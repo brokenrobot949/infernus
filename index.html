@@ -232,7 +232,14 @@ ul{ margin:0; padding:0; list-style:none; }
 .btn .ico{ width:18px; height:18px; }
 
 .btn-row{ display:flex; gap:8px; }
-.btn-row > *{ flex:1 1 0; }
+.btn-row > *{ flex:1 1 0; min-width:0; }
+/* For a button whose label carries numbers that can grow (a salvage yield
+   with Starshards, say). The label wraps onto a second line instead of
+   running past the screen edge. It has to be one span: a bare run of text
+   and numbers would become several flex items and the button's gap would
+   scatter the words. */
+.btn-tight{ padding:4px 8px; }
+.btn-wrap{ min-width:0; white-space:normal; text-align:center; line-height:1.25; }
 
 /* hold-to-confirm */
 .btn-hold{ position:relative; overflow:hidden; touch-action:none; }
@@ -5112,7 +5119,9 @@ function applyEncounter(hero, d, enc) {
     kind: enc.kind,
     crit: enc.crit,
     cost: cost,
-    items: rw.items.map(function (i) { return { name: i.name, rarity: i.rarity }; })
+    items: rw.items.map(function (i) { return { name: i.name, rarity: i.rarity }; }),
+    // Finding a page is a story moment, so the log calls it out (SPEC 14.4).
+    pages: pages.map(function (p) { return p.title; })
   });
   return 'ok';
 }
@@ -7913,7 +7922,12 @@ function logLine(entry) {
       return '<span class="' + rarityClass(i.rarity) + '">' + esc(i.name) + '</span>';
     }).join(', ') + '.</span>';
   }
-  return '<div class="' + cls + '" style="padding:3px 0">' + text + items + '</div>';
+  let pages = '';
+  if (entry.pages && entry.pages.length) {
+    pages = ' <span class="small" style="color:var(--corona)">Lore page: ' +
+      entry.pages.map(esc).join(', ') + '.</span>';
+  }
+  return '<div class="' + cls + '" style="padding:3px 0">' + text + items + pages + '</div>';
 }
 
 VIEWS.descend = {
@@ -8314,6 +8328,14 @@ function showAway(facts) {
     lines.push(r.outcome === 'clear' ? 'You cleared floor ' + r.floor + '.'
              : r.outcome === 'death' ? 'You fell on floor ' + r.floor + '.'
              : 'Your descent on floor ' + r.floor + ' ended.');
+    // Lore pages are easy to miss in a results list, so call them out here too.
+    if (r.lorePages && r.lorePages.length) {
+      const titles = r.lorePages.map(function (id) {
+        return (typeof LORE_PAGES !== 'undefined' && LORE_PAGES[id]) ? LORE_PAGES[id].title : id;
+      });
+      lines.push('You found ' + (titles.length > 1 ? titles.length + ' lore pages: ' : 'a lore page: ') +
+        titles.join(', ') + '.');
+    }
   }
   if (facts.hpGained > 0) lines.push('You recovered ' + fmtNum(facts.hpGained) + ' HP.');
   if (facts.fallenEnded) lines.push('You are no longer Fallen.');
@@ -8681,6 +8703,34 @@ function heroItemSheetAct(act, hero, item) {
     item.locked = !item.locked;
     save();
     closeSheet(); refresh();
+  } else if (act === 'sell') {
+    // Both are destructive, so they confirm first.
+    const price = sellPrice(hero, item);
+    confirmSheet({
+      title: 'Sell this?',
+      body: 'Sell <strong>' + esc(item.name) + '</strong> for ' + fmtNum(price) + ' gold.',
+      yes: 'Sell', danger: true,
+      onYes: function () {
+        const res = sellItem(hero, item);
+        if (!res.ok) { toast(res.reason); return; }
+        toast('Sold for ' + fmtNum(res.gold) + ' gold.');
+        closeAllSheets(); refresh();
+      }
+    });
+  } else if (act === 'salvage') {
+    const y = salvageYield(item);
+    confirmSheet({
+      title: 'Salvage this?',
+      body: 'Break down <strong>' + esc(item.name) + '</strong> for ' + fmtNum(y.ash) + ' Ash' +
+            (y.shards ? ' and ' + fmtNum(y.shards) + ' Starshards' : '') + '.',
+      yes: 'Salvage', danger: true,
+      onYes: function () {
+        const res = salvageItem(hero, item);
+        if (!res.ok) { toast(res.reason); return; }
+        toast('Salvaged for ' + fmtNum(res.yield.ash) + ' Ash.');
+        closeAllSheets(); refresh();
+      }
+    });
   }
 }
 
@@ -12444,64 +12494,67 @@ function heroEquipRow(hero, slot) {
   '</button>';
 }
 
-/* Change 4: a full-width card instead of a tiny 6-column tile.
-   The name/detail area opens the item sheet (data-act="item");
-   Sell and Salvage are separate sibling buttons so nothing is
-   nested inside another button. Change 2: the Power comparison
-   sits right on the card so the whole list can be scanned for
-   upgrades without opening anything. */
+/* A short coloured comparison badge for a one-line card: how this item
+   changes Power against whatever occupies its slot. Relics have no
+   meaningful Power, so they compare their own primary stat instead.
+   The full figures live in the item sheet. */
+function hero2CompareBadge(hero, item) {
+  let delta;
+  if (item.slot === 'relic') {
+    const worn = hero.equipment.relic;
+    const statOf = function (it) {
+      if (!it || it.slot !== 'relic') return 0;
+      const s = itemStats(it);
+      return s[it.relicStat] || 0;
+    };
+    const mine = statOf(item);
+    const theirs = statOf(worn);
+    delta = theirs > 0 ? ((mine - theirs) / theirs) * 100 : (mine > 0 ? 100 : 0);
+    if (!worn) delta = mine > 0 ? 100 : 0;
+  } else {
+    delta = heroPowerDeltaSafe(hero, item);
+  }
+  if (!isFinite(delta)) return '';
+  if (Math.abs(delta) < 0.5) return '<span class="tiny muted num">&mdash;</span>';
+  const up = delta >= 0;
+  return '<span class="tiny num" style="color:var(--' + (up ? 'corona' : 'blood-light') + ')">' +
+    (up ? '▲ ' : '▼ ') + fmtPct(Math.abs(delta)) + '</span>';
+}
+
+/* One line per item, the same height as an equipped slot row: the slot
+   icon, the item's name, its slot, and how it compares. Everything else
+   about the item is in its sheet, which this opens. */
 function heroInvTile(hero, idx) {
   const item = hero.inventory[idx];
   const r = RARITIES[item.rarity];
   const loc = 'inv:' + idx;
-  const isRelic = item.slot === 'relic';
-  const compare = isRelic ? hero2RelicDelta(hero, item) : powerArrow(heroPowerDeltaSafe(hero, item));
 
-  const price = sellPrice(hero, item);
-  const salv = salvageYield(item);
-
-  let indicators = '';
+  let marks = '';
   if (item.isNew) {
-    indicators += '<span aria-hidden="true" style="width:8px;height:8px;border-radius:50%;' +
+    marks += '<span aria-hidden="true" style="width:8px;height:8px;border-radius:50%;' +
       'background:var(--corona);flex:0 0 auto"></span>';
   }
   if (r.chain) {
-    indicators += '<span style="color:var(--r-' + item.rarity + ');flex:0 0 auto">' + heroIco('ico-chain', 14) + '</span>';
+    marks += '<span style="color:var(--r-' + item.rarity + ');flex:0 0 auto">' +
+      heroIco('ico-chain', 14) + '</span>';
   }
   if (item.locked) {
-    indicators += '<span style="color:var(--ash);flex:0 0 auto">' + heroIco('ico-lock', 14) + '</span>';
+    marks += '<span style="color:var(--ash);flex:0 0 auto">' + heroIco('ico-lock', 14) + '</span>';
   }
 
-  let html = '<div class="card" style="border:' + r.border + ' var(--r-' + item.rarity + ')">';
-  html += '<button class="card-tap" data-act="item" data-item="' + loc + '">';
-  html += '<div class="row" style="gap:10px;align-items:flex-start">';
-  html += '<span style="flex:0 0 auto;color:var(--ash);margin-top:1px">' + icon('ico-slot-' + item.slot) + '</span>';
-  html += '<div class="grow" style="min-width:0">';
-  html += itemNameHtml(item);
-  html += '<div class="tiny muted" style="margin-top:3px">Item level ' + fmtNum(item.ilvl) + '</div>';
-  if (item.affixes && item.affixes.length) {
-    html += '<div class="tiny muted" style="margin-top:3px">' +
-      esc(item.affixes.map(affixLine).join(' · ')) + '</div>';
-  }
-  html += '</div>';
-  if (indicators) html += '<div class="row" style="gap:6px;flex:0 0 auto;align-items:flex-start">' + indicators + '</div>';
-  html += '</div>';
-  html += '</button>';
-
-  html += '<div class="divider" style="margin:10px 0 8px"></div>';
-  html += '<div>' + compare + '</div>';
-
-  html += '<div class="btn-row" style="margin-top:10px">' +
-    '<button class="btn btn-sm" data-act="sell" data-item="' + loc + '"' + (item.locked ? ' disabled' : '') + '>' +
-      'Sell · ' + fmtNum(price) + ' gold' +
-    '</button>' +
-    '<button class="btn btn-sm" data-act="salvage" data-item="' + loc + '"' + (item.locked ? ' disabled' : '') + '>' +
-      'Salvage · ' + fmtNum(salv.ash) + ' Ash' + (salv.shards ? ' · ' + fmtNum(salv.shards) + ' Starshards' : '') +
-    '</button>' +
-  '</div>';
-
-  html += '</div>';
-  return html;
+  return '<button class="card card-tap row-between" data-act="item" data-item="' + loc + '" style="' +
+      'border:' + r.border + ' var(--r-' + item.rarity + ')">' +
+    '<span class="row" style="gap:10px;min-width:0">' +
+      '<span style="flex:0 0 auto;color:var(--ash)">' + icon('ico-slot-' + item.slot) + '</span>' +
+      '<span class="small rar-' + item.rarity + '" style="overflow:hidden;text-overflow:ellipsis;' +
+        'white-space:nowrap;font-weight:600">' + esc(item.name) + '</span>' +
+      marks +
+    '</span>' +
+    '<span class="row" style="gap:8px;flex:0 0 auto">' +
+      hero2CompareBadge(hero, item) +
+      '<span class="tiny muted">' + heroSlotLabel[item.slot] + '</span>' +
+    '</span>' +
+  '</button>';
 }
 
 /* Item detail sheet - keeps the letter badge (change 3 exempts
@@ -12569,13 +12622,33 @@ function heroOpenItemSheet(hero, item, loc) {
   }
   body += '</div>';
 
-  const foot = '<div class="btn-row">' +
-    (isThisEquipped ?
-      '<button class="btn" data-act="unequip">Unequip</button>' :
-      '<button class="btn btn-primary" data-act="equip">Equip</button>') +
-    '<button class="btn' + (item.locked ? '' : ' btn-ghost') + '" data-act="lock">' +
-      icon(item.locked ? 'ico-unlock' : 'ico-lock') + (item.locked ? 'Unlock' : 'Lock') +
-    '</button>' +
+  // Sell and Salvage live here now that the inventory card is a single line.
+  const price = sellPrice(hero, item);
+  const salv = salvageYield(item);
+  const canDispose = !isThisEquipped && !item.locked && !item.heirloom;
+
+  const foot = '<div class="stack-s">' +
+    '<div class="btn-row">' +
+      (isThisEquipped ?
+        '<button class="btn" data-act="unequip">Unequip</button>' :
+        '<button class="btn btn-primary" data-act="equip">Equip</button>') +
+      '<button class="btn' + (item.locked ? '' : ' btn-ghost') + '" data-act="lock">' +
+        icon(item.locked ? 'ico-unlock' : 'ico-lock') + (item.locked ? 'Unlock' : 'Lock') +
+      '</button>' +
+    '</div>' +
+    '<div class="btn-row">' +
+      '<button class="btn btn-sm btn-tight" data-act="sell" data-item="' + esc(loc) + '"' +
+        (canDispose ? '' : ' disabled') + '><span class="btn-wrap">Sell &middot; <span class="num">' +
+        fmtNum(price) + '</span> gold</span></button>' +
+      '<button class="btn btn-sm btn-tight" data-act="salvage" data-item="' + esc(loc) + '"' +
+        (canDispose ? '' : ' disabled') + '><span class="btn-wrap">Salvage &middot; <span class="num">' +
+        fmtNum(salv.ash) + '</span> Ash' +
+        (salv.shards ? ' &middot; <span class="num">' + fmtNum(salv.shards) + '</span> Starshards' : '') +
+      '</span></button>' +
+    '</div>' +
+    (isThisEquipped
+      ? '<div class="tiny muted">Unequip it first to sell or salvage it.</div>'
+      : (item.locked ? '<div class="tiny muted">Locked items cannot be sold or salvaged.</div>' : '')) +
   '</div>';
 
   openSheet({
