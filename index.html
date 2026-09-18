@@ -193,6 +193,15 @@ ul{ margin:0; padding:0; list-style:none; }
 
 .panel{ background:var(--raised); border-radius:var(--radius); padding:12px; }
 
+/* Two across. Cards carry a top margin when they stack in normal flow, and
+   inside a grid that margin pushed every card after the first down by 10px
+   and stretched its neighbour taller to match, so one column read as bigger
+   than the other. The grid cancels it. With .grid-fill-last, an odd final
+   card spans the full width instead of leaving a hole. */
+.grid-2{ display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+.grid-2 > .card{ margin-top:0; }
+.grid-fill-last > :last-child:nth-child(odd){ grid-column:1 / -1; }
+
 .row{ display:flex; align-items:center; gap:10px; }
 /* Indents a row that has no leading icon so it lines up with rows that do
    (a 20px icon plus the row's 10px gap). */
@@ -204,9 +213,12 @@ ul{ margin:0; padding:0; list-style:none; }
 .stack-s > * + *{ margin-top:6px; }
 .divider{ height:1px; background:var(--track); margin:12px 0; }
 
+/* Section headings read as headings, not as labels: bone rather than ash,
+   heavier, a touch larger, and with more air above so one section stops
+   before the next begins. */
 .section-title{
-  font-size:.75rem; letter-spacing:.09em; text-transform:uppercase;
-  color:var(--ash); margin:18px 0 8px;
+  font-size:.8125rem; letter-spacing:.08em; text-transform:uppercase;
+  color:var(--bone); font-weight:700; margin:22px 0 8px;
 }
 .section-title:first-child{ margin-top:0; }
 
@@ -827,6 +839,40 @@ const BALANCE = {
                 text: 'The next death becomes a retreat at 1 HP' },
       oil:    { id: 'oil',    name: 'Lantern Oil',    coef: 80,  max: 3,
                 text: '+20% time reduction on the next descent' }
+    },
+    /* Offerings: a timed buff bought at the Chapel, one at a time. Named
+       apart from account.blessings, the permanent legacy an ascended
+       champion leaves behind (SPEC 15.3). Cost is coef x g(deepest).
+
+       None of them reaches a descent. Each is a slower, cheaper version of
+       something the town already sells outright:
+         vigil    - half the price of healing the same HP instantly, but it
+                    takes two hours. Measured at level 40: two hours of
+                    doubled regeneration is worth about 2,770 HP, which the
+                    Chapel would heal on the spot for ~738 gold at the first
+                    heal of the day, against 364 for the Offering. Healing
+                    also costs 1.5x more each time within a day while this
+                    stays flat, so the gap widens for an impatient player.
+         coinshade- the Market pays a quarter more for what you sell. Unlike
+                    a gold-for-gold trade it converts loot, so it can pay
+                    for itself on a single full inventory.
+         ashen    - the Forge gives half again as much Ash. Gold for Ash,
+                    which is the scarcer of the two.
+       Anything that only multiplied a gold trickle back into gold was cut:
+       it can never be worth more than it costs. */
+    offerings: {
+      durationMs: 2 * 60 * 60 * 1000,
+      list: {
+        vigil:     { id: 'vigil',     name: 'Vigil of the Flame', coef: 24, icon: 'ico-chapel',
+                     text: 'HP regenerates twice as fast while you are not descending',
+                     effect: { k: 'town_regen_mult', value: 2 } },
+        coinshade: { id: 'coinshade', name: "Coinshade's Favour", coef: 10, icon: 'ico-market',
+                     text: 'The Market pays 25% more for what you sell',
+                     effect: { k: 'sell_price_mult', value: 1.25 } },
+        ashen:     { id: 'ashen',     name: 'Ashen Favour',       coef: 8,  icon: 'ico-salvage',
+                     text: 'Salvaging yields 50% more Ash',
+                     effect: { k: 'salvage_ash_mult', value: 1.5 } }
+      }
     }
   },
 
@@ -874,7 +920,7 @@ const BALANCE = {
   awayThresholdMs: 5 * 60 * 1000,
 
   /* --- SPEC 20 --- */
-  save: { key: 'infernus.save', version: 3, autosaveMs: 30 * 1000 },
+  save: { key: 'infernus.save', version: 4, autosaveMs: 30 * 1000 },
 
   /* --- SPEC 21.1 --- */
   debug: { offsetKey: 'infernus.debugOffset', simDefaultRuns: 1000 },
@@ -3089,7 +3135,8 @@ function freshHero(name, classId) {
     market: { stock: [], restockAt: 0, blackMarket: null },
     supplies: { candle: 0, ward: 0, oil: 0 },
     descent: null,
-    task: null,              // { id, startedAt } - The Day's Work (SPEC 13.6)
+    task: null,              // { id, startedAt } - Commissions (SPEC 13.6)
+    offering: null,          // { id, from, until } - the Chapel's timed buff.
     queue: null,
     queueMessage: null,
     oilPrimed: false,
@@ -3158,6 +3205,15 @@ const MIGRATIONS = {
     sweep(s.hero);
     note(acct.heirloom);
     for (const champ of (acct.champions || [])) sweep(champ);
+    return s;
+  },
+
+  /* Phase 3 added the Chapel Offering: a timed town buff bought with gold.
+     Saves from before it have no `offering` field on the hero. Nothing to
+     do with account.blessings, the Ascension legacy, which already existed
+     and needs no migration. Idempotent: it only fills a missing field. */
+  4: function (s) {
+    if (s.hero && s.hero.offering === undefined) s.hero.offering = null;
     return s;
   }
 };
@@ -3543,21 +3599,55 @@ function regenRatePerHour(level, recoveryPct) {
 function regenPerHour(hero, st) { return regenRatePerHour(hero.level, st.recovery); }
 function regenPerMs(hero, st) { return regenPerHour(hero, st) / HOUR; }
 
+/* Extra regeneration time earned from a Vigil of the Flame across the
+   window [from, to]. HP is stored as a value plus the stamp it was written
+   at, so regeneration is worked out over that whole window at once - and a
+   two-hour Offering usually covers only part of it, because it was made
+   partway through or ran out while the phone was asleep. Multiplying the
+   rate would hand the player double for the entire window or, worse, hand
+   them nothing at all for an Offering that expired while they were away.
+   Counting only the overlap is the honest sum. */
+function offeringRegenBonusMs(hero, from, to) {
+  const b = hero && hero.offering;
+  if (!b) return 0;
+  const def = offeringDef(b.id);
+  if (!def || def.effect.k !== 'town_regen_mult') return 0;
+  const start = b.from === undefined ? b.until - BALANCE.town.offerings.durationMs : b.from;
+  const lo = Math.max(from, start);
+  const hi = Math.min(to, b.until);
+  if (hi <= lo) return 0;
+  return (hi - lo) * (def.effect.value - 1);
+}
+
 /* HP right now. Regeneration happens only in town, and only when not Fallen. */
 function currentHp(hero, st) {
   if (!hero) return 0;
   if (hero.descent) return clamp(Math.floor(hero.descent.hp), 0, st.maxHp);
   if (hero.fallenUntil > now()) return clamp(Math.floor(hero.hp), 0, st.maxHp);
-  const gainedMs = elapsed(hero.hpAt);
+  const gainedMs = elapsed(hero.hpAt) + offeringRegenBonusMs(hero, hero.hpAt, now());
   return clamp(Math.floor(hero.hp + regenPerMs(hero, st) * gainedMs), 0, st.maxHp);
 }
 
+/* With a Vigil running, the hero fills at the doubled rate until it ends
+   and at the ordinary rate after, so the countdown is worked out in two
+   stretches rather than one. */
 function timeToFullHp(hero, st) {
   const hp = currentHp(hero, st);
   if (hp >= st.maxHp) return 0;
   const rate = regenPerMs(hero, st);
   if (rate <= 0) return Infinity;
-  return (st.maxHp - hp) / rate;
+  let need = st.maxHp - hp;
+
+  const b = activeOffering(hero);
+  const mult = offeringMult(hero, 'town_regen_mult');
+  if (b && mult > 1) {
+    const boostedMs = Math.max(0, b.until - now());
+    const boostedGain = rate * mult * boostedMs;
+    if (boostedGain >= need) return need / (rate * mult);
+    need -= boostedGain;
+    return boostedMs + need / rate;
+  }
+  return need / rate;
 }
 
 /* Write HP down at this moment, so later regeneration starts from here. */
@@ -6188,7 +6278,7 @@ function removeFromInventory(hero, item) {
    ============================================================ */
 function salvageItem(hero, item) {
   if (item.locked || item.heirloom) return { ok: false, reason: 'That item is locked.' };
-  const y = salvageYield(item);
+  const y = heroSalvageYield(hero, item);
   removeFromInventory(hero, item);
   hero.ash += y.ash;
   hero.starshards += y.shards;
@@ -6206,7 +6296,7 @@ function bulkSalvagePreview(hero, maxRarity) {
   for (const it of hero.inventory) {
     if (it.locked || it.heirloom) continue;
     if (RARITY_ORDER.indexOf(it.rarity) > limit) continue;
-    const y = salvageYield(it);
+    const y = heroSalvageYield(hero, it);
     count++; ash += y.ash; shards += y.shards;
     list.push(it);
   }
@@ -6471,7 +6561,8 @@ function sellPrice(hero, item) {
   for (const entry of passiveEffects(hero)) {
     if (entry.e.k === 'sell_bonus') bonus += effAmount(entry);
   }
-  return Math.round(base * g(item.ilvl) * (1 + bonus / 100));
+  // Coinshade's Favour (Chapel Offering) lifts this while it lasts.
+  return Math.round(base * g(item.ilvl) * (1 + bonus / 100) * offeringMult(hero, 'sell_price_mult'));
 }
 
 function buyItem(hero, item) {
@@ -7297,7 +7388,7 @@ const HELP_PAGES = [
     title: 'Town, and waiting well',
     body: 'Heal at the Last Chapel. Buy and sell at the Market. Salvage and temper your gear at ' +
           'the Forge. Spend skill points on the Hero tab, and slot rites to use before a descent.\n\n' +
-          'If you are only waiting for HP, take a job at the Day’s Work. It is small, but the ' +
+          'If you are only waiting for HP, take a Commission. It is small, but the ' +
           'wait is worth something.'
   },
   {
@@ -8718,7 +8809,7 @@ function heroItemSheetAct(act, hero, item) {
       }
     });
   } else if (act === 'salvage') {
-    const y = salvageYield(item);
+    const y = heroSalvageYield(hero, item);
     confirmSheet({
       title: 'Salvage this?',
       body: 'Break down <strong>' + esc(item.name) + '</strong> for ' + fmtNum(y.ash) + ' Ash' +
@@ -9146,6 +9237,18 @@ const TOWN_KEEPERS = {
   market: 'Vell'
 };
 
+/* Each place in town carries its own accent, on its hub tile and again at
+   the top of its page, so the hub reads as five different doors instead of
+   one card repeated five times. Palette tokens only (CLAUDE.md). */
+const TOWN_ACCENTS = {
+  chapel: 'corona',
+  forge: 'brass',
+  market: 'bone',
+  bounty: 'blood-light',
+  labour: 'ash'
+};
+function townAccent(place) { return 'var(--' + (TOWN_ACCENTS[place] || 'edge') + ')'; }
+
 /* ---- small shared helpers ---- */
 
 function townCurrencyRow(hero, opts) {
@@ -9158,10 +9261,15 @@ function townCurrencyRow(hero, opts) {
   return out;
 }
 
-function townHeader(title) {
-  return '<div class="row-between" style="margin-bottom:12px">' +
+/* `place` is optional: when given, the title carries that place's accent and
+   the header sits on a hairline of the same colour, so a page looks like the
+   tile it was opened from. */
+function townHeader(title, place) {
+  const accent = place ? townAccent(place) : '';
+  return '<div class="row-between" style="margin-bottom:12px' +
+      (accent ? ';padding-bottom:10px;border-bottom:1px solid ' + accent : '') + '">' +
     '<button class="btn btn-sm btn-ghost" data-act="back">' + icon('ico-chevron-left') + '<span>Town</span></button>' +
-    '<h2 style="font-size:1.25rem;margin:0">' + esc(title) + '</h2>' +
+    '<h2 style="font-size:1.25rem;margin:0' + (accent ? ';color:' + accent : '') + '">' + esc(title) + '</h2>' +
     '<span style="width:44px;flex:0 0 auto"></span>' +
   '</div>';
 }
@@ -9239,9 +9347,11 @@ function townMarketStatus(hero) {
 
 function townTile(place, title, status, iconId, countdown) {
   const cdAttr = countdown ? ' data-town-cd="' + countdown + '" data-town-cd-tmpl="' + place + '"' : '';
-  return '<button class="card card-tap" data-act="open" data-place="' + place + '" style="min-height:44px">' +
+  const accent = townAccent(place);
+  return '<button class="card card-tap" data-act="open" data-place="' + place + '" style="min-height:44px;' +
+      'border-left:3px solid ' + accent + '">' +
     '<div class="row" style="gap:10px">' +
-      icon(iconId) +
+      '<span style="color:' + accent + ';display:inline-flex">' + icon(iconId) + '</span>' +
       '<div class="grow">' +
         '<div style="font-weight:600">' + esc(title) + '</div>' +
         '<div class="tiny muted">' + esc(TOWN_KEEPERS[place]) + '</div>' +
@@ -9265,7 +9375,7 @@ function townRenderHub(hero) {
    ============================================================ */
 
 function townRenderChapel(hero) {
-  let out = townHeader('The Last Chapel') + townCurrencyRow(hero);
+  let out = townHeader('The Last Chapel', 'chapel') + townCurrencyRow(hero);
 
   if (hero.fallenUntil > now()) {
     const left = hero.fallenUntil - now();
@@ -9336,7 +9446,7 @@ function townRenderRespec(hero) {
    ============================================================ */
 
 function townRenderForge(hero) {
-  let out = townHeader('The Forge') + townCurrencyRow(hero, { ash: true, shards: true });
+  let out = townHeader('The Forge', 'forge') + townCurrencyRow(hero, { ash: true, shards: true });
 
   // ---- Salvage ----
   out += '<div class="section-title">Salvage</div>';
@@ -9410,7 +9520,7 @@ function townRenderForge(hero) {
    ============================================================ */
 
 function townRenderMarket(hero) {
-  let out = townHeader('The Market') + townCurrencyRow(hero);
+  let out = townHeader('The Market', 'market') + townCurrencyRow(hero);
 
   const left = Math.max(0, (hero.market.restockAt || 0) - now());
   out += '<p class="small muted" data-town-cd="' + hero.market.restockAt + '" data-town-cd-tmpl="market">' +
@@ -10223,11 +10333,11 @@ function townRenderHub(hero) {
 
 function town2RenderBounty(hero) {
   if (!hasUnlock('bounty')) {
-    return townHeader('The Bounty Board') +
+    return townHeader('The Bounty Board', 'bounty') +
       '<p class="small muted">Opens at Renown rank ' + town2UnlockRank('bounty') + '.</p>';
   }
 
-  let out = townHeader('The Bounty Board') + townCurrencyRow(hero, { shards: true });
+  let out = townHeader('The Bounty Board', 'bounty') + townCurrencyRow(hero, { shards: true });
 
   const contracts = (state.account.contracts && state.account.contracts.list) || [];
   const nextAt = (state.account.contracts && state.account.contracts.nextAt) || 0;
@@ -10280,7 +10390,7 @@ function town2RenderBounty(hero) {
    ============================================================ */
 
 function townRenderForge(hero) {
-  let out = townHeader('The Forge') + townCurrencyRow(hero, { ash: true, shards: true });
+  let out = townHeader('The Forge', 'forge') + townCurrencyRow(hero, { ash: true, shards: true });
 
   // ---- Salvage ----
   out += '<div class="section-title">Salvage</div>';
@@ -10290,7 +10400,7 @@ function townRenderForge(hero) {
   } else {
     out += '<div class="stack-s">';
     salvageable.forEach(function (item) {
-      const y = salvageYield(item);
+      const y = heroSalvageYield(hero, item);
       out += '<div class="row-between panel" style="' + town2RarityBorderStyle(item) + '">' +
         '<button type="button" class="row grow" data-act="detail" data-id="' + esc(item.id) + '" style="gap:8px;min-height:44px;text-align:left">' +
           townBadge(item) + town2ChainIcon(item) +
@@ -10401,7 +10511,7 @@ function townRenderForge(hero) {
    ============================================================ */
 
 function townRenderMarket(hero) {
-  let out = townHeader('The Market') + townCurrencyRow(hero);
+  let out = townHeader('The Market', 'market') + townCurrencyRow(hero);
 
   const left = Math.max(0, (hero.market.restockAt || 0) - now());
   out += '<p class="small muted" data-town-cd="' + hero.market.restockAt + '" data-town-cd-tmpl="market">' +
@@ -10562,6 +10672,7 @@ VIEWS.town = {
       if (tmpl === 'fallen') prefix = 'Time left: ';
       else if (tmpl === 'bounty') prefix = 'New contracts in ';
       else if (tmpl === 'blackmarket') prefix = 'Expires in ';
+      else if (tmpl === 'offering') prefix = 'Ends in ';
       n.textContent = prefix + fmtTime(left);
     });
   },
@@ -11618,13 +11729,15 @@ function halls3RenderFramesSection() {
   return html;
 }
 
+/* A reached rank carries no icon: the open padlock read too much like the
+   closed one, and a ladder of them was busy. Reached rows indent to the
+   same text column instead, the way the Codex does. */
 function halls3RankRow(r, entry) {
   const needed = renownForRank(r);
   const active = hasUnlock(entry.id);
-  const ic = active ? 'ico-unlock' : 'ico-lock';
   const status = active ? 'Unlocked' : 'Locked';
-  return '<div class="row' + (active ? '' : ' muted') + '" style="min-height:44px">' +
-    icon(ic) +
+  return '<div class="row' + (active ? ' row-indent' : ' muted') + '" style="min-height:44px">' +
+    (active ? '' : icon('ico-lock')) +
     '<div class="grow">' +
       '<div>Rank ' + fmtNum(r) + ' · ' + esc(entry.label) + '</div>' +
       '<div class="tiny">' + esc(fmtNum(needed) + ' Renown · ' + status) + '</div>' +
@@ -11859,7 +11972,7 @@ function town3RekindleSection(hero) {
    Rekindle are new below them. Every part now sits under its own
    section-title so the growing Forge stays scannable at 360px. */
 function townRenderForge(hero) {
-  let out = townHeader('The Forge') + townCurrencyRow(hero, { ash: true, shards: true });
+  let out = townHeader('The Forge', 'forge') + townCurrencyRow(hero, { ash: true, shards: true });
 
   // ---- Salvage ----
   out += '<div class="section-title">Salvage</div>';
@@ -11869,7 +11982,7 @@ function townRenderForge(hero) {
   } else {
     out += '<div class="stack-s">';
     salvageable.forEach(function (item) {
-      const y = salvageYield(item);
+      const y = heroSalvageYield(hero, item);
       out += '<div class="row-between panel" style="' + town2RarityBorderStyle(item) + '">' +
         '<button type="button" class="row grow" data-act="detail" data-id="' + esc(item.id) + '" style="gap:8px;min-height:44px;text-align:left">' +
           townBadge(item) + town2ChainIcon(item) +
@@ -12095,6 +12208,7 @@ VIEWS.town = {
       if (tmpl === 'fallen') prefix = 'Time left: ';
       else if (tmpl === 'bounty') prefix = 'New contracts in ';
       else if (tmpl === 'blackmarket') prefix = 'Expires in ';
+      else if (tmpl === 'offering') prefix = 'Ends in ';
       n.textContent = prefix + fmtTime(left);
     });
   },
@@ -12412,7 +12526,7 @@ function hero2ConfirmSell(hero, item) {
 }
 
 function hero2ConfirmSalvage(hero, item) {
-  const y = salvageYield(item);
+  const y = heroSalvageYield(hero, item);
   confirmSheet({
     title: 'Salvage item',
     body: 'Salvage ' + esc(item.name) + ' for ' + fmtNum(y.ash) + ' Ash' +
@@ -12624,7 +12738,7 @@ function heroOpenItemSheet(hero, item, loc) {
 
   // Sell and Salvage live here now that the inventory card is a single line.
   const price = sellPrice(hero, item);
-  const salv = salvageYield(item);
+  const salv = heroSalvageYield(hero, item);
   const canDispose = !isThisEquipped && !item.locked && !item.heirloom;
 
   const foot = '<div class="stack-s">' +
@@ -12710,14 +12824,14 @@ function heroRenderStats(hero) {
   void hp;
 
   html += '<div class="section-title">Combat</div>';
-  html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">' +
+  html += '<div class="grid-2 grid-fill-last">' +
     ['power'].concat(heroCoreStats).map(function (key) {
       return hero2StatTile(key, key === 'power' ? st.power : st[key]);
     }).join('') +
   '</div>';
 
   html += '<div class="section-title">Attributes</div>';
-  html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">' +
+  html += '<div class="grid-2 grid-fill-last">' +
     heroPercentStats.map(function (key) { return hero2StatTile(key, st[key]); }).join('') +
   '</div>';
 
@@ -12869,7 +12983,7 @@ function town4BulkSellPreview(hero, maxRarity) {
    card/panel each, since those are single items with a lot of text.
    ============================================================ */
 function townRenderMarket(hero) {
-  let out = townHeader('The Market') + townCurrencyRow(hero);
+  let out = townHeader('The Market', 'market') + townCurrencyRow(hero);
 
   const left = Math.max(0, (hero.market.restockAt || 0) - now());
   out += '<p class="small muted" data-town-cd="' + hero.market.restockAt + '" data-town-cd-tmpl="market">' +
@@ -12885,7 +12999,7 @@ function townRenderMarket(hero) {
     if (!stock.length) {
       out += '<p class="small muted">Nothing in stock.</p>';
     } else {
-      out += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">';
+      out += '<div class="grid-2">';
       stock.forEach(function (item) {
         const price = buyPrice(item);
         const afford = hero.gold >= price && inventoryFree(hero) > 0;
@@ -12909,7 +13023,7 @@ function townRenderMarket(hero) {
     if (!sellable.length) {
       out += '<p class="small muted">Nothing unlocked to sell.</p>';
     } else {
-      out += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">';
+      out += '<div class="grid-2">';
       sellable.forEach(function (item) {
         const price = sellPrice(hero, item);
         out += '<div class="card" style="padding:10px;' + town2RarityBorderStyle(item) + '">' +
@@ -13035,6 +13149,7 @@ VIEWS.town = {
       if (tmpl === 'fallen') prefix = 'Time left: ';
       else if (tmpl === 'bounty') prefix = 'New contracts in ';
       else if (tmpl === 'blackmarket') prefix = 'Expires in ';
+      else if (tmpl === 'offering') prefix = 'Ends in ';
       n.textContent = prefix + fmtTime(left);
     });
   },
@@ -13376,11 +13491,13 @@ function town5HubStatus(hero) {
    for keepers the town already has"), and because the status line
    needs a stable id for tick() to refresh live while a job runs. */
 function town5RenderHubTile(hero) {
-  return '<button class="card card-tap" data-act="open" data-place="labour" style="min-height:44px">' +
+  const accent = townAccent('labour');
+  return '<button class="card card-tap" data-act="open" data-place="labour" style="min-height:44px;' +
+      'border-left:3px solid ' + accent + '">' +
     '<div class="row" style="gap:10px">' +
-      icon('ico-clock') +
+      '<span style="color:' + accent + ';display:inline-flex">' + icon('ico-clock') + '</span>' +
       '<div class="grow">' +
-        '<div style="font-weight:600">The Day’s Work</div>' +
+        '<div style="font-weight:600">Commissions</div>' +
         '<div class="tiny muted">Odd jobs around town</div>' +
       '</div>' +
     '</div>' +
@@ -13409,11 +13526,11 @@ function townRenderHub(hero) {
    ============================================================ */
 function town2RenderBounty(hero) {
   if (!hasUnlock('bounty')) {
-    return townHeader('The Bounty Board') +
+    return townHeader('The Bounty Board', 'bounty') +
       '<p class="small muted">Opens at Renown rank ' + town2UnlockRank('bounty') + '.</p>';
   }
 
-  let out = townHeader('The Bounty Board') + townCurrencyRow(hero, { shards: true });
+  let out = townHeader('The Bounty Board', 'bounty') + townCurrencyRow(hero, { shards: true });
 
   const contracts = (state.account.contracts && state.account.contracts.list) || [];
   const nextAt = (state.account.contracts && state.account.contracts.nextAt) || 0;
@@ -13528,7 +13645,7 @@ function town5CurrentTaskCard(hero) {
 }
 
 function town5RenderLabour(hero) {
-  let out = townHeader('The Day’s Work');
+  let out = townHeader('Commissions', 'labour');
   out += '<p class="small muted">Wages for waiting out your HP between descents — a fraction of what a ' +
     'descent pays. Starting a descent ends the current job and banks what it earned.</p>';
 
@@ -13580,6 +13697,7 @@ VIEWS.town = {
       if (tmpl === 'fallen') prefix = 'Time left: ';
       else if (tmpl === 'bounty') prefix = 'New contracts in ';
       else if (tmpl === 'blackmarket') prefix = 'Expires in ';
+      else if (tmpl === 'offering') prefix = 'Ends in ';
       n.textContent = prefix + fmtTime(left);
     });
 
@@ -13937,9 +14055,373 @@ function boot() {
 function currentHpAtStamp(hero, st, stamp) {
   if (hero.descent) return clamp(Math.floor(hero.descent.hp), 0, st.maxHp);
   if (hero.fallenUntil > stamp) return clamp(Math.floor(hero.hp), 0, st.maxHp);
-  const ms = Math.max(0, stamp - hero.hpAt);
+  const ms = Math.max(0, stamp - hero.hpAt) + offeringRegenBonusMs(hero, hero.hpAt, stamp);
   return clamp(Math.floor(hero.hp + regenPerMs(hero, st) * ms), 0, st.maxHp);
 }
+
+/* ============================================================
+   ACHIEVEMENT PROGRESS TRACKERS
+   Added per Rob's request: show a running tally under unearned
+   achievements that have a meaningful number to show (e.g. "4 / 10").
+
+   NOTHING OUTSIDE THIS FILE NEEDS TO CHANGE. No new CSS class was
+   needed — the progress bar reuses the existing ".bar bar-xp" /
+   ".bar-fill" idiom (corona fill on the track colour, same as the
+   Renown bar just above this in halls3RenderRenown), and the figure
+   reuses ".tiny" + ".num" the same way the existing achievement
+   description line does. If Rob ever wants the bar visually
+   distinguished from the Renown bar, that would be the one thing to
+   add by hand, but nothing below requires it.
+
+   This file redeclares halls3AchievementRow(id). The codebase's
+   "later definition wins" override pattern means this version runs
+   instead of the one earlier in the script, once spliced in near
+   the end of the file (immediately before the DOMContentLoaded
+   listener, as instructed).
+   ============================================================ */
+
+/* achievementProgress(check, hero) -> { cur, max } | null
+   Mirrors achievementMet's switch on check.k, using the exact same
+   sources of truth (totalOf, getRecord, uniquesFound, lorePagesFound,
+   state.account.*, hero.counters.*) so the bar can never disagree
+   with whether the achievement has actually been earned.
+
+   Returns null for checks with no meaningful running tally:
+     - banes_cleared, boss_low_hp: a single-moment condition about
+       one specific path just cleared, not a persistent count.
+     - full_set: boolean, no number to show.
+
+   cur is always clamped to max, so a finished tracker never reads
+   "34 / 25" in the moment between the value crossing the threshold
+   and checkAchievements() marking it earned (at which point the row
+   stops showing progress entirely and shows "Earned <date>" instead).
+
+   Every lookup is guarded; a fresh save missing counters/records
+   must never throw here. */
+function achievementProgress(check, hero) {
+  try {
+    if (!check || !hero) return null;
+    const acct = state.account || {};
+
+    function clamped(cur, max) {
+      cur = (typeof cur === 'number' && isFinite(cur)) ? cur : 0;
+      max = (typeof max === 'number' && isFinite(max) && max > 0) ? max : 1;
+      if (cur < 0) cur = 0;
+      if (cur > max) cur = max;
+      return { cur: cur, max: max };
+    }
+
+    switch (check.k) {
+      case 'deepest':
+        return clamped(acct.deepestEver || 1, check.value);
+
+      case 'guardian_kills':
+        return clamped(totalOf('guardian:' + check.guardian), check.value);
+
+      case 'horrors':
+        return clamped(totalOf('horrors'), check.value);
+
+      case 'clear_streak':
+        return clamped((hero.counters && hero.counters.clearStreak) || 0, check.value);
+
+      case 'total_gold':
+        return clamped(totalOf('goldEarned'), check.value);
+
+      case 'temper': {
+        // Highest temper level on any item the hero currently holds or
+        // wears, exactly like achievementMet's own .some() scan.
+        let items = [];
+        try {
+          items = (hero.inventory || []).concat(hero.equipment ? equippedItems(hero) : []);
+        } catch (e) { items = []; }
+        let maxTemper = 0;
+        for (const it of items) {
+          const t = it && it.temper;
+          if (typeof t === 'number' && t > maxTemper) maxTemper = t;
+        }
+        return clamped(maxTemper, check.value);
+      }
+
+      case 'uniques_found':
+        return clamped(uniquesFound(), check.value);
+
+      case 'lore_pages':
+        return clamped(lorePagesFound(), check.value);
+
+      case 'ascensions':
+        return clamped(acct.ascensions || 0, check.value);
+
+      case 'class_depth': {
+        const rec = getRecord('deepest', check.classId);
+        return clamped(rec ? rec.value : 0, check.value);
+      }
+
+      // No meaningful running tally for these — deliberately untracked.
+      case 'banes_cleared':
+      case 'boss_low_hp':
+      case 'full_set':
+      default:
+        return null;
+    }
+  } catch (e) {
+    return null;
+  }
+}
+
+/* Redeclares the earlier halls3AchievementRow(id) (~line 11640).
+   Identical for earned achievements and for achievements with no
+   trackable progress. For an unearned achievement with progress,
+   adds a thin bar + "cur / max" figure beneath the description. */
+function halls3AchievementRow(id) {
+  const a = ACHIEVEMENTS[id];
+  const earnedAt = state.account.achievements && state.account.achievements[id];
+  if (earnedAt) {
+    return '<div class="card" style="padding:10px 12px">' +
+      '<div style="font-weight:600">' + esc(a.name) + '</div>' +
+      '<div class="tiny muted" style="margin-top:2px">Earned ' + esc(halls3DateStr(earnedAt)) + '</div>' +
+    '</div>';
+  }
+
+  let progHtml = '';
+  const hero = state.hero;
+  const prog = hero ? achievementProgress(a.check, hero) : null;
+  /* A target of 1 is a yes-or-no condition, not a tally. "0 / 1" under a
+     bar that can only be empty or full says nothing the description does
+     not already say, so those rows stay plain. */
+  if (prog && prog.max > 1) {
+    const pct = Math.max(0, Math.min(100, (prog.cur / prog.max) * 100));
+    progHtml =
+      '<div class="bar bar-xp" style="margin-top:6px">' +
+        '<div class="bar-fill" style="width:' + pct + '%"></div>' +
+      '</div>' +
+      '<div class="tiny num" style="margin-top:2px">' +
+        esc(fmtNum(prog.cur) + ' / ' + fmtNum(prog.max)) +
+      '</div>';
+  }
+
+  return '<div class="card muted" style="padding:10px 12px">' +
+    '<div style="font-weight:600">' + esc(a.name) + '</div>' +
+    '<div class="tiny" style="margin-top:2px">' + esc(a.desc) + ' · ' + fmtNum(a.renown) + ' Renown</div>' +
+    progHtml +
+  '</div>';
+}
+
+/* ============================================================
+   CHAPEL OFFERINGS - SPEC 13.1
+   A timed, town-only buff bought with gold. One runs at a time.
+   Stored as hero.offering = { id, from, until }, or null.
+
+   Named apart from account.blessings, the permanent bonus an ascended
+   champion leaves to every hero after them (SPEC 15.3), which is a
+   different system entirely.
+
+   Expiry is read, never written: an Offering is over when until <= now(),
+   the same way a descent's progress is read from its stamps. Nothing
+   here counts ticks, so a sleeping phone changes nothing.
+   ============================================================ */
+function offeringDef(id) {
+  return (BALANCE.town.offerings && BALANCE.town.offerings.list[id]) || null;
+}
+
+/* The Offering in force, or null. Reading never clears an expired one;
+   it is simply ignored, as hero.fallenUntil is until Revive touches it. */
+function activeOffering(hero) {
+  if (!hero || !hero.offering) return null;
+  if (hero.offering.until <= now()) return null;
+  return hero.offering;
+}
+
+/* 1 when no Offering of this kind is in force, otherwise its value, so
+   every call site is a single multiplication. */
+function offeringMult(hero, kind) {
+  const b = activeOffering(hero);
+  if (!b) return 1;
+  const def = offeringDef(b.id);
+  if (!def || def.effect.k !== kind) return 1;
+  return def.effect.value;
+}
+
+function offeringCost(hero, id) {
+  const def = offeringDef(id);
+  if (!def) return 0;
+  return Math.round(def.coef * g(hero.deepest));
+}
+
+/* Making an Offering replaces whatever is running, with nothing back for
+   the time left on it - the confirmation says so. Barred during a descent
+   for the same reason healing is: the hero is not in town. */
+function buyOffering(hero, id) {
+  const def = offeringDef(id);
+  if (!def) return { ok: false, reason: 'No such Offering.' };
+  if (hero.descent) return { ok: false, reason: 'Not during a descent.' };
+  const cost = offeringCost(hero, id);
+  if (hero.gold < cost) return { ok: false, reason: 'Not enough gold.' };
+
+  /* A Vigil pays out over the window since HP was last written down, so
+     the moment it starts has to be on record before that window moves on.
+     Settling HP here means the time before the Offering is banked at the
+     ordinary rate and only what follows is doubled. */
+  setHp(hero, currentHp(hero, heroStats(hero)));
+  hero.gold -= cost;
+  hero.offering = { id: id, from: now(), until: now() + BALANCE.town.offerings.durationMs };
+  save();
+  return { ok: true, offering: hero.offering, cost: cost };
+}
+
+/* Ashen Favour lifts the Ash from salvaging, never the Starshards, and
+   only in town. It wraps salvageYield, which stays untouched and pure, so
+   the auto-salvage of a drop that will not fit - which happens inside a
+   descent - can never see an Offering. */
+function heroSalvageYield(hero, item) {
+  const y = salvageYield(item);
+  return { ash: Math.round(y.ash * offeringMult(hero, 'salvage_ash_mult')), shards: y.shards };
+}
+
+/* ============================================================
+   THE CHAPEL - the Offerings section
+   ============================================================ */
+function townRenderOfferings(hero) {
+  const B = BALANCE.town.offerings;
+  const active = activeOffering(hero);
+  let out = '<div class="section-title">Offerings</div>';
+
+  if (active) {
+    const def = offeringDef(active.id);
+    const left = Math.max(0, active.until - now());
+    out += '<div class="card" style="border-left:3px solid ' + townAccent('chapel') + '">' +
+        '<div class="row" style="gap:10px">' +
+          '<span style="color:' + townAccent('chapel') + ';display:inline-flex">' + icon(def.icon) + '</span>' +
+          '<div class="grow">' +
+            '<div style="font-weight:600">' + esc(def.name) + '</div>' +
+            '<div class="small muted">' + esc(def.text) + '</div>' +
+          '</div>' +
+        '</div>' +
+        '<div class="small" style="margin-top:8px;color:' + townAccent('chapel') + '"' +
+          ' data-town-cd="' + active.until + '" data-town-cd-tmpl="offering">' +
+          'Ends in ' + fmtTime(left) +
+        '</div>' +
+      '</div>' +
+      '<p class="tiny muted" style="margin-top:8px">Making another ends this one early.</p>';
+  } else {
+    out += '<p class="tiny muted">Each lasts ' + fmtTime(B.durationMs) +
+      '. Only one at a time, and none of them follow you into the pit.</p>';
+  }
+
+  out += '<div class="stack-s" style="margin-top:10px">';
+  for (const id in B.list) {
+    // The one that is running is already shown in full above.
+    if (active && active.id === id) continue;
+    const def = B.list[id];
+    const cost = offeringCost(hero, id);
+    const afford = hero.gold >= cost;
+    const disabled = !afford;
+    out += '<div class="row-between panel">' +
+        '<div class="row grow" style="gap:10px;min-width:0">' +
+          '<span style="color:var(--ash);display:inline-flex;flex:0 0 auto">' + icon(def.icon) + '</span>' +
+          '<div style="min-width:0">' +
+            '<div style="font-weight:600">' + esc(def.name) + '</div>' +
+            '<div class="small muted">' + esc(def.text) + '</div>' +
+          '</div>' +
+        '</div>' +
+        '<button class="btn btn-sm' + (disabled ? '' : ' btn-primary') + '" data-act="offering" data-id="' +
+          esc(id) + '"' + (disabled ? ' disabled' : '') + ' style="flex:0 0 auto">' +
+          '<span class="num">' + fmtNum(cost) + '</span> gold' +
+        '</button>' +
+      '</div>';
+  }
+  out += '</div>';
+  return out;
+}
+
+/* Redeclares townRenderChapel to seat Offerings between Heal and Respec.
+   A Fallen hero sees it too: making a Vigil while waiting out the timer is
+   exactly the sort of thing a player stuck in town wants to do. */
+function townRenderChapel(hero) {
+  let out = townHeader('The Last Chapel', 'chapel') + townCurrencyRow(hero);
+
+  if (hero.fallenUntil > now()) {
+    const left = hero.fallenUntil - now();
+    const cost = reviveCost(hero);
+    const afford = hero.gold >= cost;
+    out += '<div class="section-title">Fallen</div>' +
+      '<div class="card">' +
+        '<div class="risk risk-deadly">' + icon('ico-deadly') + '<span>Fallen</span></div>' +
+        '<div class="small muted" style="margin-top:6px" data-town-cd="' + hero.fallenUntil + '" data-town-cd-tmpl="fallen">' +
+          'Time left: ' + fmtTime(left) +
+        '</div>' +
+        '<div style="margin-top:14px">' +
+          '<button class="btn btn-primary btn-block btn-lg" data-act="revive"' + (afford ? '' : ' disabled') + '>' +
+            'Revive — ' + fmtNum(cost) + ' gold' +
+          '</button>' +
+        '</div>' +
+      '</div>';
+    out += townRenderOfferings(hero);
+    out += townRenderRespec(hero);
+    return out;
+  }
+
+  const gate = canHeal(hero);
+  out += '<div class="section-title">Heal</div>';
+  if (!gate.ok) {
+    out += '<p class="small muted">' + esc(gate.reason) + '</p>';
+  } else {
+    out += '<p class="tiny muted">Healing costs more each time you heal within a day.</p>';
+    const options = [ [0.25, 'Heal 25%'], [0.5, 'Heal 50%'], [1, 'Heal to full'] ];
+    out += '<div class="stack-s">';
+    options.forEach(function (opt) {
+      const frac = opt[0], label = opt[1];
+      const q = healQuote(hero, frac);
+      const disabled = q.restored <= 0 || hero.gold < q.gold;
+      out += '<div class="row-between panel">' +
+        '<div>' +
+          '<div style="font-weight:600">' + esc(label) + '</div>' +
+          '<div class="small muted">Restores ' + fmtNum(q.restored) + ' HP</div>' +
+        '</div>' +
+        '<button class="btn btn-sm' + (disabled ? '' : ' btn-primary') + '" data-act="heal" data-frac="' + frac + '"' +
+          (disabled ? ' disabled' : '') + '>' + fmtNum(q.gold) + ' gold</button>' +
+      '</div>';
+    });
+    out += '</div>';
+  }
+
+  out += townRenderOfferings(hero);
+  out += townRenderRespec(hero);
+  return out;
+}
+
+/* The Town view's dispatcher is declared five times over the phases, so
+   rather than guess which copy is live, this wraps whichever one ended up
+   on VIEWS.town and hands everything it does not own straight back. */
+(function () {
+  const inherited = VIEWS.town.onAct;
+  VIEWS.town.onAct = function (act, node, ev) {
+    if (act === 'offering') {
+      const hero = state && state.hero;
+      if (!hero) return;
+      const id = node.dataset.id;
+      const def = offeringDef(id);
+      if (!def) return;
+      const cost = offeringCost(hero, id);
+      const current = activeOffering(hero);
+      confirmSheet({
+        title: current ? 'Replace the Offering?' : 'Make this Offering',
+        body: 'Offer ' + fmtNum(cost) + ' gold for <strong>' + esc(def.name) + '</strong>. ' +
+          esc(def.text) + '. Lasts ' + fmtTime(BALANCE.town.offerings.durationMs) + '.' +
+          (current ? ' This ends <strong>' + esc(offeringDef(current.id).name) +
+            '</strong> early, with nothing back for the time left on it.' : ''),
+        yes: 'Offer it',
+        onYes: function () {
+          const r = buyOffering(hero, id);
+          if (!r.ok) { toast(r.reason); return; }
+          toast(def.name + ' is upon you.');
+          refresh();
+        }
+      });
+      return;
+    }
+    return inherited.call(this, act, node, ev);
+  };
+})();
 
 document.addEventListener('DOMContentLoaded', boot);
 </script>
