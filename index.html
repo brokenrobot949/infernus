@@ -8613,6 +8613,25 @@ const heroStatLabel = {
 };
 const heroCoreLabel = { might: 'Might', guard: 'Guard', maxHp: 'Max HP' };
 
+/* What each stat actually does, in the player's language. `cap` names a
+   ceiling from SPEC 3.3 where one applies. Content as data: the Stats
+   tab's help sheet and each stat's own sheet both read from here. */
+const heroStatHelp = {
+  power:     { text: 'Guard and Might together, weighted toward Guard. Power is what every encounter is measured against: double your Power and each one costs half the HP.' },
+  might:     { text: 'Raises Power, and shortens descents. A stronger hero moves through a floor faster.' },
+  guard:     { text: 'Raises Power, and counts for more than Might does. This is the stat that makes encounters cheap.' },
+  maxHp:     { text: 'The budget a descent is paid from. More Max HP means more floors between visits to the Chapel — but regeneration is set by your level, not your Max HP, so a bigger pool also takes longer to refill.' },
+  haste:     { text: 'Shortens a descent. It changes how long the run takes, never what it costs or what it pays.', cap: 'Time reduction caps at 50%, or 65% with Phantom.' },
+  fortune:   { text: 'Counts toward gold find and item find at once, so it improves what you earn and what drops.' },
+  recovery:  { text: 'HP comes back faster while you are in town. It does nothing during a descent unless something else grants regeneration down there.' },
+  crit:      { text: 'The chance for each encounter to crit. A crit costs 30% less HP and takes 30% less time.', cap: 'Crit chance caps at 75%.' },
+  goldFind:  { text: 'More gold from every encounter. Fortune adds to this.' },
+  itemFind:  { text: 'Better odds on drops that are not guaranteed, and heavier weights on rare, unique and set items. Fortune adds to this.' },
+  xpBonus:   { text: 'More XP from every encounter. It does not change gold or drops.' },
+  eliteBoss: { text: 'Elites and bosses cost less HP. It does nothing against ordinary encounters.', cap: 'All cost reductions together cap at 60%.' },
+  riteCd:    { text: 'Rites come back sooner after you use them.', cap: 'Rite cooldown reduction caps at 50%.' }
+};
+
 function heroIsCore(key) { return heroCoreStats.indexOf(key) >= 0; }
 
 function heroClassName(classId) {
@@ -9059,7 +9078,10 @@ function heroStatSheet(hero, key) {
     }
   }
 
-  const body = '<div class="stack-s">' + rows + '</div>' +
+  // What it does comes before where the number came from.
+  const help = heroStatHelpHtml(key);
+  const body = (help ? '<div class="panel" style="margin-bottom:12px">' + help + '</div>' : '') +
+    '<div class="stack-s">' + rows + '</div>' +
     '<div class="divider"></div>' +
     '<div class="stack-s">' + heroSheetRow('Total', fmt(totalVal)) + '</div>' +
     gearDetail;
@@ -9341,6 +9363,7 @@ function heroOnAct(act, node, ev) {
     if (found) heroOpenItemSheet(hero, found.item, found.loc);
     return;
   }
+  if (act === 'stathelp') { heroStatsHelpSheet(); return; }
   if (act === 'stat') { heroStatSheet(hero, node.dataset.stat); return; }
   if (act === 'node') { heroNodeSheet(hero, node.dataset.node); return; }
   if (act === 'riteSlot') { heroRiteSlotSheet(hero, parseInt(node.dataset.slot, 10)); return; }
@@ -12907,6 +12930,38 @@ function heroOpenItemSheet(hero, item, loc) {
    core, then the nine percentage stats in a dense two-column
    grid. Every stat still opens its breakdown sheet via heroStatSheet.
    ============================================================ */
+/* One explanation, used both in the all-stats help sheet and at the top of
+   an individual stat's sheet. */
+function heroStatHelpHtml(key) {
+  const help = heroStatHelp[key];
+  if (!help) return '';
+  return '<p class="small" style="margin:0">' + esc(help.text) + '</p>' +
+    (help.cap ? '<p class="tiny muted" style="margin:4px 0 0">' + esc(help.cap) + '</p>' : '');
+}
+
+/* Every stat explained in one place. The figures belong to the tiles and to
+   each stat's own sheet; this one is only about what they do. */
+function heroStatsHelpSheet() {
+  const group = function (title, keys) {
+    return '<div class="section-title">' + esc(title) + '</div>' +
+      '<div class="stack-s">' +
+        keys.map(function (key) {
+          return '<div class="panel">' +
+            '<div style="font-weight:600">' + esc(heroStatLabel[key]) + '</div>' +
+            '<div style="margin-top:4px">' + heroStatHelpHtml(key) + '</div>' +
+          '</div>';
+        }).join('') +
+      '</div>';
+  };
+  openSheet({
+    title: 'What the stats do',
+    body:
+      '<p class="tiny muted" style="margin:0 0 10px">Tap any stat to see where its number comes from.</p>' +
+      group('Combat', ['power'].concat(heroCoreStats)) +
+      group('Attributes', heroPercentStats)
+  });
+}
+
 function heroRenderStats(hero) {
   const st = heroStats(hero);
   const hp = currentHp(hero, st);
@@ -12951,7 +13006,13 @@ function heroRenderStats(hero) {
   html += '</div>';
   void hp;
 
-  html += '<div class="section-title">Combat</div>';
+  /* The Combat heading carries the help button, so "what does Guard do?"
+     is answered on the screen that raises the question. */
+  html += '<div class="row-between" style="margin:22px 0 8px">' +
+    '<span class="section-title" style="margin:0">Combat</span>' +
+    '<button class="btn btn-sm btn-ghost" data-act="stathelp" aria-label="What the stats do" ' +
+      'style="width:44px;padding:0">' + icon('ico-help') + '</button>' +
+  '</div>';
   html += '<div class="grid-2 grid-fill-last">' +
     ['power'].concat(heroCoreStats).map(function (key) {
       return hero2StatTile(key, key === 'power' ? st.power : st[key]);
@@ -13009,6 +13070,7 @@ function heroOnAct(act, node, ev) {
     if (found) hero2ConfirmSalvage(hero, found.item);
     return;
   }
+  if (act === 'stathelp') { heroStatsHelpSheet(); return; }
   if (act === 'stat') { heroStatSheet(hero, node.dataset.stat); return; }
   if (act === 'node') { heroNodeSheet(hero, node.dataset.node); return; }
   if (act === 'riteSlot') { heroRiteSlotSheet(hero, parseInt(node.dataset.slot, 10)); return; }
@@ -14303,10 +14365,19 @@ function achievementProgress(check, hero) {
 function halls3AchievementRow(id) {
   const a = ACHIEVEMENTS[id];
   const earnedAt = state.account.achievements && state.account.achievements[id];
+  /* An earned achievement is marked in verdant, the same "done" green a
+     claimed contract uses, so the earned ones read down the list at a
+     glance instead of differing from the rest only by a line of text. */
   if (earnedAt) {
-    return '<div class="card" style="padding:10px 12px">' +
-      '<div style="font-weight:600">' + esc(a.name) + '</div>' +
-      '<div class="tiny muted" style="margin-top:2px">Earned ' + esc(halls3DateStr(earnedAt)) + '</div>' +
+    return '<div class="card" style="padding:10px 12px;border-color:var(--verdant)">' +
+      '<div class="row" style="gap:8px">' +
+        '<span style="color:var(--verdant);display:inline-flex;flex:0 0 auto">' + icon('ico-star') + '</span>' +
+        '<div class="grow" style="min-width:0">' +
+          '<div style="font-weight:600;color:var(--verdant)">' + esc(a.name) + '</div>' +
+          '<div class="tiny muted" style="margin-top:2px">Earned ' + esc(halls3DateStr(earnedAt)) +
+            ' · <span class="num">' + fmtNum(a.renown) + '</span> Renown</div>' +
+        '</div>' +
+      '</div>' +
     '</div>';
   }
 
