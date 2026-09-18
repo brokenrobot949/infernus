@@ -4905,20 +4905,26 @@ function grantLorePage(page) {
   return page;
 }
 
-/* Returns the pages dropped by this encounter, already recorded. */
+/* Returns the pages dropped by this encounter, already recorded.
+
+   A Guardian always yields a page, but only one. It used to hand over every
+   page its act still owed, which meant the elite and Horror rolls never
+   decided whether a page was found, only whether it was found early - and
+   since no Guardian can be skipped, it made Keeper of Pages a second reward
+   for finishing the story. One page keeps the guarantee that a Guardian is
+   worth something to the Codex without settling the whole act. */
 function rollLorePages(enc, floor, rng) {
   const act = actForFloor(floor);
   if (!act) return [];
   const missing = missingLorePages(act.id);
   if (!missing.length) return [];
 
-  if (enc.kind === 'guardian') {
-    return missing.map(grantLorePage).filter(Boolean);
+  if (enc.kind !== 'guardian') {
+    let chance = 0;
+    if (enc.kind === 'elite') chance = BALANCE.lore.eliteChance;
+    else if (enc.kind === 'horror') chance = BALANCE.lore.horrorChance;
+    if (chance <= 0 || rng.next() >= chance) return [];
   }
-  let chance = 0;
-  if (enc.kind === 'elite') chance = BALANCE.lore.eliteChance;
-  else if (enc.kind === 'horror') chance = BALANCE.lore.horrorChance;
-  if (chance <= 0 || rng.next() >= chance) return [];
   const got = grantLorePage(rng.pick(missing));
   return got ? [got] : [];
 }
