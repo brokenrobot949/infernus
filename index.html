@@ -51,6 +51,11 @@
   --r-unique:#EE9657;
   --r-set:#6FCF83;
 
+  /* A general "done" green, for states like a claimed contract. Shares its
+     value with the set rarity, but is a separate token so rarity colours
+     stay reserved for items. */
+  --verdant:#6FCF83;
+
   --sat:env(safe-area-inset-top,0px);
   --sab:env(safe-area-inset-bottom,0px);
   --sal:env(safe-area-inset-left,0px);
@@ -127,11 +132,12 @@ ul{ margin:0; padding:0; list-style:none; }
 .strip-meta{ display:flex; align-items:center; gap:14px; flex-wrap:wrap; }
 .strip-stat{ display:flex; align-items:center; gap:5px; font-size:.875rem; }
 .strip-stat .ico{ width:15px; height:15px; }
-#strip-settings{
-  flex:0 0 auto; width:44px; height:44px; margin:-8px -10px -8px 0;
+#strip-settings,#strip-help{
+  flex:0 0 auto; width:44px; height:44px; margin:-8px 0;
   display:grid; place-items:center; color:var(--ash); border-radius:8px;
 }
-#strip-settings:active{ background:var(--raised); }
+#strip-settings{ margin-right:-10px; }
+#strip-settings:active,#strip-help:active{ background:var(--raised); }
 
 /* ---- main view ---- */
 #view{
@@ -188,6 +194,9 @@ ul{ margin:0; padding:0; list-style:none; }
 .panel{ background:var(--raised); border-radius:var(--radius); padding:12px; }
 
 .row{ display:flex; align-items:center; gap:10px; }
+/* Indents a row that has no leading icon so it lines up with rows that do
+   (a 20px icon plus the row's 10px gap). */
+.row-indent{ padding-left:30px; }
 .row-between{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
 .wrap{ flex-wrap:wrap; }
 .grow{ flex:1 1 auto; min-width:0; }
@@ -391,6 +400,37 @@ button[data-act]{ min-height:44px; }
 </head>
 <body>
 <svg xmlns="http://www.w3.org/2000/svg" style="display:none" aria-hidden="true">
+  <symbol id="ico-help" viewBox="0 0 24 24">
+    <path fill="currentColor" fill-rule="evenodd" d="M12 2A10 10 0 1 0 12 22A10 10 0 1 0 12 2ZM12 4A8 8 0 1 1 12 20A8 8 0 1 1 12 4Z"/>
+    <path fill="currentColor" d="M12 6.4A3.4 3.4 0 0 0 8.7 10.2H10.7A1.4 1.4 0 1 1 12.8 11.5C12.1 12 11.1 12.7 11.1 14.1V14.8H13.1V14.2C13.1 13.6 13.8 13.2 14.4 12.7A3.4 3.4 0 0 0 12 6.4Z"/>
+    <circle cx="12.1" cy="17.2" r="1.25" fill="currentColor"/>
+  </symbol>
+  <symbol id="ico-slot-weapon" viewBox="0 0 24 24">
+    <path fill="currentColor" d="M12 1.4L13.6 14.2H10.4Z"/>
+    <rect x="7.2" y="14.2" width="9.6" height="2" rx="0.7" fill="currentColor"/>
+    <rect x="10.8" y="16.2" width="2.4" height="4.2" rx="0.7" fill="currentColor"/>
+    <circle cx="12" cy="21.3" r="1.6" fill="currentColor"/>
+  </symbol>
+  <symbol id="ico-slot-helm" viewBox="0 0 24 24">
+    <path fill="currentColor" fill-rule="evenodd" d="M4.2 15.4C4.2 8.8 7.6 3.6 12 3.6C16.4 3.6 19.8 8.8 19.8 15.4V17.2H4.2Z M8.6 10.1H15.4V11.7H8.6Z M11.1 11.7H12.9V16.2H11.1Z"/>
+    <rect x="3.4" y="17.2" width="17.2" height="2.4" rx="0.9" fill="currentColor"/>
+  </symbol>
+  <symbol id="ico-slot-armor" viewBox="0 0 24 24">
+    <path fill="currentColor" fill-rule="evenodd" d="M5 5H19L18.3 12.8L19 21H5L5.7 12.8Z M9.4 5H14.6L12 8.2Z"/>
+    <rect x="5.6" y="13.9" width="12.8" height="1.9" fill="currentColor"/>
+  </symbol>
+  <symbol id="ico-slot-gloves" viewBox="0 0 24 24">
+    <path fill="currentColor" fill-rule="evenodd" d="M8.2 21V12.2A3.8 3.8 0 0 1 15.8 12.2V21Z M8.7 13.7H15.3V14.9H8.7Z"/>
+    <path fill="currentColor" d="M4.9 14.6A2.5 2.5 0 0 1 9.4 13.3L7.9 17.6A2.5 2.5 0 0 1 4.9 14.6Z"/>
+    <rect x="6.9" y="19.3" width="10.2" height="2.5" rx="0.9" fill="currentColor"/>
+  </symbol>
+  <symbol id="ico-slot-boots" viewBox="0 0 24 24">
+    <path fill="currentColor" fill-rule="evenodd" d="M9.2 3H14.8V13.6L18.3 14.6C19.5 15 20.3 16.1 20.3 17.4V19.6C20.3 20.4 19.6 21 18.9 21H5.6C4.9 21 4.3 20.4 4.3 19.7V18.2C4.3 16.1 5.9 14.3 8 14L9.2 13.8Z M9.2 15.6H18.7V17.1H9.2Z"/>
+  </symbol>
+  <symbol id="ico-slot-relic" viewBox="0 0 24 24">
+    <path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M4.2 3L12 12M19.8 3L12 12"/>
+    <path fill="currentColor" d="M12 10.4L16.1 14.8L12 21.6L7.9 14.8Z"/>
+  </symbol>
   <symbol id="ico-hp" viewBox="0 0 24 24">
     <path fill="currentColor" d="M12 21C12 21 4 14.5 4 9.2C4 6.1 6.4 3.8 9.3 3.8C10.9 3.8 12 4.6 12 4.6C12 4.6 13.1 3.8 14.7 3.8C17.6 3.8 20 6.1 20 9.2C20 14.5 12 21 12 21Z"/>
   </symbol>
@@ -827,7 +867,7 @@ const BALANCE = {
   awayThresholdMs: 5 * 60 * 1000,
 
   /* --- SPEC 20 --- */
-  save: { key: 'infernus.save', version: 2, autosaveMs: 30 * 1000 },
+  save: { key: 'infernus.save', version: 3, autosaveMs: 30 * 1000 },
 
   /* --- SPEC 21.1 --- */
   debug: { offsetKey: 'infernus.debugOffset', simDefaultRuns: 1000 },
@@ -862,7 +902,38 @@ const BALANCE = {
   },
 
   /* --- SPEC 16.2: the descent queue --- */
-  queue: { maxCount: 3, minFreeSlots: 4 }
+  queue: { maxCount: 3, minFreeSlots: 4 },
+
+  /* --- SPEC 13.6: The Day's Work ---
+     Small rewards earned while HP refills. Deliberately a fraction of what a
+     descent pays: the point is that waiting feels like doing something, not
+     that anyone farms it. One task at a time, capped, and ended by descending. */
+  labour: {
+    capMs: 6 * 60 * 60 * 1000,        // stops paying after six hours
+    tasks: {
+      gold: {
+        id: 'gold', reward: 'gold', keeper: 'Vell',
+        name: "Haul for Vell",
+        text: 'Carrying crates up from the rope line.',
+        icon: 'ico-coin',
+        perHour: 6                     // x g(deepest)
+      },
+      ash: {
+        id: 'ash', reward: 'ash', keeper: 'Brannoch',
+        name: "Work Brannoch's bellows",
+        text: 'Feeding the forge while he sleeps.',
+        icon: 'ico-ash',
+        perHour: 2                     // x (1 + floor(deepest / 10))
+      },
+      rites: {
+        id: 'rites', reward: 'rites', keeper: 'Sister Maren',
+        name: 'Keep vigil with Sister Maren',
+        text: 'Long hours in the chapel. The rites come back quicker.',
+        icon: 'ico-chapel',
+        perHour: 20                    // minutes off every rite cooldown
+      }
+    }
+  }
 };
 
 /* ============================================================
@@ -3011,6 +3082,10 @@ function freshHero(name, classId) {
     market: { stock: [], restockAt: 0, blackMarket: null },
     supplies: { candle: 0, ward: 0, oil: 0 },
     descent: null,
+    task: null,              // { id, startedAt } - The Day's Work (SPEC 13.6)
+    queue: null,
+    queueMessage: null,
+    oilPrimed: false,
     lastResults: null,
     counters: { descents: 0, deaths: 0, clearStreak: 0, bossesSlain: 0, fellSinceClear: false }
   };
@@ -3036,6 +3111,7 @@ const MIGRATIONS = {
       if (h.queue === undefined) h.queue = null;
       if (h.queueMessage === undefined) h.queueMessage = null;
       if (h.oilPrimed === undefined) h.oilPrimed = false;
+      if (h.task === undefined) h.task = null;          // SPEC 13.6
       if (!h.abyssal) h.abyssal = { ranks: 0, spent: {} };
       if (!h.abyssal.spent) h.abyssal.spent = {};
       // An heirloom needs its own ceiling remembered (SPEC 15.4).
@@ -3048,6 +3124,33 @@ const MIGRATIONS = {
     if (acct.heirloom && acct.heirloom.originalIlvl === undefined) {
       acct.heirloom.originalIlvl = acct.heirloom.ilvl;
     }
+    return s;
+  },
+
+  /* Until now the Hollow Warden's first-kill unique and anything bought from
+     the Black Market never reached the Armory. The code is fixed, but an
+     existing save still has the gap, so rebuild the Armory from every item
+     the account can still see: worn, carried, the heirloom, and the gear on
+     each champion's plaque. Uniques already sold or salvaged cannot be
+     recovered - nothing recorded them at the time. */
+  3: function (s) {
+    const acct = s.account || (s.account = {});
+    if (!Array.isArray(acct.armory)) acct.armory = [];
+
+    const note = function (it) {
+      if (!it) return;
+      const id = it.uniqueId || (it.rarity === 'set' ? it.name : null);
+      if (id && acct.armory.indexOf(id) < 0) acct.armory.push(id);
+    };
+    const sweep = function (owner) {
+      if (!owner) return;
+      for (const slot in (owner.equipment || {})) note(owner.equipment[slot]);
+      for (const it of (owner.inventory || [])) note(it);
+    };
+
+    sweep(s.hero);
+    note(acct.heirloom);
+    for (const champ of (acct.champions || [])) sweep(champ);
     return s;
   }
 };
@@ -4820,8 +4923,12 @@ function autoSalvages(item) {
   return !!f[item.rarity];
 }
 
-/* A drop that doesn't fit is salvaged automatically (SPEC 11.9). */
+/* A drop that doesn't fit is salvaged automatically (SPEC 11.9).
+   Every item the hero is ever handed passes through here, so this is where
+   the Armory learns about it (SPEC 17.4) - recording it at each call site
+   meant a path could be added later that quietly forgot to. */
 function addItem(hero, item) {
+  recordArmory(item);
   if (autoSalvages(item)) {
     const y = salvageYield(item);
     hero.ash += y.ash;
@@ -4852,6 +4959,9 @@ function startDescent(hero, floor, pathIndex) {
   const paths = getFloorPaths(hero, floor);
   const path = paths[pathIndex];
   if (!path) return null;
+
+  // Descending ends the day's work, banking whatever it earned (SPEC 13.6).
+  const banked = hero.task ? collectTask(hero) : null;
 
   const startAt = now();
   const st0 = heroStats(hero);
@@ -4884,6 +4994,7 @@ function startDescent(hero, floor, pathIndex) {
     log: []
   };
   hero.counters.descents = (hero.counters.descents || 0) + 1;
+  if (banked && banked.amount > 0) hero.descent.bankedTask = banked;
   save();
   return hero.descent;
 }
@@ -5091,6 +5202,7 @@ function endDescent(hero, outcome, killer) {
     startedAt: d.startedAt,
     endedAt: endAt,
     timeTaken: endAt - d.startedAt,
+    bankedTask: d.bankedTask || null,
     hpSpent: Math.max(0, d.hpAtStart - Math.max(d.hp, 0)),
     hpLeft: Math.max(0, Math.floor(d.hp)),
     gold: d.rewards.gold,
@@ -5236,6 +5348,88 @@ function retreat(hero) {
   const d = hero.descent;
   if (!d) return null;
   return endDescent(hero, 'retreat', null);
+}
+
+/* ============================================================
+   THE DAY'S WORK - SPEC 13.6
+   One task at a time, earned while the hero's HP refills. Everything is
+   derived from the start timestamp, so it accrues with the game closed,
+   and it stops paying at the cap.
+   ============================================================ */
+function taskDef(id) { return BALANCE.labour.tasks[id] || null; }
+
+function startTask(hero, id) {
+  if (!taskDef(id)) return { ok: false, reason: 'No such work.' };
+  if (hero.descent) return { ok: false, reason: 'Not while you are descending.' };
+  // Switching work banks whatever the last task earned rather than losing it.
+  if (hero.task) collectTask(hero);
+  hero.task = { id: id, startedAt: now() };
+  save();
+  return { ok: true };
+}
+
+/* How long the current task has been paying, capped. */
+function taskElapsed(hero) {
+  if (!hero.task) return 0;
+  return Math.min(elapsed(hero.task.startedAt), BALANCE.labour.capMs);
+}
+function taskAtCap(hero) {
+  return !!hero.task && elapsed(hero.task.startedAt) >= BALANCE.labour.capMs;
+}
+function taskCapIn(hero) {
+  if (!hero.task) return 0;
+  return Math.max(0, BALANCE.labour.capMs - elapsed(hero.task.startedAt));
+}
+
+/* What the current task has earned so far. Gold and Ash are whole units;
+   rite recharge is milliseconds off every cooldown. */
+function taskAccrued(hero) {
+  if (!hero.task) return 0;
+  const def = taskDef(hero.task.id);
+  if (!def) return 0;
+  // Built from the SAME per-hour figure the UI shows, so the rate on screen
+  // times the hours elapsed is exactly what gets paid.
+  return Math.floor(taskRate(hero, hero.task.id) * (taskElapsed(hero) / HOUR));
+}
+
+/* What a task pays per hour, in the SAME units taskAccrued and
+   taskAmountText use: whole gold, whole Ash, or milliseconds of rite
+   recharge. Keeping one unit per reward means the UI can show the rate and
+   the earnings through the same formatter. */
+function taskRate(hero, id) {
+  const def = taskDef(id);
+  if (!def) return 0;
+  if (def.reward === 'gold') return Math.round(def.perHour * g(hero.deepest));
+  if (def.reward === 'ash') return def.perHour * (1 + Math.floor(hero.deepest / 10));
+  return def.perHour * MINUTE;
+}
+
+/* Bank what has been earned and clear the task. */
+function collectTask(hero) {
+  if (!hero.task) return null;
+  const def = taskDef(hero.task.id);
+  const amount = taskAccrued(hero);
+  const out = { id: hero.task.id, reward: def ? def.reward : null, amount: amount };
+
+  if (def && amount > 0) {
+    if (def.reward === 'gold') hero.gold += amount;
+    else if (def.reward === 'ash') hero.ash += amount;
+    else if (def.reward === 'rites') {
+      for (const rid in hero.riteReadyAt) {
+        hero.riteReadyAt[rid] = Math.max(0, hero.riteReadyAt[rid] - amount);
+      }
+    }
+  }
+  hero.task = null;
+  save();
+  return out;
+}
+
+/* A readable amount for whichever reward a task pays. */
+function taskAmountText(reward, amount) {
+  if (reward === 'gold') return fmtNum(amount) + ' gold';
+  if (reward === 'ash') return fmtNum(amount) + ' Ash';
+  return fmtTime(amount) + ' off every rite';
 }
 
 /* ============================================================
@@ -6111,6 +6305,7 @@ function craftItem(hero, slot) {
   const item = rollItem(rng, { floor: hero.deepest, ilvl: hero.deepest,
                                classId: hero.classId, slot: slot, rarity: rarity });
   hero.gold -= c.gold; hero.ash -= c.ash; hero.starshards -= c.shards;
+  recordArmory(item);
   hero.inventory.push(item);
   save();
   return { ok: true, item: item };
@@ -6211,6 +6406,7 @@ function buyBlackMarket(hero) {
   if (inventoryFree(hero) <= 0) return { ok: false, reason: 'Inventory full' };
   hero.gold -= price;
   bm.item.isNew = true;
+  recordArmory(bm.item);            // a bought unique still counts as found
   hero.inventory.push(bm.item);
   hero.market.blackMarket = { item: null, expiresAt: bm.expiresAt };
   save();
@@ -6277,6 +6473,7 @@ function buyItem(hero, item) {
   const i = hero.market.stock.indexOf(item);
   if (i >= 0) hero.market.stock.splice(i, 1);
   item.isNew = true;
+  recordArmory(item);
   hero.inventory.push(item);
   save();
   return { ok: true };
@@ -6765,7 +6962,13 @@ const ui = {
 };
 
 function setTab(id) {
-  if (ui.tab === id) return;
+  // Tapping the tab you are already on takes you back to that tab's top
+  // level, which is how the Town tab escapes the Chapel, Forge and so on.
+  if (ui.tab === id) {
+    const v = VIEWS[id];
+    if (v && v.reset) { v.reset(); refresh(); el('view').scrollTop = 0; }
+    return;
+  }
   ui.tab = id;
   refresh();
   el('view').scrollTop = 0;
@@ -6847,6 +7050,16 @@ function renderStrip() {
   }
 
   host.innerHTML =
+    // Who the hero is, above their HP.
+    '<div class="strip-row">' +
+      '<div class="grow" style="min-width:0">' +
+        '<span class="small" style="font-weight:600">' + esc(hero.name) + '</span>' +
+        '<span class="tiny muted"> &middot; Level <span class="num">' + fmtNum(hero.level) + '</span>' +
+          (activeTitleName() ? ' &middot; ' + esc(activeTitleName()) : '') + '</span>' +
+      '</div>' +
+      '<button id="strip-help" data-act="help" aria-label="How to play">' + icon('ico-help') + '</button>' +
+      '<button id="strip-settings" data-act="settings" aria-label="Settings">' + icon('ico-settings') + '</button>' +
+    '</div>' +
     '<div class="strip-row">' +
       '<div class="strip-hp">' +
         '<div class="row" style="gap:8px">' +
@@ -6854,7 +7067,6 @@ function renderStrip() {
           '<span class="num small" style="flex:0 0 auto">' + fmtNum(hp) + ' / ' + fmtNum(st.maxHp) + '</span>' +
         '</div>' +
       '</div>' +
-      '<button id="strip-settings" data-act="settings" aria-label="Settings">' + icon('ico-settings') + '</button>' +
     '</div>' +
     '<div class="strip-row strip-meta">' +
       '<span class="strip-stat num">' + icon('ico-coin', 'coin') + '<span>' + fmtNum(hero.gold) + '</span></span>' +
@@ -7031,6 +7243,117 @@ function attachHold(btn, ms, onDone) {
   btn.addEventListener('pointerup', stop);
   btn.addEventListener('pointercancel', stop);
   btn.addEventListener('pointerleave', stop);
+}
+
+/* ============================================================
+   HOW TO PLAY
+   A short walkthrough for a new player, reachable any time from the
+   "?" beside the settings button.
+   ============================================================ */
+const HELP_PAGES = [
+  {
+    title: 'One hero, one pit',
+    body: 'You have a single hero. They descend the pit one floor at a time, and each floor ' +
+          'they clear opens the next.\n\n' +
+          'The story ends on floor 40, with whatever is waiting down there. The pit does not end.'
+  },
+  {
+    title: 'HP is what you spend',
+    body: 'Every encounter costs HP. That is the whole game: not winning fights, but deciding ' +
+          'how much HP a floor is worth to you.\n\n' +
+          'HP only comes back in town, and slowly. Spend it well.'
+  },
+  {
+    title: 'Read the forecast first',
+    body: 'Pick a path and the forecast tells you what it should cost, what it pays, and how long ' +
+          'it takes. The bar shows the HP you will certainly keep, the HP you might keep, and the ' +
+          'HP you will certainly spend.\n\n' +
+          'Every path is labelled Safe, Risky or Deadly. Nothing that can kill you is hidden, ' +
+          'bosses included.'
+  },
+  {
+    title: 'It runs without you',
+    body: 'Once you descend, the run happens in real time. Close the game and put your phone ' +
+          'down. When you come back it will have finished, and the results will be waiting.\n\n' +
+          'Changed your mind partway? Hold Retreat. You keep everything you have found and every ' +
+          'point of HP you have left. You just do not clear the floor.'
+  },
+  {
+    title: 'If you fall',
+    body: 'You keep the items you found. You lose half the gold and XP from that descent, and you ' +
+          'cannot descend again until the Fallen timer runs out.\n\n' +
+          'Falling is a setback, not a disaster. The Last Chapel will revive you sooner for a price.'
+  },
+  {
+    title: 'Town, and waiting well',
+    body: 'Heal at the Last Chapel. Buy and sell at the Market. Salvage and temper your gear at ' +
+          'the Forge. Spend skill points on the Hero tab, and slot rites to use before a descent.\n\n' +
+          'If you are only waiting for HP, take a job at the Day’s Work. It is small, but the ' +
+          'wait is worth something.'
+  },
+  {
+    title: 'Keep your save',
+    body: 'Add Infernus to your home screen. Some browsers erase game data after a week without a ' +
+          'visit, and this is exactly the sort of game people put down for a week.\n\n' +
+          'Settings also has Export, which gives you a copy you can paste back in.'
+  }
+];
+
+let helpPage = 0;
+
+function helpFooter() {
+  const last = helpPage >= HELP_PAGES.length - 1;
+  return '<div class="btn-row">' +
+      '<button class="btn" data-act="back"' + (helpPage === 0 ? ' disabled' : '') + '>Back</button>' +
+      '<button class="btn btn-primary" data-act="next">' + (last ? 'Done' : 'Next') + '</button>' +
+    '</div>';
+}
+
+function helpBody() {
+  const p = HELP_PAGES[helpPage];
+  // Plain type, not the display face: CLAUDE.md reserves that for the game's
+  // title, act names and floor numbers.
+  return '<div class="stack">' +
+      '<h3 style="font-size:1.125rem;margin:0">' + esc(p.title) + '</h3>' +
+      p.body.split('\n\n').map(function (para, i) {
+        return '<p style="line-height:1.7;margin:' + (i ? '14px' : '0') + ' 0 0">' +
+          esc(para) + '</p>';
+      }).join('') +
+      // Page dots. The count is also written out, so the position never
+      // depends on colour alone.
+      '<div class="row" style="gap:6px;margin-top:4px" aria-hidden="true">' +
+        HELP_PAGES.map(function (_, i) {
+          return '<i style="width:7px;height:7px;border-radius:50%;background:' +
+            (i === helpPage ? 'var(--corona)' : 'var(--track)') + '"></i>';
+        }).join('') +
+      '</div>' +
+      '<div class="tiny muted">Step ' + fmtNum(helpPage + 1) + ' of ' + fmtNum(HELP_PAGES.length) + '</div>' +
+    '</div>';
+}
+
+function openHelp() {
+  helpPage = 0;
+  // Queries are scoped to this sheet's own layer: a closing sheet lingers for
+  // its animation, so a document-wide lookup could find the wrong one.
+  let layer = null;
+  layer = openSheet({
+    title: 'How to play',
+    body: '<div class="help-body">' + helpBody() + '</div>',
+    foot: '<div class="help-foot">' + helpFooter() + '</div>',
+    onAct: function (act) {
+      if (act === 'back' && helpPage > 0) helpPage--;
+      else if (act === 'next') {
+        if (helpPage >= HELP_PAGES.length - 1) { closeSheet(); return; }
+        helpPage++;
+      } else return;
+      // Redraw in place so the sheet does not animate out and back in.
+      if (!layer) return;
+      const b = layer.querySelector('.help-body');
+      const f = layer.querySelector('.help-foot');
+      if (b) b.innerHTML = helpBody();
+      if (f) f.innerHTML = helpFooter();
+    }
+  });
 }
 
 /* ============================================================
@@ -7940,6 +8263,11 @@ function showResults(r) {
       (r.levelUps > 1 ? r.levelUps + ' levels. ' : '') + 'You have skill points to spend.</p>';
   }
   if (r.skillPoint) body += '<p class="small" style="color:var(--corona)">First kill: +1 skill point.</p>';
+  if (r.bankedTask && r.bankedTask.amount > 0) {
+    const t = taskDef(r.bankedTask.id);
+    body += '<p class="small muted">' + esc(t ? t.name : 'The day’s work') + ' ended when you ' +
+      'descended: ' + esc(taskAmountText(r.bankedTask.reward, r.bankedTask.amount)) + '.</p>';
+  }
   if (r.renown) body += '<p class="small" style="color:var(--corona)">+' + fmtNum(r.renown) + ' Renown.</p>';
   if (r.renownUnlocks && r.renownUnlocks.length) {
     body += r.renownUnlocks.map(function (u) {
@@ -8074,14 +8402,25 @@ function heroRender() {
   return html;
 }
 
+/* The status strip already carries the hero's name, level and title, so this
+   header shows what the strip does not: their class, and the sigil frame
+   their Mastery achievements have earned (SPEC 18.3). */
 function heroHeader(hero) {
+  const frame = bestFrame();
+  const ring = frame
+    ? 'border:2px solid ' + FRAME_COLOURS[frame] + ';border-radius:50%;padding:4px;'
+    : 'padding:4px;';
   return '<div class="row" style="gap:10px;margin-bottom:14px">' +
-    '<svg class="ico" style="width:30px;height:30px" aria-hidden="true">' +
-      '<use href="#sig-' + esc(hero.classId) + '"></use>' +
-    '</svg>' +
+    '<span style="' + ring + 'display:inline-flex">' +
+      '<svg class="ico" style="width:26px;height:26px" aria-hidden="true">' +
+        '<use href="#sig-' + esc(hero.classId) + '"></use>' +
+      '</svg>' +
+    '</span>' +
     '<div class="grow">' +
-      '<div style="font-weight:600">' + esc(hero.name) + '</div>' +
-      '<div class="tiny muted">Level ' + fmtNum(hero.level) + ' ' + esc(heroClassName(hero.classId)) + '</div>' +
+      '<div style="font-weight:600">' + esc(heroClassName(hero.classId)) + '</div>' +
+      '<div class="tiny muted">' +
+        (frame ? esc(frame.charAt(0).toUpperCase() + frame.slice(1)) + ' sigil &middot; ' : '') +
+        'Floor ' + fmtNum(hero.deepest) + ' reached</div>' +
     '</div>' +
   '</div>';
 }
@@ -8964,7 +9303,7 @@ function townRenderForge(hero) {
           '<div>' + townItemLabel(item) + '</div>' +
         '</div>' +
         '<button class="btn btn-sm" data-act="salvage" data-id="' + esc(item.id) + '">' +
-          fmtNum(y.ash) + ' Ash' + (y.shards ? ', ' + fmtNum(y.shards) + ' Sh' : '') +
+          fmtNum(y.ash) + ' Ash' + (y.shards ? ', ' + fmtNum(y.shards) + ' Starshards' : '') +
         '</button>' +
       '</div>';
     });
@@ -9005,7 +9344,7 @@ function townRenderForge(hero) {
           (afford ? '' : ' disabled') + '>' +
           '+' + c.to + ': ' + fmtNum(c.gold) + 'g' +
           (c.ash ? ', ' + fmtNum(c.ash) + ' Ash' : '') +
-          (c.shards ? ', ' + fmtNum(c.shards) + ' Sh' : '') +
+          (c.shards ? ', ' + fmtNum(c.shards) + ' Starshards' : '') +
         '</button>';
       }
       out += '</div>';
@@ -9325,8 +9664,9 @@ function hallsCardRow(cardId) {
 
   const title = hallsCardTitle(cardId);
   return (
-    '<button type="button" class="card-tap row" data-act="card" data-card="' + esc(cardId) + '">' +
-      icon('ico-unlock') +
+    // No unlock icon on a found entry: it reads too close to the lock beside
+    // it and made the list busy. The title and the chevron are the signal.
+    '<button type="button" class="card-tap row row-indent" data-act="card" data-card="' + esc(cardId) + '">' +
       '<div class="grow">' +
         '<div>' + esc(title) + '</div>' +
         '<div class="muted tiny">' + esc(STORY_CARDS[cardId] ? STORY_CARDS[cardId].when : '') + '</div>' +
@@ -9684,28 +10024,25 @@ function town2UnlockRank(id) {
    name (looked up in UNIQUES/SETS, per API-PHASE2), a rare's
    rolled name, or null for common/magic (which show only their
    base type, same as Phase 1). */
+/* SPEC 11.7 - a common item is just its base type; everything else carries
+   its own rolled or fixed name. A set piece is named for the PIECE
+   ("Oathbound Greathelm"), not for its set. */
 function town2ItemName(item) {
-  if (item.rarity === 'unique') {
-    const u = item.uniqueId && UNIQUES[item.uniqueId];
-    return u ? u.name : item.name;
-  }
-  if (item.rarity === 'set') {
-    const s = item.setId && SETS[item.setId];
-    return s ? s.name : item.name;
-  }
-  if (item.rarity === 'rare') return item.name;
-  return null;
+  if (item.rarity === 'common') return null;
+  return item.name || item.baseType;
 }
 
 /* Replacement for the Phase 1 townItemLabel that also names
    uniques and set pieces, not just rares. */
 function town2ItemLabel(item) {
   const nm = town2ItemName(item);
-  if (nm) {
-    return '<div style="font-weight:600">' + esc(nm) + '</div>' +
-      '<div class="tiny muted">' + esc(item.baseType) + '</div>';
-  }
-  return '<div style="font-weight:600">' + esc(item.baseType) + '</div>';
+  const cls = 'rar-' + item.rarity;
+  if (!nm) return '<div class="' + cls + '" style="font-weight:600">' + esc(item.baseType) + '</div>';
+  // Only a rare hides its base type inside its name, so only a rare repeats it
+  // beneath (SPEC 11.7). A magic name already ends in its base type.
+  const showBase = item.rarity === 'rare' || item.rarity === 'unique' || item.rarity === 'set';
+  return '<div class="' + cls + '" style="font-weight:600">' + esc(nm) + '</div>' +
+    (showBase ? '<div class="tiny muted">' + esc(item.baseType) + '</div>' : '');
 }
 
 /* A border style string from RARITIES[r].border (e.g. "3px double"),
@@ -9910,7 +10247,7 @@ function townRenderForge(hero) {
           '<div>' + town2ItemLabel(item) + '</div>' +
         '</button>' +
         '<button class="btn btn-sm" data-act="salvage" data-id="' + esc(item.id) + '">' +
-          fmtNum(y.ash) + ' Ash' + (y.shards ? ', ' + fmtNum(y.shards) + ' Sh' : '') +
+          fmtNum(y.ash) + ' Ash' + (y.shards ? ', ' + fmtNum(y.shards) + ' Starshards' : '') +
         '</button>' +
       '</div>';
     });
@@ -9951,7 +10288,7 @@ function townRenderForge(hero) {
           (afford ? '' : ' disabled') + '>' +
           '+' + c.to + ': ' + fmtNum(c.gold) + 'g' +
           (c.ash ? ', ' + fmtNum(c.ash) + ' Ash' : '') +
-          (c.shards ? ', ' + fmtNum(c.shards) + ' Sh' : '') +
+          (c.shards ? ', ' + fmtNum(c.shards) + ' Starshards' : '') +
         '</button>';
       }
       out += '</div>';
@@ -10609,8 +10946,7 @@ function halls2LoreRow(page) {
   }
 
   return (
-    '<button type="button" class="card-tap row" data-act="lore" data-page="' + esc(page.id) + '">' +
-      icon('ico-unlock') +
+    '<button type="button" class="card-tap row row-indent" data-act="lore" data-page="' + esc(page.id) + '">' +
       '<div class="grow">' + esc(page.title) + '</div>' +
       icon('ico-chevron-right') +
     '</button>'
@@ -10904,8 +11240,7 @@ function halls3EchoRow(n) {
     '</div>';
   }
   const info = halls3EchoInfo(n);
-  return '<button type="button" class="card-tap row" data-act="echo" data-floor="' + n + '">' +
-    icon('ico-unlock') +
+  return '<button type="button" class="card-tap row row-indent" data-act="echo" data-floor="' + n + '">' +
     '<div class="grow">' + esc(info.title) + '</div>' +
     icon('ico-chevron-right') +
   '</button>';
@@ -11131,8 +11466,7 @@ function halls3UniqueRow(u, armory) {
       '<div class="grow">' + esc(halls3SlotName(u.slot)) + ' · Undiscovered</div>' +
     '</div>';
   }
-  return '<div class="row" style="align-items:flex-start;min-height:44px">' +
-    icon('ico-unlock') +
+  return '<div class="row row-indent" style="align-items:flex-start;min-height:44px">' +
     '<div class="grow">' +
       '<div class="row" style="gap:6px">' +
         '<span class="badge rar-unique">' + esc(RARITIES.unique.badge) + '</span>' +
@@ -11153,8 +11487,7 @@ function halls3SetPieceRow(p, armory) {
       '<div class="grow">' + esc(halls3SlotName(p.slot)) + ' · Undiscovered</div>' +
     '</div>';
   }
-  return '<div class="row" style="min-height:44px">' +
-    icon('ico-unlock') +
+  return '<div class="row row-indent" style="min-height:44px">' +
     '<div class="grow">' +
       '<div class="row" style="gap:6px">' +
         '<span class="badge rar-set">' + esc(RARITIES.set.badge) + '</span>' +
@@ -11493,7 +11826,7 @@ function townRenderForge(hero) {
           '<div>' + town2ItemLabel(item) + '</div>' +
         '</button>' +
         '<button class="btn btn-sm" data-act="salvage" data-id="' + esc(item.id) + '">' +
-          fmtNum(y.ash) + ' Ash' + (y.shards ? ', ' + fmtNum(y.shards) + ' Sh' : '') +
+          fmtNum(y.ash) + ' Ash' + (y.shards ? ', ' + fmtNum(y.shards) + ' Starshards' : '') +
         '</button>' +
       '</div>';
     });
@@ -11534,7 +11867,7 @@ function townRenderForge(hero) {
           (afford ? '' : ' disabled') + '>' +
           '+' + c.to + ': ' + fmtNum(c.gold) + 'g' +
           (c.ash ? ', ' + fmtNum(c.ash) + ' Ash' : '') +
-          (c.shards ? ', ' + fmtNum(c.shards) + ' Sh' : '') +
+          (c.shards ? ', ' + fmtNum(c.shards) + ' Starshards' : '') +
         '</button>';
       }
       out += '</div>';
@@ -11936,6 +12269,1537 @@ VIEWS.town = {
 };
 
 /* ============================================================
+   VIEWS.hero REWORK - Hero tab (SPEC 19.3, 11.2, 11.3, 11.6-11.9, 3.1)
+
+   This whole block is spliced in AFTER the Phase 1 hero view
+   already in index.html, so every declaration below wins.
+
+   Reused untouched (still defined earlier in the file, called by
+   name, never redeclared here): heroTab, heroSort, heroSlotLabel,
+   heroCoreStats, heroPercentStats, heroStatLabel, heroCoreLabel,
+   heroIsCore, heroClassName, heroIco, heroItemName, heroHeader,
+   heroSegControl, heroSortRow, heroSortedIndices,
+   heroPowerDeltaSafe, heroFindItem, heroItemStatLines,
+   heroRelicChangeBlock, heroBareClone, heroStatOf, heroSheetRow,
+   heroStatSheet, heroItemSheetAct, heroTypeTag, heroTypeLabel,
+   heroRiteKindLabel, heroRenderSkills, heroBranchColumn,
+   heroNodeTile, heroPerRankInfo, heroApplyPerRank, heroFindNode,
+   heroNodeSheet, heroNodeSheetAct, heroRiteSlotsBlock,
+   heroRiteSlotRow, heroRiteSlotSheet, heroRiteSlotSheetAct,
+   heroRender (its logic doesn't change - it already calls the
+   redeclared functions below by name).
+
+   Also reused: the shared (non-hero-prefixed) helpers itemBadge,
+   itemNameHtml, rarityClass, affixLine, powerArrow, RARITIES,
+   RARITY_ORDER, AFFIXES, UNIQUES, SETS, equippedSetCounts,
+   heroHasSetBonus, sellPrice, sellItem, salvageYield, salvageItem,
+   confirmSheet, openSheet, closeSheet, toast, icon, esc, fmtNum,
+   fmtPct, fmtTime, itemStats, powerDelta, heroStats, currentHp,
+   timeToFullHp, xpToNext, BALANCE, inventoryCap, inventoryFree.
+
+   Redeclared on purpose (same name, last one wins - this is the
+   whole point of the splice, replacing Phase 1 behaviour):
+   heroRenderGear, heroEquipRow, heroInvTile, heroOpenItemSheet,
+   heroRenderStats, heroOnAct, and the VIEWS.hero object itself.
+
+   Brand new pieces (Sell/Salvage confirmation, the relic stat-
+   change line, the compact stat tile) use a `hero2` prefix so
+   they can never collide with a same-named helper elsewhere.
+   ============================================================ */
+
+/* ============================================================
+   NEW HELPERS (hero2 prefix)
+   ============================================================ */
+
+/* Change 2: a relic has no meaningful Power, so instead of
+   powerArrow(powerDelta(...)) it compares its own primary stat
+   (Haste, Fortune or Recovery) against whatever relic is
+   equipped now. Formatted exactly like powerArrow so the colour
+   and arrow language stay consistent across the whole list. */
+function hero2RelicDelta(hero, item) {
+  const equipped = hero.equipment.relic;
+  const statKey = item.relicStat || (equipped && equipped.relicStat);
+  const label = statKey ? (heroStatLabel[statKey] || statKey) : 'stats';
+  if (!statKey) return '<span class="muted small">No change to ' + esc(label) + '</span>';
+  const curSt = equipped ? itemStats(equipped) : null;
+  const newSt = itemStats(item);
+  const curV = curSt ? (curSt[statKey] || 0) : 0;
+  const newV = newSt[statKey] || 0;
+  const diff = newV - curV;
+  if (Math.abs(diff) < 0.05) return '<span class="muted small">No change to ' + esc(label) + '</span>';
+  const up = diff >= 0;
+  return '<span class="num small" style="color:var(--' + (up ? 'corona' : 'blood-light') + ')">' +
+    (up ? '▲ ' : '▼ ') + fmtPct(Math.abs(diff)) + ' ' + esc(label) + '</span>';
+}
+
+/* Change 6: one compact, tappable stat cell. Value formatting
+   matches the old per-row list exactly (Power/Might/Guard/Max HP
+   as whole numbers, everything else as a percentage). */
+function hero2StatTile(key, raw) {
+  const display = (key === 'power' || heroIsCore(key)) ? fmtNum(Math.round(raw)) : fmtPct(raw);
+  return '<button class="card card-tap" data-act="stat" data-stat="' + key + '" style="padding:10px 12px">' +
+    '<div class="tiny muted">' + esc(heroStatLabel[key]) + '</div>' +
+    '<div class="num" style="font-weight:600;margin-top:2px">' + display + '</div>' +
+  '</button>';
+}
+
+/* Change 5: Sell and Salvage are destructive, so both are
+   confirmed first, naming the item and what they yield. */
+function hero2ConfirmSell(hero, item) {
+  const price = sellPrice(hero, item);
+  confirmSheet({
+    title: 'Sell item',
+    body: 'Sell ' + esc(item.name) + ' for ' + fmtNum(price) + ' gold?',
+    yes: 'Sell',
+    danger: true,
+    onYes: function () {
+      const res = sellItem(hero, item);
+      if (!res.ok) { toast(res.reason); return; }
+      toast('Sold for ' + fmtNum(res.gold) + ' gold.');
+      refresh();
+    }
+  });
+}
+
+function hero2ConfirmSalvage(hero, item) {
+  const y = salvageYield(item);
+  confirmSheet({
+    title: 'Salvage item',
+    body: 'Salvage ' + esc(item.name) + ' for ' + fmtNum(y.ash) + ' Ash' +
+      (y.shards ? ' and ' + fmtNum(y.shards) + ' Starshards' : '') + '?',
+    yes: 'Salvage',
+    danger: true,
+    onYes: function () {
+      const res = salvageItem(hero, item);
+      if (!res.ok) { toast(res.reason); return; }
+      toast('Salvaged for ' + fmtNum(res.yield.ash) + ' Ash' +
+        (res.yield.shards ? ' and ' + fmtNum(res.yield.shards) + ' Starshards' : '') + '.');
+      refresh();
+    }
+  });
+}
+
+/* ============================================================
+   GEAR - redeclared: slot icons everywhere (change 1), no letter
+   badge on cards but a distinct rarity border kept (change 3),
+   inventory as a single-column list of bigger cards with Power
+   comparison and quick Sell/Salvage (changes 2, 4, 5).
+   ============================================================ */
+function heroRenderGear(hero) {
+  let html = '<div class="section-title">Equipped</div>';
+  html += '<div class="stack-s">' +
+    BALANCE.items.slots.map(function (slot) { return heroEquipRow(hero, slot); }).join('') +
+  '</div>';
+
+  const cap = inventoryCap(hero);
+  const free = inventoryFree(hero);
+  const used = cap - free;
+
+  html += '<div class="row-between" style="margin-top:20px">' +
+    '<span class="section-title" style="margin:0">Inventory</span>' +
+    '<span class="small muted num">' + fmtNum(used) + ' / ' + fmtNum(cap) + ' slots</span>' +
+  '</div>';
+
+  html += heroSortRow();
+
+  const order = heroSortedIndices(hero);
+  if (!order.length) {
+    html += '<p class="small muted">No items yet.</p>';
+  } else {
+    html += '<div class="stack-s">' +
+      order.map(function (idx) { return heroInvTile(hero, idx); }).join('') +
+    '</div>';
+  }
+  return html;
+}
+
+/* Change 1 + 3: the slot icon replaces nothing that was there
+   before (Phase 1 had no icon here at all); the rarity border
+   replaces the old letter badge as the non-colour rarity signal. */
+function heroEquipRow(hero, slot) {
+  const item = hero.equipment[slot];
+  const slotIco = '<span style="flex:0 0 auto;color:var(--ash)">' + icon('ico-slot-' + slot) + '</span>';
+  if (!item) {
+    return '<div class="card row-between">' +
+      '<span class="row" style="gap:10px">' + slotIco +
+        '<span class="small">' + heroSlotLabel[slot] + '</span>' +
+      '</span>' +
+      '<span class="small" style="color:var(--ash)">Empty</span>' +
+    '</div>';
+  }
+  const r = RARITIES[item.rarity];
+  return '<button class="card card-tap row-between" data-act="item" data-item="equip:' + slot + '" style="' +
+    'border:' + r.border + ' var(--r-' + item.rarity + ')">' +
+    '<span class="row" style="gap:10px;min-width:0">' +
+      slotIco +
+      (r.chain ? '<span style="color:var(--r-' + item.rarity + ');flex:0 0 auto">' + heroIco('ico-chain', 14) + '</span>' : '') +
+      '<span class="small rar-' + item.rarity + '" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600">' +
+        esc(item.name) +
+      '</span>' +
+    '</span>' +
+    '<span class="row" style="gap:6px;flex:0 0 auto">' +
+      (item.locked ? heroIco('ico-lock', 16) : '') +
+      '<span class="tiny muted">' + heroSlotLabel[slot] + '</span>' +
+    '</span>' +
+  '</button>';
+}
+
+/* Change 4: a full-width card instead of a tiny 6-column tile.
+   The name/detail area opens the item sheet (data-act="item");
+   Sell and Salvage are separate sibling buttons so nothing is
+   nested inside another button. Change 2: the Power comparison
+   sits right on the card so the whole list can be scanned for
+   upgrades without opening anything. */
+function heroInvTile(hero, idx) {
+  const item = hero.inventory[idx];
+  const r = RARITIES[item.rarity];
+  const loc = 'inv:' + idx;
+  const isRelic = item.slot === 'relic';
+  const compare = isRelic ? hero2RelicDelta(hero, item) : powerArrow(heroPowerDeltaSafe(hero, item));
+
+  const price = sellPrice(hero, item);
+  const salv = salvageYield(item);
+
+  let indicators = '';
+  if (item.isNew) {
+    indicators += '<span aria-hidden="true" style="width:8px;height:8px;border-radius:50%;' +
+      'background:var(--corona);flex:0 0 auto"></span>';
+  }
+  if (r.chain) {
+    indicators += '<span style="color:var(--r-' + item.rarity + ');flex:0 0 auto">' + heroIco('ico-chain', 14) + '</span>';
+  }
+  if (item.locked) {
+    indicators += '<span style="color:var(--ash);flex:0 0 auto">' + heroIco('ico-lock', 14) + '</span>';
+  }
+
+  let html = '<div class="card" style="border:' + r.border + ' var(--r-' + item.rarity + ')">';
+  html += '<button class="card-tap" data-act="item" data-item="' + loc + '">';
+  html += '<div class="row" style="gap:10px;align-items:flex-start">';
+  html += '<span style="flex:0 0 auto;color:var(--ash);margin-top:1px">' + icon('ico-slot-' + item.slot) + '</span>';
+  html += '<div class="grow" style="min-width:0">';
+  html += itemNameHtml(item);
+  html += '<div class="tiny muted" style="margin-top:3px">Item level ' + fmtNum(item.ilvl) + '</div>';
+  if (item.affixes && item.affixes.length) {
+    html += '<div class="tiny muted" style="margin-top:3px">' +
+      esc(item.affixes.map(affixLine).join(' · ')) + '</div>';
+  }
+  html += '</div>';
+  if (indicators) html += '<div class="row" style="gap:6px;flex:0 0 auto;align-items:flex-start">' + indicators + '</div>';
+  html += '</div>';
+  html += '</button>';
+
+  html += '<div class="divider" style="margin:10px 0 8px"></div>';
+  html += '<div>' + compare + '</div>';
+
+  html += '<div class="btn-row" style="margin-top:10px">' +
+    '<button class="btn btn-sm" data-act="sell" data-item="' + loc + '"' + (item.locked ? ' disabled' : '') + '>' +
+      'Sell · ' + fmtNum(price) + ' gold' +
+    '</button>' +
+    '<button class="btn btn-sm" data-act="salvage" data-item="' + loc + '"' + (item.locked ? ' disabled' : '') + '>' +
+      'Salvage · ' + fmtNum(salv.ash) + ' Ash' + (salv.shards ? ' · ' + fmtNum(salv.shards) + ' Starshards' : '') +
+    '</button>' +
+  '</div>';
+
+  html += '</div>';
+  return html;
+}
+
+/* Item detail sheet - keeps the letter badge (change 3 exempts
+   the sheet), adds the unique power/lore and set worn-count and
+   bonuses (Phase 2/3 content the Phase 1 sheet never had). */
+function heroOpenItemSheet(hero, item, loc) {
+  if (item.isNew) { item.isNew = false; save(); refresh(); }
+  const isThisEquipped = hero.equipment[item.slot] === item;
+  const r = RARITIES[item.rarity];
+
+  let body = '<div class="stack">';
+  body += '<div class="row" style="gap:8px">' +
+    itemBadge(item) +
+    (r.chain ? heroIco('ico-chain', 16) : '') +
+    '<div class="grow">' + itemNameHtml(item) + '</div>' +
+  '</div>';
+  body += '<div class="small muted">Item level ' + fmtNum(item.ilvl) + '</div>';
+
+  const statLines = heroItemStatLines(itemStats(item));
+  if (statLines.length) {
+    body += '<div class="divider"></div><div class="stack-s">' +
+      statLines.map(function (l) {
+        return '<div class="row-between small"><span>' + esc(l.label) + '</span><span class="num">' + l.value + '</span></div>';
+      }).join('') +
+    '</div>';
+  }
+
+  if (item.affixes && item.affixes.length) {
+    body += '<div class="divider"></div><div class="stack-s">' +
+      item.affixes.map(function (a) {
+        const def = AFFIXES[a.id];
+        const text = def ? def.text.replace('X', fmtNum(a.value)) : a.id;
+        return '<div class="small">' + esc(text) + '</div>';
+      }).join('') +
+    '</div>';
+  }
+
+  if (item.rarity === 'unique' && item.uniqueId && UNIQUES[item.uniqueId]) {
+    const u = UNIQUES[item.uniqueId];
+    body += '<div class="divider"></div>';
+    body += '<div class="small">' + esc(u.power.text) + '</div>';
+    body += '<div class="small" style="font-style:italic;color:var(--ash);margin-top:6px">' + esc(u.lore) + '</div>';
+  }
+
+  if (item.rarity === 'set' && item.setId && SETS[item.setId]) {
+    const s = SETS[item.setId];
+    const counts = equippedSetCounts(hero);
+    const worn = counts[item.setId] || 0;
+    const has2 = heroHasSetBonus(hero, item.setId, 2);
+    const has3 = heroHasSetBonus(hero, item.setId, 3);
+    body += '<div class="divider"></div>';
+    body += '<div class="small" style="font-weight:600">' + esc(s.name) + '</div>';
+    body += '<div class="tiny muted">Worn: ' + fmtNum(worn) + ' / ' + fmtNum(s.pieces.length) + '</div>';
+    body += '<div class="small' + (has2 ? '' : ' muted') + '" style="margin-top:6px">(2) ' + esc(s.bonus2.text) + '</div>';
+    body += '<div class="small' + (has3 ? '' : ' muted') + '" style="margin-top:4px">(3) ' + esc(s.bonus3.text) + '</div>';
+  }
+
+  body += '<div class="divider"></div>';
+  if (isThisEquipped) {
+    body += '<div class="small muted">Currently equipped.</div>';
+  } else if (item.slot === 'relic') {
+    body += heroRelicChangeBlock(hero, item);
+  } else {
+    body += '<div style="font-weight:600">' + powerArrow(powerDelta(hero, item)) + '</div>';
+  }
+  body += '</div>';
+
+  const foot = '<div class="btn-row">' +
+    (isThisEquipped ?
+      '<button class="btn" data-act="unequip">Unequip</button>' :
+      '<button class="btn btn-primary" data-act="equip">Equip</button>') +
+    '<button class="btn' + (item.locked ? '' : ' btn-ghost') + '" data-act="lock">' +
+      icon(item.locked ? 'ico-unlock' : 'ico-lock') + (item.locked ? 'Unlock' : 'Lock') +
+    '</button>' +
+  '</div>';
+
+  openSheet({
+    title: heroSlotLabel[item.slot],
+    body: body,
+    foot: foot,
+    onAct: function (act) { heroItemSheetAct(act, hero, item); }
+  });
+}
+
+/* ============================================================
+   STATS - redeclared for change 6: level/XP and the HP line stay
+   at the top, then Power/Might/Guard/Max HP as a compact combat
+   core, then the nine percentage stats in a dense two-column
+   grid. Every stat still opens its breakdown sheet via heroStatSheet.
+   ============================================================ */
+function heroRenderStats(hero) {
+  const st = heroStats(hero);
+  const hp = currentHp(hero, st);
+  const xpNext = xpToNext(hero.level);
+
+  /* One progress card. The status strip already carries HP and the hero's
+     level, so this shows what it cannot: the bar toward the next level, or,
+     at the cap, the bar toward the next Abyssal Rank (SPEC 4). */
+  let html = '<div class="card">';
+  if (isFinite(xpNext)) {
+    const xpPct = xpNext > 0 ? Math.max(0, Math.min(1, hero.xp / xpNext)) * 100 : 0;
+    html += '<div class="row-between"><span class="small muted">Level ' + fmtNum(hero.level) +
+      ' of ' + fmtNum(BALANCE.levelCap) + '</span>' +
+      '<span class="num small">' + fmtNum(hero.xp) + ' / ' + fmtNum(xpNext) + ' XP</span></div>';
+    html += '<div class="bar bar-xp" style="margin-top:8px"><div class="bar-fill" style="width:' +
+      xpPct + '%"></div></div>';
+  } else {
+    const per = abyssalPer();
+    const pct = per > 0 ? Math.max(0, Math.min(1, hero.xp / per)) * 100 : 0;
+    const unspent = abyssalUnspent(hero);
+    html += '<div class="row-between"><span class="small muted">Abyssal Rank ' +
+      fmtNum(hero.abyssal.ranks || 0) + '</span>' +
+      '<span class="num small">' + fmtNum(hero.xp) + ' / ' + fmtNum(per) + ' XP</span></div>';
+    html += '<div class="bar bar-xp" style="margin-top:8px"><div class="bar-fill" style="width:' +
+      pct + '%"></div></div>';
+    html += '<div class="small" style="margin-top:6px;color:' +
+      (unspent > 0 ? 'var(--corona)' : 'var(--ash)') + '">' +
+      (unspent > 0
+        ? fmtNum(unspent) + ' Abyssal point' + (unspent === 1 ? '' : 's') + ' to spend'
+        : 'Level 50. Every ' + fmtNum(per) + ' XP earns another rank.') +
+      '</div>';
+    if (unspent > 0) {
+      html += '<div class="row wrap" style="gap:6px;margin-top:8px">' +
+        Object.keys(BALANCE.abyssal.options).map(function (id) {
+          const o = BALANCE.abyssal.options[id];
+          return '<button class="btn btn-sm" data-act="abyssal" data-opt="' + id + '">+' +
+            fmtPct(o.per) + ' ' + esc(o.label) + '</button>';
+        }).join('') +
+      '</div>';
+    }
+  }
+  html += '</div>';
+  void hp;
+
+  html += '<div class="section-title">Combat</div>';
+  html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">' +
+    ['power'].concat(heroCoreStats).map(function (key) {
+      return hero2StatTile(key, key === 'power' ? st.power : st[key]);
+    }).join('') +
+  '</div>';
+
+  html += '<div class="section-title">Attributes</div>';
+  html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">' +
+    heroPercentStats.map(function (key) { return hero2StatTile(key, st[key]); }).join('') +
+  '</div>';
+
+  return html;
+}
+
+/* ============================================================
+   DISPATCH - redeclared to add 'sell' and 'salvage'; every other
+   branch is unchanged from Phase 1.
+   ============================================================ */
+function heroOnAct(act, node, ev) {
+  const hero = state && state.hero;
+  if (!hero) return;
+
+  if (act === 'seg') { heroTab = node.dataset.seg; refresh(); return; }
+  if (act === 'sort') { heroSort = node.dataset.sort; refresh(); return; }
+  if (act === 'abyssal') {
+    // SPEC 4 - spending an Abyssal point cannot be undone, so confirm it.
+    const opt = BALANCE.abyssal.options[node.dataset.opt];
+    if (!opt) return;
+    confirmSheet({
+      title: 'Spend an Abyssal point',
+      body: 'Add <strong>+' + fmtPct(opt.per) + ' ' + esc(opt.label) +
+            '</strong> permanently. Abyssal points cannot be moved once spent.',
+      yes: 'Spend it',
+      onYes: function () {
+        const res = spendAbyssal(hero, opt.id);
+        if (!res.ok) { toast(res.reason); return; }
+        toast('+' + fmtPct(opt.per) + ' ' + opt.label + '.');
+        refresh();
+      }
+    });
+    return;
+  }
+  if (act === 'item') {
+    const found = heroFindItem(hero, node.dataset.item);
+    if (found) heroOpenItemSheet(hero, found.item, found.loc);
+    return;
+  }
+  if (act === 'sell') {
+    const found = heroFindItem(hero, node.dataset.item);
+    if (found) hero2ConfirmSell(hero, found.item);
+    return;
+  }
+  if (act === 'salvage') {
+    const found = heroFindItem(hero, node.dataset.item);
+    if (found) hero2ConfirmSalvage(hero, found.item);
+    return;
+  }
+  if (act === 'stat') { heroStatSheet(hero, node.dataset.stat); return; }
+  if (act === 'node') { heroNodeSheet(hero, node.dataset.node); return; }
+  if (act === 'riteSlot') { heroRiteSlotSheet(hero, parseInt(node.dataset.slot, 10)); return; }
+}
+
+VIEWS.hero = {
+  render: heroRender,
+  onAct: heroOnAct
+};
+/* ============================================================
+   VIEWS.town (Town rework) - SPEC 13.2, 13.3, 11.3, 11.9, 16.1, 19.4
+   COMPLETE replacement of the Phase 3 town view. This is spliced
+   in after the Phase 3 file (view-town3 material already in
+   index.html), so this VIEWS.town assignment wins.
+
+   Reused as-is (not redeclared - they are already `let`/`const`/
+   `function` bindings earlier in the same script, and redeclaring
+   `let`/`const` would throw): the `townPlace` / `townMarketTab`
+   state, `TOWN_KEEPERS`, and the helpers townCurrencyRow,
+   townHeader, townBadge, townAffixLines, townFindInvItem,
+   townFindOwnedItem, townIsEquipped, townChapelStatus,
+   townForgeStatus, townMarketStatus, townTile, townRenderChapel,
+   townRenderRespec, townRenderForge, townRenderHub (the Phase 3
+   version with the champion statues strip), town2UnlockRank,
+   town2ItemName, town2ItemLabel, town2RarityBorderStyle,
+   town2ChainIcon, town2AffixText, town2ItemDetailBody,
+   town2OpenItemDetail, town2RenderHubTile, town2RenderBounty,
+   town3CraftSection, town3RekindleCandidates, town3RekindleSection,
+   town3StatueTile, town3RenderStatues, town3PlaqueBody and
+   town3OpenPlaque. The Chapel, Forge and Bounty Board are
+   unchanged, so none of their render functions are touched here -
+   only the Market changes.
+
+   Redeclared on purpose (same name, last one wins - the whole
+   point of the splice): townRenderMarket (Buy and Sell now render
+   as a two-column grid, and Sell gets bulk "sell all" buttons
+   mirroring the Forge's bulk salvage) and the VIEWS.town object
+   itself (onAct needs one new case: `sellbulk`).
+
+   Brand new pieces use a `town4` prefix so they can never collide
+   with a same-named helper already in the file:
+   - town4AffixLinesCompact(item) - a shortened one-line affix
+     summary (at most 2 affixes, "+N" for the rest) for the narrow
+     two-column Buy/Sell cards.
+   - town4BulkSellPreview(hero, maxRarity) - there is no engine
+     bulkSellPreview, so this is built from primitives the API
+     docs confirm exist: it walks hero.inventory, skips anything
+     locked or heirloom, skips anything above maxRarity using
+     RARITY_ORDER.indexOf (exactly like bulkSalvagePreview does for
+     salvage), and totals sellPrice(hero, item) for the rest. No
+     price formula is reimplemented - sellPrice is called for every
+     item, same as the single-sell path already does.
+   ============================================================ */
+
+/* A compact affix line for the narrow two-column Market cards:
+   at most `max` affixes (default 2), then "+N" for the remainder.
+   Same source data and formatting as townAffixLines, just capped
+   so a 3-4 affix rare doesn't blow out a 164px-wide card. */
+function town4AffixLinesCompact(item, max) {
+  max = max || 2;
+  if (!item.affixes || !item.affixes.length) return '';
+  const parts = item.affixes.map(function (a) {
+    const def = AFFIXES[a.id];
+    if (!def) return '';
+    return def.text.replace('X', fmtNum(a.value));
+  }).filter(Boolean);
+  if (!parts.length) return '';
+  const shown = parts.slice(0, max);
+  let text = shown.join(' · ');
+  if (parts.length > max) text += ' +' + (parts.length - max);
+  return '<div class="tiny muted">' + esc(text) + '</div>';
+}
+
+/* Mirrors bulkSalvagePreview(hero, maxRarity): never includes a
+   locked or heirloom item, and never includes anything rarer than
+   maxRarity (RARITY_ORDER.indexOf keeps uniques and sets out of
+   every tier automatically, since only 'common'/'magic'/'rare' are
+   ever passed in as maxRarity). Totals the real sellPrice for each
+   included item - no price math is invented here. */
+function town4BulkSellPreview(hero, maxRarity) {
+  const limit = RARITY_ORDER.indexOf(maxRarity);
+  let count = 0, gold = 0;
+  const list = [];
+  for (const it of hero.inventory) {
+    if (it.locked || it.heirloom) continue;
+    if (RARITY_ORDER.indexOf(it.rarity) > limit) continue;
+    gold += sellPrice(hero, it);
+    count++;
+    list.push(it);
+  }
+  return { count: count, gold: gold, items: list };
+}
+
+/* ============================================================
+   THE MARKET - SPEC 13.3
+   Redeclares the Phase 2 townRenderMarket. Buy and Sell are now a
+   two-column grid of smaller cards (about 164px wide at 360px, per
+   #view's ~12px side padding and the 8px grid gap). Supplies, Early
+   restock and the Black Market are untouched - still one full-width
+   card/panel each, since those are single items with a lot of text.
+   ============================================================ */
+function townRenderMarket(hero) {
+  let out = townHeader('The Market') + townCurrencyRow(hero);
+
+  const left = Math.max(0, (hero.market.restockAt || 0) - now());
+  out += '<p class="small muted" data-town-cd="' + hero.market.restockAt + '" data-town-cd-tmpl="market">' +
+    'Restocks in ' + fmtTime(left) + '</p>';
+
+  out += '<div class="btn-row" style="margin:10px 0">' +
+    '<button class="btn btn-sm' + (townMarketTab === 'buy' ? ' btn-primary' : '') + '" data-act="markettab" data-tab="buy">Buy</button>' +
+    '<button class="btn btn-sm' + (townMarketTab === 'sell' ? ' btn-primary' : '') + '" data-act="markettab" data-tab="sell">Sell</button>' +
+  '</div>';
+
+  if (townMarketTab === 'buy') {
+    const stock = hero.market.stock || [];
+    if (!stock.length) {
+      out += '<p class="small muted">Nothing in stock.</p>';
+    } else {
+      out += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">';
+      stock.forEach(function (item) {
+        const price = buyPrice(item);
+        const afford = hero.gold >= price && inventoryFree(hero) > 0;
+        const delta = Math.round(powerDelta(hero, item));
+        out += '<div class="card" style="padding:10px;' + town2RarityBorderStyle(item) + '">' +
+          '<div class="row" style="gap:6px">' + townBadge(item) + town2ChainIcon(item) + '</div>' +
+          '<div style="margin-top:6px">' + town2ItemLabel(item) + '</div>' +
+          '<div class="tiny muted">ilvl ' + fmtNum(item.ilvl) + '</div>' +
+          town4AffixLinesCompact(item) +
+          '<div style="margin-top:4px">' + powerArrow(delta) + '</div>' +
+          '<button class="btn btn-sm btn-block' + (afford ? ' btn-primary' : '') + '" data-act="buy" data-id="' + esc(item.id) + '"' +
+            (afford ? '' : ' disabled') + ' style="margin-top:8px">' +
+            'Buy &middot; <span class="num">' + fmtNum(price) + '</span>g' +
+          '</button>' +
+        '</div>';
+      });
+      out += '</div>';
+    }
+  } else {
+    const sellable = hero.inventory.filter(function (i) { return !i.locked; });
+    if (!sellable.length) {
+      out += '<p class="small muted">Nothing unlocked to sell.</p>';
+    } else {
+      out += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">';
+      sellable.forEach(function (item) {
+        const price = sellPrice(hero, item);
+        out += '<div class="card" style="padding:10px;' + town2RarityBorderStyle(item) + '">' +
+          '<button type="button" class="row" data-act="detail" data-id="' + esc(item.id) + '" style="gap:6px;width:100%;text-align:left;min-height:44px">' +
+            townBadge(item) + town2ChainIcon(item) +
+            '<div class="grow">' + town2ItemLabel(item) + '</div>' +
+          '</button>' +
+          '<button class="btn btn-sm btn-block" data-act="sell" data-id="' + esc(item.id) + '" style="margin-top:8px">' +
+            'Sell — ' + fmtNum(price) + 'g' +
+          '</button>' +
+        '</div>';
+      });
+      out += '</div>';
+
+      out += '<div class="stack-s" style="margin-top:10px">';
+      ['common', 'magic', 'rare'].forEach(function (r) {
+        out += '<button class="btn btn-sm btn-block" data-act="sellbulk" data-rarity="' + r + '">' +
+          'Sell all unlocked ' + RARITIES[r].name.toLowerCase() + ' and below' +
+        '</button>';
+      });
+      out += '</div>';
+    }
+  }
+
+  // ---- Supplies (Phase 2, always available) ----
+  out += '<div class="section-title">Supplies</div>';
+  out += '<div class="stack-s">';
+  ['candle', 'ward', 'oil'].forEach(function (id) {
+    const s = BALANCE.town.supplies[id];
+    const held = (hero.supplies && hero.supplies[id]) || 0;
+    const price = supplyPrice(hero, id);
+    const atMax = held >= s.max;
+    const afford = hero.gold >= price;
+    out += '<div class="row-between panel">' +
+      '<div class="grow">' +
+        '<div style="font-weight:600">' + esc(s.name) + '</div>' +
+        '<div class="tiny muted">' + esc(s.text) + '</div>' +
+        '<div class="tiny muted">' + fmtNum(held) + ' / ' + fmtNum(s.max) + ' held</div>' +
+      '</div>' +
+      '<button class="btn btn-sm' + (!atMax && afford ? ' btn-primary' : '') + '" data-act="buySupply" data-id="' + id + '"' +
+        (atMax || !afford ? ' disabled' : '') + '>' +
+        (atMax ? 'Max' : fmtNum(price) + ' gold') +
+      '</button>' +
+    '</div>';
+  });
+  out += '</div>';
+
+  // ---- Early restock (Phase 2, Renown rank 5) ----
+  if (hasUnlock('restock')) {
+    out += '<div class="section-title">Early restock</div>';
+    const cost = earlyRestockCost(hero);
+    const afford = hero.gold >= cost;
+    out += '<button class="btn btn-block' + (afford ? ' btn-primary' : '') + '" data-act="earlyRestock"' +
+      (afford ? '' : ' disabled') + '>' +
+      'Restock now — ' + fmtNum(cost) + ' gold' +
+    '</button>';
+  }
+
+  // ---- Black Market (Phase 2, Renown rank 12) ----
+  if (hasUnlock('blackmarket')) {
+    out += '<div class="section-title">Black Market</div>';
+    const bm = hero.market.blackMarket;
+    if (!bm || !bm.item) {
+      out += '<p class="small muted">Nothing on offer. Check back after it refreshes.</p>';
+    } else {
+      const item = bm.item;
+      const price = blackMarketPrice(item);
+      const afford = hero.gold >= price && inventoryFree(hero) > 0;
+      const bmLeft = Math.max(0, (bm.expiresAt || 0) - now());
+      const u = item.uniqueId && UNIQUES[item.uniqueId];
+      out += '<div class="card" style="' + town2RarityBorderStyle(item) + '">' +
+        '<div class="row" style="gap:8px">' +
+          townBadge(item) + town2ChainIcon(item) +
+          '<div class="grow">' + town2ItemLabel(item) +
+            '<div class="tiny muted">ilvl ' + fmtNum(item.ilvl) + '</div>' +
+            townAffixLines(item) +
+          '</div>' +
+        '</div>';
+      if (u) {
+        out += '<p class="small" style="margin-top:10px">' + esc(u.power.text) + '</p>' +
+          '<p class="small" style="font-style:italic;color:var(--ash);margin-top:8px">' + esc(u.lore) + '</p>';
+      }
+      out += '<div class="small muted" style="margin-top:10px" data-town-cd="' + (bm.expiresAt || 0) + '" data-town-cd-tmpl="blackmarket">' +
+          'Expires in ' + fmtTime(bmLeft) +
+        '</div>' +
+        '<div style="margin-top:10px">' +
+          '<button class="btn btn-block' + (afford ? ' btn-primary' : '') + '" data-act="buyBlackMarket"' +
+            (afford ? '' : ' disabled') + '>Buy — ' + fmtNum(price) + ' gold</button>' +
+        '</div>' +
+      '</div>';
+    }
+  }
+
+  return out;
+}
+
+/* ============================================================
+   THE VIEW
+   ============================================================ */
+
+VIEWS.town = {
+  render: function () {
+    const hero = state && state.hero;
+    if (!hero) {
+      return '<div class="card"><p class="muted small">No hero yet.</p></div>';
+    }
+    if (townPlace === 'chapel') return townRenderChapel(hero);
+    if (townPlace === 'forge') return townRenderForge(hero);
+    if (townPlace === 'market') return townRenderMarket(hero);
+    if (townPlace === 'bounty') return town2RenderBounty(hero);
+    return townRenderHub(hero);
+  },
+
+  tick: function () {
+    const host = el('view');
+    if (!host) return;
+    const nodes = host.querySelectorAll('[data-town-cd]');
+    nodes.forEach(function (n) {
+      const target = parseInt(n.getAttribute('data-town-cd'), 10) || 0;
+      const tmpl = n.getAttribute('data-town-cd-tmpl');
+      const left = Math.max(0, target - now());
+      let prefix = 'Restocks in ';
+      if (tmpl === 'fallen') prefix = 'Time left: ';
+      else if (tmpl === 'bounty') prefix = 'New contracts in ';
+      else if (tmpl === 'blackmarket') prefix = 'Expires in ';
+      n.textContent = prefix + fmtTime(left);
+    });
+  },
+
+  onAct: function (act, node) {
+    const hero = state && state.hero;
+    if (!hero) return;
+
+    if (act === 'open') { townPlace = node.dataset.place; townMarketTab = 'buy'; refresh(); return; }
+    if (act === 'back') { townPlace = null; refresh(); return; }
+
+    if (act === 'statue') {
+      const idx = parseInt(node.dataset.idx, 10);
+      const p = ((state.account && state.account.champions) || [])[idx];
+      if (!p) return;
+      town3OpenPlaque(p);
+      return;
+    }
+
+    if (act === 'heal') {
+      const r = healHero(hero, parseFloat(node.dataset.frac));
+      if (!r.ok) toast(r.reason); else toast('Healed ' + fmtNum(r.restored) + ' HP.');
+      refresh();
+      return;
+    }
+
+    if (act === 'revive') {
+      const r = reviveHero(hero);
+      if (!r.ok) toast(r.reason); else toast('Revived.');
+      refresh();
+      return;
+    }
+
+    if (act === 'respec') {
+      const cost = respecCost(hero);
+      confirmSheet({
+        title: 'Respec your skills?',
+        body: 'This refunds every skill point and empties your rite slots.' +
+          (cost > 0 ? ' It costs ' + fmtNum(cost) + ' gold.' : ' It is free below level ' + BALANCE.tree.respecFreeBelowLevel + '.'),
+        yes: 'Respec',
+        danger: true,
+        onYes: function () {
+          const r = respec(hero);
+          if (!r.ok) toast(r.reason); else toast('Skills reset.');
+          refresh();
+        }
+      });
+      return;
+    }
+
+    if (act === 'salvage') {
+      const item = townFindInvItem(hero, node.dataset.id);
+      if (!item) return;
+      const r = salvageItem(hero, item);
+      if (!r.ok) toast(r.reason);
+      else toast('Salvaged for ' + fmtNum(r.yield.ash) + ' Ash' + (r.yield.shards ? ' and ' + fmtNum(r.yield.shards) + ' Starshards' : '') + '.');
+      refresh();
+      return;
+    }
+
+    if (act === 'bulk') {
+      const rarity = node.dataset.rarity;
+      const p = bulkSalvagePreview(hero, rarity);
+      if (p.count <= 0) { toast('Nothing to salvage.'); return; }
+      confirmSheet({
+        title: 'Salvage ' + fmtNum(p.count) + ' item' + (p.count === 1 ? '' : 's') + '?',
+        body: 'Yields ' + fmtNum(p.ash) + ' Ash' + (p.shards ? ' and ' + fmtNum(p.shards) + ' Starshards' : '') + '.',
+        yes: 'Salvage',
+        danger: true,
+        onYes: function () {
+          bulkSalvage(hero, rarity);
+          refresh();
+          toast('Salvaged.');
+        }
+      });
+      return;
+    }
+
+    if (act === 'temper') {
+      const item = townFindOwnedItem(hero, node.dataset.id);
+      if (!item) return;
+      const r = temperItem(hero, item);
+      if (!r.ok) toast(r.reason); else toast('Tempered to +' + r.to + '.');
+      refresh();
+      return;
+    }
+
+    if (act === 'detail') {
+      const item = townFindOwnedItem(hero, node.dataset.id);
+      if (!item) return;
+      town2OpenItemDetail(hero, item);
+      return;
+    }
+
+    if (act === 'reforgeOpen') {
+      const item = townFindOwnedItem(hero, node.dataset.id);
+      if (!item) return;
+      const gate = canReforge(item);
+      if (!gate.ok) { toast(gate.reason); return; }
+      const cost = reforgeCost(item);
+      const afford = hero.gold >= cost.gold && hero.ash >= cost.ash;
+      openSheet({
+        title: 'Reforge',
+        body:
+          '<div class="stack-s">' +
+            '<div class="row" style="gap:8px">' + townBadge(item) + town2ChainIcon(item) + '<div>' + town2ItemLabel(item) + '</div></div>' +
+            '<p class="small muted">Pick one affix to replace. Costs ' + fmtNum(cost.gold) + ' gold and ' + fmtNum(cost.ash) + ' Ash' +
+              (afford ? '.' : ' — not enough to reforge.') +
+            '</p>' +
+            '<div class="stack-s">' +
+              item.affixes.map(function (a, i) {
+                return '<button type="button" class="row-between panel card-tap" data-act="reforgePick" data-idx="' + i + '"' +
+                  (afford ? '' : ' disabled') + ' style="min-height:44px;width:100%">' +
+                  '<span class="small">' + esc(town2AffixText(a)) + '</span>' +
+                  '<span class="tiny muted">Replace</span>' +
+                '</button>';
+              }).join('') +
+            '</div>' +
+          '</div>',
+        foot: '<button class="btn btn-block" data-act="close">Cancel</button>',
+        onAct: function (a, n) {
+          if (a === 'close') { closeSheet(); return; }
+          if (a === 'reforgePick') {
+            const idx = parseInt(n.dataset.idx, 10);
+            const r = reforgeAffix(hero, item, idx);
+            if (!r.ok) { toast(r.reason); return; }
+            toast('Reforged: ' + town2AffixText(r.from) + ' → ' + town2AffixText(r.to));
+            closeSheet();
+            refresh();
+          }
+        }
+      });
+      return;
+    }
+
+    if (act === 'autosalvage') {
+      if (!state.settings) state.settings = {};
+      if (!state.settings.autoSalvage) state.settings.autoSalvage = { common: false, magic: false, rare: false };
+      const r = node.dataset.rarity;
+      state.settings.autoSalvage[r] = !state.settings.autoSalvage[r];
+      save();
+      refresh();
+      return;
+    }
+
+    if (act === 'craft') {
+      const slot = node.dataset.slot;
+      const r = craftItem(hero, slot);
+      if (!r.ok) { toast(r.reason); return; }
+      toast('Crafted ' + (town2ItemName(r.item) || r.item.baseType) + '.');
+      refresh();
+      town2OpenItemDetail(hero, r.item);
+      return;
+    }
+
+    if (act === 'rekindle') {
+      const item = townFindOwnedItem(hero, node.dataset.id);
+      if (!item) return;
+      const r = rekindleItem(hero, item);
+      if (!r.ok) { toast(r.reason); return; }
+      toast('Rekindled to ilvl ' + fmtNum(r.to) + '.');
+      refresh();
+      return;
+    }
+
+    if (act === 'markettab') { townMarketTab = node.dataset.tab; refresh(); return; }
+
+    if (act === 'buy') {
+      const item = (hero.market.stock || []).find(function (i) { return i.id === node.dataset.id; });
+      if (!item) return;
+      const r = buyItem(hero, item);
+      if (!r.ok) toast(r.reason); else toast('Bought ' + (town2ItemName(item) || item.baseType) + '.');
+      refresh();
+      return;
+    }
+
+    if (act === 'sell') {
+      const item = townFindInvItem(hero, node.dataset.id);
+      if (!item) return;
+      const r = sellItem(hero, item);
+      if (!r.ok) toast(r.reason); else toast('Sold for ' + fmtNum(r.gold) + ' gold.');
+      refresh();
+      return;
+    }
+
+    if (act === 'sellbulk') {
+      const rarity = node.dataset.rarity;
+      const p = town4BulkSellPreview(hero, rarity);
+      if (p.count <= 0) { toast('Nothing to sell.'); return; }
+      confirmSheet({
+        title: 'Sell ' + fmtNum(p.count) + ' item' + (p.count === 1 ? '' : 's') + '?',
+        body: 'Sells for ' + fmtNum(p.gold) + ' gold total.',
+        yes: 'Sell',
+        danger: true,
+        onYes: function () {
+          let total = 0, sold = 0;
+          p.items.forEach(function (it) {
+            const r = sellItem(hero, it);
+            if (r.ok) { total += r.gold; sold++; }
+          });
+          refresh();
+          toast('Sold ' + fmtNum(sold) + ' item' + (sold === 1 ? '' : 's') + ' for ' + fmtNum(total) + ' gold.');
+        }
+      });
+      return;
+    }
+
+    if (act === 'buySupply') {
+      const id = node.dataset.id;
+      const r = buySupply(hero, id);
+      if (!r.ok) toast(r.reason); else toast('Bought ' + BALANCE.town.supplies[id].name + '.');
+      refresh();
+      return;
+    }
+
+    if (act === 'earlyRestock') {
+      const r = buyEarlyRestock(hero);
+      if (!r.ok) toast(r.reason); else toast('The Market restocked.');
+      refresh();
+      return;
+    }
+
+    if (act === 'buyBlackMarket') {
+      const bm = hero.market.blackMarket;
+      const boughtItem = bm && bm.item;
+      const r = buyBlackMarket(hero);
+      if (!r.ok) { toast(r.reason); return; }
+      toast('Bought ' + (boughtItem ? (town2ItemName(boughtItem) || boughtItem.baseType) : 'the item') + '.');
+      refresh();
+      return;
+    }
+
+    if (act === 'claimContract') {
+      const idx = parseInt(node.dataset.idx, 10);
+      const r = claimContract(hero, idx);
+      if (!r.ok) { toast(r.reason); return; }
+      let msg = 'Contract complete: ' + fmtNum(r.gold) + ' gold, ' + fmtNum(r.starshards) + ' Starshard' + (r.starshards === 1 ? '' : 's');
+      if (r.renown && r.renown.amount) msg += ', ' + fmtNum(r.renown.amount) + ' Renown';
+      toast(msg);
+      refresh();
+      return;
+    }
+  }
+};
+
+/* ---- Tapping a tab you are already on returns it to its top level. ----
+   Declared after every view is spliced in, so it attaches to the final
+   version of each. */
+/* ============================================================
+   VIEWS.town (Town: The Day's Work + Bounty payouts) - SPEC 13.4, 13.6, 19.4
+   COMPLETE replacement of the "Town rework" VIEWS.town (view-town4
+   material already in index.html), so this VIEWS.town assignment
+   wins. Every existing behaviour - Chapel, Forge (Salvage, Temper,
+   Reforge, auto-salvage, Craft, Rekindle), Market (Buy, Sell
+   two-across, sell-all, Supplies, early restock, Black Market) and
+   the champion statues - is carried over unchanged below.
+
+   Reused as-is (not redeclared - they are already `let`/`const`/
+   `function` bindings earlier in the same script, and redeclaring
+   `let`/`const` would throw): the `townPlace` / `townMarketTab`
+   state, `TOWN_KEEPERS`, and the helpers townCurrencyRow,
+   townHeader, townBadge, townAffixLines, townFindInvItem,
+   townFindOwnedItem, townIsEquipped, townChapelStatus,
+   townForgeStatus, townMarketStatus, townTile, townRenderChapel,
+   townRenderRespec, townRenderForge, townRenderMarket,
+   town2UnlockRank, town2ItemName, town2ItemLabel,
+   town2RarityBorderStyle, town2ChainIcon, town2AffixText,
+   town2ItemDetailBody, town2OpenItemDetail, town2RenderHubTile,
+   town3CraftSection, town3RekindleCandidates, town3RekindleSection,
+   town3StatueTile, town3RenderStatues, town3PlaqueBody,
+   town3OpenPlaque, town4AffixLinesCompact and town4BulkSellPreview.
+
+   Redeclared on purpose (same name, last one wins - the whole
+   point of the splice):
+   - townRenderHub - adds a fifth hub tile for The Day's Work,
+     after the Bounty Board tile and before the champion statues.
+   - town2RenderBounty - every contract now shows its payout
+     (Renown, gold, Starshard) before it is claimed, and a claimed
+     contract's card gets a verdant border to match its "Claimed"
+     label (SPEC 13.4).
+   - the VIEWS.town object itself - render() gains the `labour`
+     place, tick() gains live updates for the running job's earned
+     total, its cap countdown and the hub tile's status line, and
+     onAct() gains two cases: `startTask` and `collectTask`.
+
+   Brand new pieces use a `town5` prefix so they can never collide
+   with a same-named helper already in the file:
+   - town5HubStatus(hero) - the hub tile's status line: the running
+     job and what it has earned so far, or an idle line.
+   - town5RenderHubTile(hero) - the fifth hub tile. Written by hand
+     rather than through townTile() because The Day's Work has no
+     single keeper (SPEC 13.6) - townTile() always looks one up in
+     TOWN_KEEPERS - and because the status line needs a stable id
+     (`town5-hub-status`) for tick() to update live.
+   - town5TaskRateAmountText(hero, id) - taskRate(hero,id) already
+     returns gold/Ash already scaled per hour, but for the rites
+     job it returns a plain minute count (BALANCE.labour.tasks.rites
+     .perHour is documented as "minutes off every rite cooldown"),
+     not milliseconds, so passing it straight into taskAmountText
+     would hand fmtTime a number 60,000x too small. This multiplies
+     that one case by the existing global MINUTE constant (the same
+     conversion collectTask/taskAccrued already do internally to
+     the *earned* total) before handing off to taskAmountText - it
+     does not touch or reimplement the payout formula itself.
+   - town5JobCard(hero, id, switching) - one job's card: icon, name,
+     keeper, flavour text, per-hour rate, and a Start/Switch button.
+   - town5CurrentTaskCard(hero) - the running job's card: which job,
+     what it has earned so far (with a live id for tick()), how long
+     until the six-hour cap or that it has stopped paying (also a
+     live id), and the Collect button.
+   - town5RenderLabour(hero) - The Day's Work place itself.
+   ============================================================ */
+
+/* SPEC 13.6 - taskRate(hero,'rites') is a plain per-hour minute count,
+   not milliseconds, so it needs the same *MINUTE conversion
+   collectTask/taskAccrued already apply to the earned total before
+   it can be handed to taskAmountText (which formats "rites" amounts
+   with fmtTime, i.e. expects milliseconds). Gold and Ash are already
+   in their natural unit and pass through untouched. */
+/* taskRate now returns the same units taskAmountText expects for every
+   reward, so this is a straight format. */
+function town5TaskRateAmountText(hero, id) {
+  const def = taskDef(id);
+  if (!def) return '';
+  return taskAmountText(def.reward, taskRate(hero, id));
+}
+
+/* The hub tile's status line (also reused live by tick()). */
+function town5HubStatus(hero) {
+  if (hero.task) {
+    const def = taskDef(hero.task.id);
+    if (def) return def.name + ' · ' + taskAmountText(def.reward, taskAccrued(hero));
+  }
+  return 'Three jobs on offer';
+}
+
+/* The fifth hub tile. Not built through townTile() because The
+   Day's Work has no single keeper (SPEC 13.6 - "the three jobs are
+   for keepers the town already has"), and because the status line
+   needs a stable id for tick() to refresh live while a job runs. */
+function town5RenderHubTile(hero) {
+  return '<button class="card card-tap" data-act="open" data-place="labour" style="min-height:44px">' +
+    '<div class="row" style="gap:10px">' +
+      icon('ico-clock') +
+      '<div class="grow">' +
+        '<div style="font-weight:600">The Day’s Work</div>' +
+        '<div class="tiny muted">Odd jobs around town</div>' +
+      '</div>' +
+    '</div>' +
+    '<div class="divider" style="margin:10px 0 8px"></div>' +
+    '<div class="small" id="town5-hub-status">' + esc(town5HubStatus(hero)) + '</div>' +
+  '</button>';
+}
+
+/* Redeclares the Phase 3 townRenderHub to add The Day's Work tile
+   between the Bounty Board and the champion statues strip. */
+function townRenderHub(hero) {
+  return '<div class="stack">' +
+    townTile('chapel', 'The Last Chapel', townChapelStatus(hero), 'ico-chapel') +
+    townTile('forge', 'The Forge', townForgeStatus(hero), 'ico-salvage') +
+    townTile('market', 'The Market', townMarketStatus(hero), 'ico-market', hero.market.restockAt) +
+    town2RenderHubTile(hero) +
+    town5RenderHubTile(hero) +
+  '</div>' + town3RenderStatues();
+}
+
+/* ============================================================
+   THE BOUNTY BOARD - SPEC 13.4
+   Redeclares town2RenderBounty: every contract now shows exactly
+   what it pays before it is claimed, and a claimed contract gets a
+   verdant border alongside its existing "Claimed" label.
+   ============================================================ */
+function town2RenderBounty(hero) {
+  if (!hasUnlock('bounty')) {
+    return townHeader('The Bounty Board') +
+      '<p class="small muted">Opens at Renown rank ' + town2UnlockRank('bounty') + '.</p>';
+  }
+
+  let out = townHeader('The Bounty Board') + townCurrencyRow(hero, { shards: true });
+
+  const contracts = (state.account.contracts && state.account.contracts.list) || [];
+  const nextAt = (state.account.contracts && state.account.contracts.nextAt) || 0;
+  const left = Math.max(0, nextAt - now());
+  out += '<p class="small muted" data-town-cd="' + nextAt + '" data-town-cd-tmpl="bounty">' +
+    'New contracts in ' + fmtTime(left) +
+  '</p>';
+
+  if (!contracts.length) {
+    out += '<p class="small muted">No contracts posted yet.</p>';
+    return out;
+  }
+
+  // Same gold formula claimContract uses, so the figure shown here always
+  // matches the figure paid on Claim.
+  const gold = Math.round(BALANCE.contracts.goldCoef * g(hero.deepest));
+  const starshards = BALANCE.contracts.starshards;
+  const renown = BALANCE.renown.perContract;
+  const payoutText = 'Pays ' + fmtNum(renown) + ' Renown · ' + fmtNum(gold) + ' gold · ' +
+    fmtNum(starshards) + ' Starshard' + (starshards === 1 ? '' : 's');
+
+  out += '<div class="stack-s">';
+  contracts.forEach(function (c, idx) {
+    const pct = c.goal > 0 ? Math.max(0, Math.min(1, c.progress / c.goal)) : 0;
+    const claimedStyle = c.claimed ? ' style="border-color:var(--verdant)"' : '';
+    out += '<div class="card' + (c.claimed ? ' muted' : '') + '"' + claimedStyle + '>' +
+      '<div style="font-weight:600">' + esc(c.text) + '</div>' +
+      '<div class="tiny muted" style="margin-top:4px">' + esc(payoutText) + '</div>';
+
+    if (c.goal === 1) {
+      out += '<div class="small' + (c.done ? '' : ' muted') + '" style="margin-top:8px">' +
+        (c.done ? 'Done' : 'Not done') +
+      '</div>';
+    } else {
+      // bar-xp fills in corona; blood is reserved for HP.
+      out += '<div class="bar bar-xp" style="margin-top:8px"><div class="bar-fill" style="width:' + Math.round(pct * 100) + '%"></div></div>' +
+        '<div class="tiny muted" style="margin-top:4px">' + fmtNum(Math.min(c.progress, c.goal)) + ' / ' + fmtNum(c.goal) + '</div>';
+    }
+
+    if (c.claimed) {
+      out += '<div class="small" style="margin-top:10px;color:var(--verdant);font-weight:600">Claimed</div>';
+    } else if (c.done) {
+      out += '<div style="margin-top:10px">' +
+        '<button class="btn btn-primary btn-block" data-act="claimContract" data-idx="' + idx + '">Claim</button>' +
+      '</div>';
+    }
+
+    out += '</div>';
+  });
+  out += '</div>';
+
+  return out;
+}
+
+/* ============================================================
+   THE DAY'S WORK - SPEC 13.6
+   No keeper of its own - the three jobs are for keepers the town
+   already has (Vell, Brannoch, Sister Maren). One job at a time;
+   starting a different job, or starting a descent, banks whatever
+   the current one earned.
+   ============================================================ */
+
+/* One job's card. `switching` is true when this card is offered as
+   an alternative to the job already running (label reads "Switch"
+   and is not the primary button, since a job is already active). */
+function town5JobCard(hero, id, switching) {
+  const def = taskDef(id);
+  if (!def) return '';
+  const rateText = town5TaskRateAmountText(hero, id);
+  return '<div class="card">' +
+    '<div class="row" style="gap:10px">' +
+      icon(def.icon) +
+      // The job's name already names its keeper, so it is not repeated here.
+      '<div class="grow" style="font-weight:600">' + esc(def.name) + '</div>' +
+    '</div>' +
+    '<p class="small" style="margin-top:8px">' + esc(def.text) + '</p>' +
+    '<div class="small muted num" style="margin-top:4px">Pays ' + esc(rateText) + ' per hour</div>' +
+    '<button class="btn btn-sm btn-block' + (switching ? '' : ' btn-primary') + '" data-act="startTask" data-id="' + esc(def.id) + '" style="margin-top:10px">' +
+      (switching ? 'Switch to this' : 'Start') +
+    '</button>' +
+  '</div>';
+}
+
+/* The running job's card: which job, what it has earned so far
+   (live via #town5-earned), how long until the six-hour cap or
+   that it has already stopped paying (live via #town5-cap), and
+   Collect. */
+function town5CurrentTaskCard(hero) {
+  const def = taskDef(hero.task.id);
+  if (!def) return '';
+  const accrued = taskAccrued(hero);
+  const atCap = taskAtCap(hero);
+  const capIn = taskCapIn(hero);
+  const earnedText = 'Earned so far: ' + taskAmountText(def.reward, accrued);
+  const capText = atCap
+    ? 'This job has stopped paying. Collect to bank it.'
+    : 'Stops paying in ' + fmtTime(capIn) + '.';
+
+  return '<div class="card" style="border-color:var(--corona)">' +
+    '<div class="row" style="gap:10px">' +
+      icon(def.icon) +
+      '<div class="grow">' +
+        '<div style="font-weight:600">' + esc(def.name) + '</div>' +
+        '<div class="tiny muted">' + esc(def.keeper) + '</div>' +
+      '</div>' +
+    '</div>' +
+    '<div class="divider" style="margin:10px 0 8px"></div>' +
+    '<div class="small num" id="town5-earned">' + esc(earnedText) + '</div>' +
+    '<div class="small muted" id="town5-cap" style="margin-top:4px">' + esc(capText) + '</div>' +
+    '<button class="btn btn-primary btn-block" data-act="collectTask" style="margin-top:10px">Collect</button>' +
+  '</div>';
+}
+
+function town5RenderLabour(hero) {
+  let out = townHeader('The Day’s Work');
+  out += '<p class="small muted">Wages for waiting out your HP between descents — a fraction of what a ' +
+    'descent pays. Starting a descent ends the current job and banks what it earned.</p>';
+
+  if (hero.task) {
+    out += town5CurrentTaskCard(hero);
+    out += '<div class="section-title">Switch to a different job</div>';
+    out += '<p class="tiny muted">Starting a different job banks what this one earned first — nothing is lost.</p>';
+  } else {
+    out += '<div class="section-title">Available work</div>';
+  }
+
+  out += '<div class="stack-s">';
+  ['gold', 'ash', 'rites'].forEach(function (id) {
+    if (hero.task && hero.task.id === id) return; // already shown above as the running job
+    out += town5JobCard(hero, id, !!hero.task);
+  });
+  out += '</div>';
+
+  return out;
+}
+
+/* ============================================================
+   THE VIEW
+   ============================================================ */
+
+VIEWS.town = {
+  render: function () {
+    const hero = state && state.hero;
+    if (!hero) {
+      return '<div class="card"><p class="muted small">No hero yet.</p></div>';
+    }
+    if (townPlace === 'chapel') return townRenderChapel(hero);
+    if (townPlace === 'forge') return townRenderForge(hero);
+    if (townPlace === 'market') return townRenderMarket(hero);
+    if (townPlace === 'bounty') return town2RenderBounty(hero);
+    if (townPlace === 'labour') return town5RenderLabour(hero);
+    return townRenderHub(hero);
+  },
+
+  tick: function () {
+    const host = el('view');
+    if (!host) return;
+    const nodes = host.querySelectorAll('[data-town-cd]');
+    nodes.forEach(function (n) {
+      const target = parseInt(n.getAttribute('data-town-cd'), 10) || 0;
+      const tmpl = n.getAttribute('data-town-cd-tmpl');
+      const left = Math.max(0, target - now());
+      let prefix = 'Restocks in ';
+      if (tmpl === 'fallen') prefix = 'Time left: ';
+      else if (tmpl === 'bounty') prefix = 'New contracts in ';
+      else if (tmpl === 'blackmarket') prefix = 'Expires in ';
+      n.textContent = prefix + fmtTime(left);
+    });
+
+    // The Day's Work: re-render only the running figures, never state.
+    const hero = state && state.hero;
+    if (hero && hero.task) {
+      const def = taskDef(hero.task.id);
+      if (def) {
+        const accrued = taskAccrued(hero);
+        const hubStatus = el('town5-hub-status');
+        if (hubStatus) hubStatus.textContent = town5HubStatus(hero);
+
+        const earnedEl = el('town5-earned');
+        if (earnedEl) earnedEl.textContent = 'Earned so far: ' + taskAmountText(def.reward, accrued);
+
+        const capEl = el('town5-cap');
+        if (capEl) {
+          capEl.textContent = taskAtCap(hero)
+            ? 'This job has stopped paying. Collect to bank it.'
+            : 'Stops paying in ' + fmtTime(taskCapIn(hero)) + '.';
+        }
+      }
+    }
+  },
+
+  onAct: function (act, node) {
+    const hero = state && state.hero;
+    if (!hero) return;
+
+    if (act === 'open') { townPlace = node.dataset.place; townMarketTab = 'buy'; refresh(); return; }
+    if (act === 'back') { townPlace = null; refresh(); return; }
+
+    if (act === 'statue') {
+      const idx = parseInt(node.dataset.idx, 10);
+      const p = ((state.account && state.account.champions) || [])[idx];
+      if (!p) return;
+      town3OpenPlaque(p);
+      return;
+    }
+
+    if (act === 'heal') {
+      const r = healHero(hero, parseFloat(node.dataset.frac));
+      if (!r.ok) toast(r.reason); else toast('Healed ' + fmtNum(r.restored) + ' HP.');
+      refresh();
+      return;
+    }
+
+    if (act === 'revive') {
+      const r = reviveHero(hero);
+      if (!r.ok) toast(r.reason); else toast('Revived.');
+      refresh();
+      return;
+    }
+
+    if (act === 'respec') {
+      const cost = respecCost(hero);
+      confirmSheet({
+        title: 'Respec your skills?',
+        body: 'This refunds every skill point and empties your rite slots.' +
+          (cost > 0 ? ' It costs ' + fmtNum(cost) + ' gold.' : ' It is free below level ' + BALANCE.tree.respecFreeBelowLevel + '.'),
+        yes: 'Respec',
+        danger: true,
+        onYes: function () {
+          const r = respec(hero);
+          if (!r.ok) toast(r.reason); else toast('Skills reset.');
+          refresh();
+        }
+      });
+      return;
+    }
+
+    if (act === 'salvage') {
+      const item = townFindInvItem(hero, node.dataset.id);
+      if (!item) return;
+      const r = salvageItem(hero, item);
+      if (!r.ok) toast(r.reason);
+      else toast('Salvaged for ' + fmtNum(r.yield.ash) + ' Ash' + (r.yield.shards ? ' and ' + fmtNum(r.yield.shards) + ' Starshards' : '') + '.');
+      refresh();
+      return;
+    }
+
+    if (act === 'bulk') {
+      const rarity = node.dataset.rarity;
+      const p = bulkSalvagePreview(hero, rarity);
+      if (p.count <= 0) { toast('Nothing to salvage.'); return; }
+      confirmSheet({
+        title: 'Salvage ' + fmtNum(p.count) + ' item' + (p.count === 1 ? '' : 's') + '?',
+        body: 'Yields ' + fmtNum(p.ash) + ' Ash' + (p.shards ? ' and ' + fmtNum(p.shards) + ' Starshards' : '') + '.',
+        yes: 'Salvage',
+        danger: true,
+        onYes: function () {
+          bulkSalvage(hero, rarity);
+          refresh();
+          toast('Salvaged.');
+        }
+      });
+      return;
+    }
+
+    if (act === 'temper') {
+      const item = townFindOwnedItem(hero, node.dataset.id);
+      if (!item) return;
+      const r = temperItem(hero, item);
+      if (!r.ok) toast(r.reason); else toast('Tempered to +' + r.to + '.');
+      refresh();
+      return;
+    }
+
+    if (act === 'detail') {
+      const item = townFindOwnedItem(hero, node.dataset.id);
+      if (!item) return;
+      town2OpenItemDetail(hero, item);
+      return;
+    }
+
+    if (act === 'reforgeOpen') {
+      const item = townFindOwnedItem(hero, node.dataset.id);
+      if (!item) return;
+      const gate = canReforge(item);
+      if (!gate.ok) { toast(gate.reason); return; }
+      const cost = reforgeCost(item);
+      const afford = hero.gold >= cost.gold && hero.ash >= cost.ash;
+      openSheet({
+        title: 'Reforge',
+        body:
+          '<div class="stack-s">' +
+            '<div class="row" style="gap:8px">' + townBadge(item) + town2ChainIcon(item) + '<div>' + town2ItemLabel(item) + '</div></div>' +
+            '<p class="small muted">Pick one affix to replace. Costs ' + fmtNum(cost.gold) + ' gold and ' + fmtNum(cost.ash) + ' Ash' +
+              (afford ? '.' : ' — not enough to reforge.') +
+            '</p>' +
+            '<div class="stack-s">' +
+              item.affixes.map(function (a, i) {
+                return '<button type="button" class="row-between panel card-tap" data-act="reforgePick" data-idx="' + i + '"' +
+                  (afford ? '' : ' disabled') + ' style="min-height:44px;width:100%">' +
+                  '<span class="small">' + esc(town2AffixText(a)) + '</span>' +
+                  '<span class="tiny muted">Replace</span>' +
+                '</button>';
+              }).join('') +
+            '</div>' +
+          '</div>',
+        foot: '<button class="btn btn-block" data-act="close">Cancel</button>',
+        onAct: function (a, n) {
+          if (a === 'close') { closeSheet(); return; }
+          if (a === 'reforgePick') {
+            const idx = parseInt(n.dataset.idx, 10);
+            const r = reforgeAffix(hero, item, idx);
+            if (!r.ok) { toast(r.reason); return; }
+            toast('Reforged: ' + town2AffixText(r.from) + ' → ' + town2AffixText(r.to));
+            closeSheet();
+            refresh();
+          }
+        }
+      });
+      return;
+    }
+
+    if (act === 'autosalvage') {
+      if (!state.settings) state.settings = {};
+      if (!state.settings.autoSalvage) state.settings.autoSalvage = { common: false, magic: false, rare: false };
+      const r = node.dataset.rarity;
+      state.settings.autoSalvage[r] = !state.settings.autoSalvage[r];
+      save();
+      refresh();
+      return;
+    }
+
+    if (act === 'craft') {
+      const slot = node.dataset.slot;
+      const r = craftItem(hero, slot);
+      if (!r.ok) { toast(r.reason); return; }
+      toast('Crafted ' + (town2ItemName(r.item) || r.item.baseType) + '.');
+      refresh();
+      town2OpenItemDetail(hero, r.item);
+      return;
+    }
+
+    if (act === 'rekindle') {
+      const item = townFindOwnedItem(hero, node.dataset.id);
+      if (!item) return;
+      const r = rekindleItem(hero, item);
+      if (!r.ok) { toast(r.reason); return; }
+      toast('Rekindled to ilvl ' + fmtNum(r.to) + '.');
+      refresh();
+      return;
+    }
+
+    if (act === 'markettab') { townMarketTab = node.dataset.tab; refresh(); return; }
+
+    if (act === 'buy') {
+      const item = (hero.market.stock || []).find(function (i) { return i.id === node.dataset.id; });
+      if (!item) return;
+      const r = buyItem(hero, item);
+      if (!r.ok) toast(r.reason); else toast('Bought ' + (town2ItemName(item) || item.baseType) + '.');
+      refresh();
+      return;
+    }
+
+    if (act === 'sell') {
+      const item = townFindInvItem(hero, node.dataset.id);
+      if (!item) return;
+      const r = sellItem(hero, item);
+      if (!r.ok) toast(r.reason); else toast('Sold for ' + fmtNum(r.gold) + ' gold.');
+      refresh();
+      return;
+    }
+
+    if (act === 'sellbulk') {
+      const rarity = node.dataset.rarity;
+      const p = town4BulkSellPreview(hero, rarity);
+      if (p.count <= 0) { toast('Nothing to sell.'); return; }
+      confirmSheet({
+        title: 'Sell ' + fmtNum(p.count) + ' item' + (p.count === 1 ? '' : 's') + '?',
+        body: 'Sells for ' + fmtNum(p.gold) + ' gold total.',
+        yes: 'Sell',
+        danger: true,
+        onYes: function () {
+          let total = 0, sold = 0;
+          p.items.forEach(function (it) {
+            const r = sellItem(hero, it);
+            if (r.ok) { total += r.gold; sold++; }
+          });
+          refresh();
+          toast('Sold ' + fmtNum(sold) + ' item' + (sold === 1 ? '' : 's') + ' for ' + fmtNum(total) + ' gold.');
+        }
+      });
+      return;
+    }
+
+    if (act === 'buySupply') {
+      const id = node.dataset.id;
+      const r = buySupply(hero, id);
+      if (!r.ok) toast(r.reason); else toast('Bought ' + BALANCE.town.supplies[id].name + '.');
+      refresh();
+      return;
+    }
+
+    if (act === 'earlyRestock') {
+      const r = buyEarlyRestock(hero);
+      if (!r.ok) toast(r.reason); else toast('The Market restocked.');
+      refresh();
+      return;
+    }
+
+    if (act === 'buyBlackMarket') {
+      const bm = hero.market.blackMarket;
+      const boughtItem = bm && bm.item;
+      const r = buyBlackMarket(hero);
+      if (!r.ok) { toast(r.reason); return; }
+      toast('Bought ' + (boughtItem ? (town2ItemName(boughtItem) || boughtItem.baseType) : 'the item') + '.');
+      refresh();
+      return;
+    }
+
+    if (act === 'claimContract') {
+      const idx = parseInt(node.dataset.idx, 10);
+      const r = claimContract(hero, idx);
+      if (!r.ok) { toast(r.reason); return; }
+      let msg = 'Contract complete: ' + fmtNum(r.gold) + ' gold, ' + fmtNum(r.starshards) + ' Starshard' + (r.starshards === 1 ? '' : 's');
+      if (r.renown && r.renown.amount) msg += ', ' + fmtNum(r.renown.amount) + ' Renown';
+      toast(msg);
+      refresh();
+      return;
+    }
+
+    if (act === 'startTask') {
+      const id = node.dataset.id;
+      const r = startTask(hero, id);
+      if (!r.ok) { toast(r.reason); return; }
+      const def = taskDef(id);
+      if (def) toast('Started: ' + def.name + '.');
+      refresh();
+      return;
+    }
+
+    if (act === 'collectTask') {
+      const r = collectTask(hero);
+      if (!r) return;
+      toast('Collected ' + taskAmountText(r.reward, r.amount) + '.');
+      refresh();
+      return;
+    }
+  }
+};
+function attachTabResets() {
+  if (VIEWS.town) VIEWS.town.reset = function () { townPlace = null; };
+  if (VIEWS.hero) VIEWS.hero.reset = function () { heroTab = 'gear'; };
+  if (VIEWS.halls) VIEWS.halls.reset = function () {
+    if (typeof halls2Tab !== 'undefined') halls2Tab = 'codex';
+    if (typeof halls3Tab !== 'undefined') halls3Tab = 'codex';
+  };
+}
+
+/* ============================================================
    BOOT
    ============================================================ */
 function initUI() {
@@ -11944,6 +13808,7 @@ function initUI() {
   });
   delegate(el('strip'), function (act, node) {
     if (act === 'settings') openSettings();
+    if (act === 'help') openHelp();
     if (act === 'tab') setTab(node.dataset.tab);
   });
   // Each view handles its own actions.
@@ -11951,6 +13816,7 @@ function initUI() {
     const v = VIEWS[ui.tab];
     if (v && v.onAct) v.onAct(act, node, ev);
   });
+  attachTabResets();
   renderTabs();
   refresh();
   startTick();
