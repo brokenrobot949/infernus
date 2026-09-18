@@ -198,6 +198,22 @@ ul{ margin:0; padding:0; list-style:none; }
    and stretched its neighbour taller to match, so one column read as bigger
    than the other. The grid cancels it. With .grid-fill-last, an odd final
    card spans the full width instead of leaving a hole. */
+/* The floor picker's grid. Five across at 360px still leaves every tile
+   comfortably past the 44px minimum. */
+.floor-grid{ display:grid; grid-template-columns:repeat(5,1fr); gap:6px; }
+.floor-tile{
+  /* A fixed height, not a minimum: the Guardian tiles carry an extra icon,
+     and without this their whole row stood taller than the others. */
+  height:54px; padding:4px 2px;
+  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:1px;
+  background:var(--crypt); border:1px solid var(--track); border-radius:var(--radius);
+  color:var(--bone); font-variant-numeric:tabular-nums; font-size:1rem;
+}
+.floor-tile:active{ background:var(--raised); }
+.floor-tile.boss{ border-color:var(--blood-light); }
+.floor-tile.sel{ border-color:var(--corona); box-shadow:inset 0 0 0 1px var(--corona); color:var(--corona); }
+.floor-tile .ico{ width:12px; height:12px; }
+
 .grid-2{ display:grid; grid-template-columns:1fr 1fr; gap:8px; }
 .grid-2 > .card{ margin-top:0; }
 .grid-fill-last > :last-child:nth-child(odd){ grid-column:1 / -1; }
@@ -5020,6 +5036,33 @@ function autoSalvages(item) {
   return !!f[item.rarity];
 }
 
+/* Two different things salvage a drop the moment it is found, and the
+   results sheet has to be able to tell the player which one happened: the
+   auto-salvage filters they set themselves (SPEC 11.9), and an inventory
+   with no room left. Tallied apart so neither is ever reported as the
+   other. `count`, `ash` and `shards` stay as the totals. */
+function freshAutoSalvage() {
+  return {
+    ash: 0, shards: 0, count: 0,
+    filtered: { ash: 0, shards: 0, count: 0 },
+    full:     { ash: 0, shards: 0, count: 0 }
+  };
+}
+
+/* `res` is what addItem returned: res.auto marks the filter path. The two
+   guards cover a descent already in flight in a save written before the
+   breakdown existed. */
+function tallyAutoSalvage(bucket, res) {
+  const kind = res.auto ? 'filtered' : 'full';
+  if (!bucket[kind]) bucket[kind] = { ash: 0, shards: 0, count: 0 };
+  bucket.count++;
+  bucket.ash += res.salvaged.ash;
+  bucket.shards += res.salvaged.shards;
+  bucket[kind].count++;
+  bucket[kind].ash += res.salvaged.ash;
+  bucket[kind].shards += res.salvaged.shards;
+}
+
 /* A drop that doesn't fit is salvaged automatically (SPEC 11.9).
    Every item the hero is ever handed passes through here, so this is where
    the Armory learns about it (SPEC 17.4) - recording it at each call site
@@ -5085,7 +5128,7 @@ function startDescent(hero, floor, pathIndex) {
     resolved: 0,
     hp: hpAtStart,
     lastTickAt: startAt,
-    rewards: { gold: 0, xp: 0, items: [], starshards: 0, autoSalvaged: { ash: 0, shards: 0, count: 0 } },
+    rewards: { gold: 0, xp: 0, items: [], starshards: 0, autoSalvaged: freshAutoSalvage() },
     stacks: { elitesKilled: 0, crits: 0 },
     levelUps: 0,
     log: []
@@ -5157,11 +5200,7 @@ function applyEncounter(hero, d, enc) {
     recordArmory(it);
     const res = addItem(hero, it);
     if (res.added) d.rewards.items.push(it);
-    else {
-      d.rewards.autoSalvaged.count++;
-      d.rewards.autoSalvaged.ash += res.salvaged.ash;
-      d.rewards.autoSalvaged.shards += res.salvaged.shards;
-    }
+    else tallyAutoSalvage(d.rewards.autoSalvaged, res);
   }
 
   if (enc.kind === 'elite') { d.stacks.elitesKilled++; contractEvent('elite'); }
@@ -5334,11 +5373,7 @@ function endDescent(hero, outcome, killer) {
       recordArmory(it);
       const res = addItem(hero, it);
       if (res.added) results.items.push(it);
-      else {
-        results.autoSalvaged.count++;
-        results.autoSalvaged.ash += res.salvaged.ash;
-        results.autoSalvaged.shards += res.salvaged.shards;
-      }
+      else tallyAutoSalvage(results.autoSalvaged, res);
     }
   }
 
@@ -7821,6 +7856,75 @@ function renderRiteRow(hero) {
     '</div>';
 }
 
+/* Every floor the hero may pick, in labelled bands. The four acts name
+   floors 1-40; below that the pit has no acts, so it falls back to tens.
+   Returns [{ label, floors:[n,...] }]. */
+function floorBands(cap) {
+  const bands = [];
+  for (const a of ACTS) {
+    if (a.minFloor > cap) break;
+    const floors = [];
+    for (let f = a.minFloor; f <= Math.min(a.maxFloor, cap); f++) floors.push(f);
+    if (floors.length) bands.push({ label: a.display, floors: floors });
+  }
+  const below = ACTS[ACTS.length - 1].maxFloor;
+  for (let start = below + 1; start <= cap; start += 10) {
+    const end = Math.min(start + 9, cap);
+    const floors = [];
+    for (let f = start; f <= end; f++) floors.push(f);
+    bands.push({ label: 'Floors ' + fmtNum(start) + '–' + fmtNum(end), floors: floors });
+  }
+  return bands;
+}
+
+/* Stepping one floor at a time is fine for a nudge and miserable for a
+   journey - a hero fifty floors down had fifty taps to reach a Guardian.
+   Tapping the floor number opens this instead: every floor at once,
+   grouped, with the Guardians marked and the current one highlighted. */
+function openFloorPicker(hero) {
+  const cap = maxSelectableFloor(hero);
+  const current = selectedFloor(hero);
+
+  const body = floorBands(cap).map(function (band) {
+    return '<div class="section-title">' + esc(band.label) + '</div>' +
+      '<div class="floor-grid">' +
+        band.floors.map(function (f) {
+          const gd = guardianOnFloor(f);
+          const cls = 'floor-tile' + (gd ? ' boss' : '') + (f === current ? ' sel' : '');
+          return '<button type="button" class="' + cls + '" data-act="floorpick" data-f="' + f + '"' +
+            (f === current ? ' aria-current="true"' : '') +
+            ' aria-label="Floor ' + f + (gd ? ', ' + esc(GUARDIAN_NAMES[gd.id]) : '') + '">' +
+            '<span>' + fmtNum(f) + '</span>' +
+            (gd ? '<span style="color:var(--blood-light)">' + icon('ico-boss') + '</span>' : '') +
+          '</button>';
+        }).join('') +
+      '</div>';
+  }).join('');
+
+  openSheet({
+    title: 'Choose a floor',
+    body: '<p class="tiny muted" style="margin:0 0 10px">You can return to any floor you have reached. ' +
+      'Guardian floors are outlined in red.</p>' + body,
+
+    /* The sheet carries its own dispatcher: delegate() is bound to #view,
+       and sheets live outside it. */
+    onAct: function (act, node) {
+      if (act !== 'floorpick') return;
+      const picked = clamp(parseInt(node.dataset.f, 10) || 1, 1, maxSelectableFloor(hero));
+      closeSheet();
+      if (picked !== descendUi.floor) { descendUi.floor = picked; descendUi.path = 0; }
+      refresh();
+      maybeShowActCard(descendUi.floor);
+    },
+
+    // Open on the floor they are standing on rather than at the top.
+    after: function (layer) {
+      const sel = layer.querySelector('.floor-tile.sel');
+      if (sel && sel.scrollIntoView) sel.scrollIntoView({ block: 'center' });
+    }
+  });
+}
+
 function renderTownDescend(hero) {
   const cap = maxSelectableFloor(hero);
   const f = selectedFloor(hero);
@@ -7840,10 +7944,13 @@ function renderTownDescend(hero) {
     '<div class="row-between">' +
       '<button class="btn btn-ghost" data-act="floor" data-d="-1" aria-label="Previous floor" ' +
         (f <= 1 ? 'disabled' : '') + ' style="width:44px;padding:0">' + icon('ico-chevron-left') + '</button>' +
-      '<div style="text-align:center" class="grow">' +
+      '<button type="button" class="grow" data-act="floorpick-open" ' +
+        'style="text-align:center;background:none;border:0;padding:4px 0;min-height:44px;color:inherit" ' +
+        'aria-label="Choose a floor. Currently floor ' + f + '">' +
         '<div class="display" style="font-size:1.75rem;line-height:1.1">Floor ' + f + '</div>' +
         '<div class="display" style="font-size:1rem;color:var(--ash)">' + esc(act.display) + '</div>' +
-      '</div>' +
+        (cap > 1 ? '<div class="tiny" style="color:var(--corona);margin-top:2px">Tap to choose</div>' : '') +
+      '</button>' +
       '<button class="btn btn-ghost" data-act="floor" data-d="1" aria-label="Next floor" ' +
         (f >= cap ? 'disabled' : '') + ' style="width:44px;padding:0">' + icon('ico-chevron-right') + '</button>' +
     '</div>' +
@@ -8064,6 +8171,7 @@ VIEWS.descend = {
       refresh();
       maybeShowActCard(descendUi.floor);
     }
+    if (act === 'floorpick-open') { openFloorPicker(hero); return; }
     if (act === 'path') { descendUi.path = parseInt(node.dataset.i, 10); refresh(); }
     if (act === 'reroll-paths') {
       const f = selectedFloor(hero);
@@ -8389,9 +8497,29 @@ function showResults(r) {
   }
   if (r.unlockedFloor) body += '<p class="small">Floor ' + r.unlockedFloor + ' is open.</p>';
   if (r.autoSalvaged && r.autoSalvaged.count) {
-    body += '<p class="small muted">' + r.autoSalvaged.count + ' item' +
-      (r.autoSalvaged.count > 1 ? 's' : '') + ' did not fit and were salvaged for ' +
-      fmtNum(r.autoSalvaged.ash) + ' Ash.</p>';
+    /* Say which of the two reasons it was. Reporting a filtered item as
+       one that "did not fit" reads as though the inventory were full. */
+    const salvageLine = function (tally, reason) {
+      if (!tally || !tally.count) return '';
+      const many = tally.count > 1;
+      return '<p class="small muted">' + fmtNum(tally.count) + ' item' + (many ? 's' : '') +
+        ' ' + reason(many) + ' and ' + (many ? 'were' : 'was') + ' salvaged for ' +
+        '<span class="num">' + fmtNum(tally.ash) + '</span> Ash' +
+        (tally.shards ? ' and <span class="num">' + fmtNum(tally.shards) + '</span> Starshard' +
+          (tally.shards > 1 ? 's' : '') : '') +
+        '.</p>';
+    };
+    const lines =
+      salvageLine(r.autoSalvaged.filtered, function (many) {
+        return 'matched your salvage filter' + (many ? 's' : '');
+      }) +
+      salvageLine(r.autoSalvaged.full, function (many) {
+        return 'did not fit in your inventory';
+      });
+    // A descent that began before the breakdown existed has only the total.
+    body += lines || ('<p class="small muted">' + fmtNum(r.autoSalvaged.count) + ' item' +
+      (r.autoSalvaged.count > 1 ? 's were' : ' was') + ' salvaged on the spot for ' +
+      '<span class="num">' + fmtNum(r.autoSalvaged.ash) + '</span> Ash.</p>');
   }
 
   body += '<div class="section-title">Found</div>' + itemsHtml;
