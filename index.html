@@ -198,6 +198,21 @@ ul{ margin:0; padding:0; list-style:none; }
    and stretched its neighbour taller to match, so one column read as bigger
    than the other. The grid cancels it. With .grid-fill-last, an odd final
    card spans the full width instead of leaving a hole. */
+/* A resource bar that stays put while the page scrolls under it, for screens
+   where what you can afford matters all the way down. The negative side
+   margins cancel #view's padding so the bar spans the full width and nothing
+   shows through beside it. */
+.res-sticky{
+  /* top is -14px, not 0, because #view carries 14px of top padding: a sticky
+     offset of 0 pins the bar that far down and leaves a strip of the page
+     scrolling past above it. The bar's own padding keeps the text clear. */
+  position:sticky; top:-14px; z-index:5;
+  margin:0 calc(-12px - var(--sar)) 10px calc(-12px - var(--sal));
+  padding:12px calc(12px + var(--sar)) 10px calc(12px + var(--sal));
+  background:var(--abyss);
+  border-bottom:1px solid var(--track);
+}
+
 /* The floor picker's grid. Five across at 360px still leaves every tile
    comfortably past the 44px minimum. */
 .floor-grid{ display:grid; grid-template-columns:repeat(5,1fr); gap:6px; }
@@ -530,6 +545,12 @@ button[data-act]{ min-height:44px; }
   <symbol id="ico-lock" viewBox="0 0 24 24">
     <path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M8 10V7.4C8 5 9.8 3.2 12 3.2C14.2 3.2 16 5 16 7.4V10"/>
     <path fill="currentColor" fill-rule="evenodd" d="M5.5 10H18.5V20.5H5.5ZM11.1 13.9A1.1 1.1 0 1 0 13.3 13.9A1.1 1.1 0 1 0 11.1 13.9M11.5 15.3H12.5L13.1 18.4H10.9Z"/>
+  </symbol>
+  <!-- A banded strongbox. The Vault needs its own mark: the padlock already
+       means "this item is locked" everywhere in the gear lists. -->
+  <symbol id="ico-vault" viewBox="0 0 24 24">
+    <path fill="currentColor" fill-rule="evenodd" d="M3 7.5C3 6.4 3.9 5.5 5 5.5H19C20.1 5.5 21 6.4 21 7.5V18C21 19.1 20.1 20 19 20H5C3.9 20 3 19.1 3 18ZM5 7.5V10.8H10.6V7.5ZM13.4 7.5V10.8H19V7.5ZM19 13.2H13.4V18H19ZM10.6 18V13.2H5V18Z"/>
+    <path fill="currentColor" d="M10.2 2.6H13.8C14.3 2.6 14.7 3 14.7 3.5C14.7 4 14.3 4.4 13.8 4.4H10.2C9.7 4.4 9.3 4 9.3 3.5C9.3 3 9.7 2.6 10.2 2.6Z"/>
   </symbol>
   <symbol id="ico-unlock" viewBox="0 0 24 24">
     <path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M8 10V7.4C8 5 9.8 3.2 12 3.2C14.2 3.2 16 5 16 6.8V7.7"/>
@@ -889,6 +910,15 @@ const BALANCE = {
                      text: 'Salvaging yields 50% more Ash',
                      effect: { k: 'salvage_ash_mult', value: 1.5 } }
       }
+    },
+    /* The Vault: per-hero storage for gear worth keeping but not wearing.
+       A slot upgrade costs upgradeCoef x g(deepest) x growth^(bought). */
+    vault: {
+      baseSlots: 12,
+      slotsPerUpgrade: 6,
+      maxSlots: 48,
+      upgradeCoef: 400,
+      upgradeGrowth: 1.6
     }
   },
 
@@ -936,7 +966,7 @@ const BALANCE = {
   awayThresholdMs: 5 * 60 * 1000,
 
   /* --- SPEC 20 --- */
-  save: { key: 'infernus.save', version: 4, autosaveMs: 30 * 1000 },
+  save: { key: 'infernus.save', version: 5, autosaveMs: 30 * 1000 },
 
   /* --- SPEC 21.1 --- */
   debug: { offsetKey: 'infernus.debugOffset', simDefaultRuns: 1000 },
@@ -3143,6 +3173,8 @@ function freshHero(name, classId) {
     timed: [],
     equipment: { weapon: null, helm: null, armor: null, gloves: null, boots: null, relic: null },
     inventory: [],
+    vault: [],               // the Vault's stash - emptied on Ascension, like the inventory
+    vaultUpgrades: 0,
     floors: {},
     rerollsAt: [],
     healsAt: [],
@@ -3230,6 +3262,16 @@ const MIGRATIONS = {
      and needs no migration. Idempotent: it only fills a missing field. */
   4: function (s) {
     if (s.hero && s.hero.offering === undefined) s.hero.offering = null;
+    return s;
+  },
+
+  /* Phase 3 added the Vault, a per-hero stash beside the inventory. Saves
+     from before it have neither field. Idempotent: it only fills gaps. */
+  5: function (s) {
+    if (s.hero) {
+      if (!Array.isArray(s.hero.vault)) s.hero.vault = [];
+      if (s.hero.vaultUpgrades === undefined) s.hero.vaultUpgrades = 0;
+    }
     return s;
   }
 };
@@ -5816,6 +5858,10 @@ function syncHeirloom(hero) {
 }
 
 /* Relics the hero could pass on (SPEC 15.2 step 1). */
+/* Worn, carried, or stored. The Vault has to count: it is where a player
+   puts the relic they are saving, and leaving it out would mean stashing a
+   relic quietly disqualified it from being the heirloom - losing it for
+   good at the one moment that choice is made. */
 function heirloomCandidates(hero) {
   const out = [];
   for (const slot of BALANCE.items.slots) {
@@ -5823,6 +5869,7 @@ function heirloomCandidates(hero) {
     if (it && it.slot === 'relic') out.push(it);
   }
   for (const it of hero.inventory) if (it.slot === 'relic') out.push(it);
+  for (const it of (hero.vault || [])) if (it.slot === 'relic') out.push(it);
   return out;
 }
 
@@ -9408,9 +9455,10 @@ function townAccent(place) { return 'var(--' + (TOWN_ACCENTS[place] || 'edge') +
 
 /* ---- small shared helpers ---- */
 
+/* `opts.sticky` keeps the row visible while the page scrolls under it. */
 function townCurrencyRow(hero, opts) {
   opts = opts || {};
-  let out = '<div class="row wrap small num" style="gap:14px">' +
+  let out = '<div class="row wrap small num' + (opts.sticky ? ' res-sticky' : '') + '" style="gap:14px">' +
     '<span class="row" style="gap:4px">' + icon('ico-coin', 'coin') + fmtNum(hero.gold) + '</span>';
   if (opts.ash) out += '<span class="row" style="gap:4px">' + icon('ico-ash') + fmtNum(hero.ash) + ' Ash</span>';
   if (opts.shards) out += '<span class="row" style="gap:4px">' + icon('ico-star') + fmtNum(hero.starshards) + ' Starshards</span>';
@@ -9603,7 +9651,8 @@ function townRenderRespec(hero) {
    ============================================================ */
 
 function townRenderForge(hero) {
-  let out = townHeader('The Forge', 'forge') + townCurrencyRow(hero, { ash: true, shards: true });
+  let out = townHeader('The Forge', 'forge') +
+    townCurrencyRow(hero, { ash: true, shards: true, sticky: true });
 
   // ---- Salvage ----
   out += '<div class="section-title">Salvage</div>';
@@ -10323,6 +10372,8 @@ function debugPaceText() {
 
 /* The Bounty Board's keeper, added to the existing keeper map. */
 TOWN_KEEPERS.bounty = 'Warden Hask';
+TOWN_KEEPERS.vault = 'Doss the Quiet';
+TOWN_ACCENTS.vault = 'edge';
 
 /* ============================================================
    SHARED NEW HELPERS (town2 prefix)
@@ -10547,7 +10598,8 @@ function town2RenderBounty(hero) {
    ============================================================ */
 
 function townRenderForge(hero) {
-  let out = townHeader('The Forge', 'forge') + townCurrencyRow(hero, { ash: true, shards: true });
+  let out = townHeader('The Forge', 'forge') +
+    townCurrencyRow(hero, { ash: true, shards: true, sticky: true });
 
   // ---- Salvage ----
   out += '<div class="section-title">Salvage</div>';
@@ -12129,7 +12181,8 @@ function town3RekindleSection(hero) {
    Rekindle are new below them. Every part now sits under its own
    section-title so the growing Forge stays scannable at 360px. */
 function townRenderForge(hero) {
-  let out = townHeader('The Forge', 'forge') + townCurrencyRow(hero, { ash: true, shards: true });
+  let out = townHeader('The Forge', 'forge') +
+    townCurrencyRow(hero, { ash: true, shards: true, sticky: true });
 
   // ---- Salvage ----
   out += '<div class="section-title">Salvage</div>';
@@ -13704,13 +13757,27 @@ function town5RenderHubTile(hero) {
 
 /* Redeclares the Phase 3 townRenderHub to add The Day's Work tile
    between the Bounty Board and the champion statues strip. */
+/* The hub names the town. Every place page already carries its own title, so
+   this one belongs to the hub alone. Kept in the reading face: CLAUDE.md
+   reserves the display face for the game's title, act names and floor
+   numbers, and the place headings beneath it are set the same way. */
+function townRenderTownTitle() {
+  return '<div style="text-align:center;margin:0 0 14px;padding-bottom:12px;' +
+      'border-bottom:1px solid var(--track)">' +
+    '<h2 style="font-size:1.375rem;margin:0;letter-spacing:.02em">Emberhold</h2>' +
+    '<div class="tiny muted" style="margin-top:3px">The last town above the pit</div>' +
+  '</div>';
+}
+
 function townRenderHub(hero) {
-  return '<div class="stack">' +
+  return townRenderTownTitle() +
+  '<div class="stack">' +
     townTile('chapel', 'The Last Chapel', townChapelStatus(hero), 'ico-chapel') +
     townTile('forge', 'The Forge', townForgeStatus(hero), 'ico-salvage') +
     townTile('market', 'The Market', townMarketStatus(hero), 'ico-market', hero.market.restockAt) +
     town2RenderHubTile(hero) +
     town5RenderHubTile(hero) +
+    townTile('vault', 'The Vault', townVaultStatus(hero), 'ico-vault') +
   '</div>' + town3RenderStatues();
 }
 
@@ -13878,6 +13945,7 @@ VIEWS.town = {
     if (townPlace === 'market') return townRenderMarket(hero);
     if (townPlace === 'bounty') return town2RenderBounty(hero);
     if (townPlace === 'labour') return town5RenderLabour(hero);
+    if (townPlace === 'vault') return townRenderVault(hero);
     return townRenderHub(hero);
   },
 
@@ -14380,6 +14448,8 @@ function halls3AchievementRow(id) {
         '<span style="color:var(--verdant);display:inline-flex;flex:0 0 auto">' + icon('ico-star') + '</span>' +
         '<div class="grow" style="min-width:0">' +
           '<div style="font-weight:600;color:var(--verdant)">' + esc(a.name) + '</div>' +
+          // What it took stays on the card: the name alone rarely says it.
+          '<div class="tiny" style="margin-top:2px">' + esc(a.desc) + '</div>' +
           '<div class="tiny muted" style="margin-top:2px">Earned ' + esc(halls3DateStr(earnedAt)) +
             ' · <span class="num">' + fmtNum(a.renown) + '</span> Renown</div>' +
         '</div>' +
@@ -14624,6 +14694,226 @@ function townRenderChapel(hero) {
       });
       return;
     }
+    return inherited.call(this, act, node, ev);
+  };
+})();
+
+
+/* ============================================================
+   THE VAULT - per-hero stash for gear the player wants to keep but
+   not wear, without it crowding out the inventory.
+
+   hero.vault lives on the HERO, not the account. ascend() sets
+   state.hero = null, which wipes a hero's inventory outright - only
+   the chosen heirloom relic and the account survive an Ascension
+   (SPEC 15.6: "Resets for each new hero: ... gear and inventory ...").
+   An account-wide Vault would quietly become a second, unlimited
+   heirloom slot - a way to carry any amount of gear across
+   Ascensions by stashing it first - which breaks pillar 6 ("Legacy
+   always carries over" names only blessings and the heirloom as
+   legacy) and the "one heirloom at a time" rule (SPEC 15.4). Rob's
+   own framing - "stash gear you don't want to get rid of yet" - is
+   about inventory pressure during a single hero's life, so the
+   Vault empties along with everything else on Ascension, exactly
+   like the inventory it sits beside.
+   ============================================================ */
+
+function vaultCap(hero) {
+  const V = BALANCE.town.vault;
+  return Math.min(V.maxSlots, V.baseSlots + V.slotsPerUpgrade * (hero.vaultUpgrades || 0));
+}
+
+function vaultFree(hero) {
+  return vaultCap(hero) - (hero.vault || []).length;
+}
+
+/* null once the Vault is already at maxSlots - nothing more to buy. */
+function vaultUpgradeCost(hero) {
+  const V = BALANCE.town.vault;
+  if (vaultCap(hero) >= V.maxSlots) return null;
+  return Math.round(V.upgradeCoef * g(hero.deepest) * Math.pow(V.upgradeGrowth, hero.vaultUpgrades || 0));
+}
+
+function buyVaultSlots(hero) {
+  const cost = vaultUpgradeCost(hero);
+  if (cost === null) return { ok: false, reason: 'Already at maximum.' };
+  if (hero.gold < cost) return { ok: false, reason: 'Not enough gold.' };
+  hero.gold -= cost;
+  hero.vaultUpgrades = (hero.vaultUpgrades || 0) + 1;
+  save();
+  return { ok: true, cap: vaultCap(hero) };
+}
+
+/* Moves an item from the inventory into the Vault. Free, no cooldown
+   either direction (Rob: "freely send gear between... inventory and
+   storage"). An equipped item can't be stored - unequip it first.
+   Locked only guards Sell/Salvage (SPEC 11.9), never the Vault, so a
+   locked item can be stashed same as any other. */
+function vaultStore(hero, item) {
+  if (townIsEquipped(hero, item)) return { ok: false, reason: 'Unequip it first.' };
+  if (vaultFree(hero) <= 0) return { ok: false, reason: 'The Vault is full.' };
+  removeFromInventory(hero, item);
+  hero.vault.push(item);
+  save();
+  return { ok: true };
+}
+
+/* Moves an item from the Vault back into the inventory. Not through
+   addItem(hero, item) - addItem applies the auto-salvage filters and
+   records the Armory, and an item coming back from the Vault has
+   already been recorded and was never up for auto-salvage. */
+function vaultWithdraw(hero, item) {
+  if (inventoryFree(hero) <= 0) return { ok: false, reason: 'Inventory full.' };
+  const i = hero.vault.indexOf(item);
+  if (i >= 0) hero.vault.splice(i, 1);
+  hero.inventory.push(item);
+  save();
+  return { ok: true };
+}
+
+/* ============================================================
+   THE VAULT - UI, SPEC 13 / 19.4 idiom (townTile, townHeader,
+   town2RarityBorderStyle / town2ItemLabel / townBadge, the one-line
+   card used throughout the Forge's Salvage and Temper lists).
+   ============================================================ */
+
+function townVaultStatus(hero) {
+  return fmtNum((hero.vault || []).length) + ' / ' + fmtNum(vaultCap(hero)) + ' stored';
+}
+
+function townFindVaultItem(hero, id) {
+  return (hero.vault || []).find(function (i) { return i.id === id; }) || null;
+}
+
+function townRenderVault(hero) {
+  let out = townHeader('The Vault', 'vault') + townCurrencyRow(hero);
+
+  const vault = hero.vault || [];
+  const cap = vaultCap(hero);
+  const cost = vaultUpgradeCost(hero);
+  const atMax = cost === null;
+  const afford = !atMax && hero.gold >= cost;
+
+  out += '<div class="section-title">Storage</div>';
+  out += '<div class="row-between panel">' +
+    '<div>' +
+      '<div style="font-weight:600" class="num">' + fmtNum(vault.length) + ' / ' + fmtNum(cap) + ' slots</div>' +
+      '<div class="tiny muted">' + esc(TOWN_KEEPERS.vault) + ' keeps what you cannot carry.</div>' +
+    '</div>' +
+    '<button class="btn btn-sm' + (afford ? ' btn-primary' : '') + '" data-act="vaultUpgrade"' +
+      (atMax || !afford ? ' disabled' : '') + '>' +
+      (atMax ? 'Maximum' : fmtNum(cost) + ' gold') +
+    '</button>' +
+  '</div>';
+  if (atMax) {
+    out += '<p class="tiny muted" style="margin-top:6px">The Vault cannot hold more than ' + fmtNum(BALANCE.town.vault.maxSlots) + ' items.</p>';
+  } else if (!afford) {
+    out += '<p class="tiny muted" style="margin-top:6px">Not enough gold to add ' + fmtNum(BALANCE.town.vault.slotsPerUpgrade) + ' more slots.</p>';
+  }
+
+  out += '<div class="section-title">Stored</div>';
+  if (!vault.length) {
+    out += '<p class="small muted">Nothing stashed. Gear you send here stays safe until you take it back.</p>';
+  } else {
+    out += '<div class="stack-s">';
+    vault.forEach(function (item) {
+      out += '<div class="row-between panel" style="' + town2RarityBorderStyle(item) + '">' +
+        '<button type="button" class="row grow" data-act="vaultDetail" data-id="' + esc(item.id) + '" style="gap:8px;min-height:44px;text-align:left">' +
+          townBadge(item) + town2ChainIcon(item) +
+          '<div>' + town2ItemLabel(item) + '</div>' +
+        '</button>' +
+        '<button class="btn btn-sm" data-act="vaultTake" data-id="' + esc(item.id) + '">Take</button>' +
+      '</div>';
+    });
+    out += '</div>';
+  }
+
+  out += '<div class="section-title">In your pack</div>';
+  const carried = hero.inventory || [];
+  if (!carried.length) {
+    out += '<p class="small muted">Nothing worth storing right now.</p>';
+  } else {
+    const vaultIsFull = vaultFree(hero) <= 0;
+    out += '<div class="stack-s">';
+    carried.forEach(function (item) {
+      out += '<div class="row-between panel" style="' + town2RarityBorderStyle(item) + '">' +
+        '<button type="button" class="row grow" data-act="detail" data-id="' + esc(item.id) + '" style="gap:8px;min-height:44px;text-align:left">' +
+          townBadge(item) + town2ChainIcon(item) +
+          '<div>' + town2ItemLabel(item) + '</div>' +
+        '</button>' +
+        '<button class="btn btn-sm" data-act="vaultPut" data-id="' + esc(item.id) + '"' +
+          (vaultIsFull ? ' disabled' : '') + '>Store</button>' +
+      '</div>';
+    });
+    out += '</div>';
+  }
+
+  return out;
+}
+
+/* The Town view's dispatcher is declared several times across the
+   build phases, so rather than guess which copy is live, this wraps
+   whichever one ended up on VIEWS.town and hands everything it does
+   not own straight back - same pattern the Chapel Offerings feature
+   uses just above this. Opening the place itself needs no new case:
+   the hub's Vault tile is built with townTile(), whose generic
+   data-act="open" / data-place="vault" is already handled by the
+   base onAct. */
+(function () {
+  const inherited = VIEWS.town.onAct;
+  VIEWS.town.onAct = function (act, node, ev) {
+    if (act === 'vaultPut') {
+      const hero = state && state.hero;
+      if (!hero) return;
+      const item = townFindInvItem(hero, node.dataset.id);
+      if (!item) return;
+      const r = vaultStore(hero, item);
+      if (!r.ok) toast(r.reason); else toast('Stored in the Vault.');
+      refresh();
+      return;
+    }
+
+    if (act === 'vaultTake') {
+      const hero = state && state.hero;
+      if (!hero) return;
+      const item = townFindVaultItem(hero, node.dataset.id);
+      if (!item) return;
+      const r = vaultWithdraw(hero, item);
+      if (!r.ok) toast(r.reason); else toast('Back in your pack.');
+      refresh();
+      return;
+    }
+
+    if (act === 'vaultDetail') {
+      const hero = state && state.hero;
+      if (!hero) return;
+      const item = townFindVaultItem(hero, node.dataset.id);
+      if (!item) return;
+      town2OpenItemDetail(hero, item);
+      return;
+    }
+
+    if (act === 'vaultUpgrade') {
+      const hero = state && state.hero;
+      if (!hero) return;
+      const cost = vaultUpgradeCost(hero);
+      if (cost === null) { toast('The Vault is already at maximum.'); return; }
+      if (hero.gold < cost) { toast('Not enough gold.'); return; }
+      confirmSheet({
+        title: 'Expand the Vault?',
+        body: 'Adds ' + fmtNum(BALANCE.town.vault.slotsPerUpgrade) + ' storage slots for ' +
+          fmtNum(cost) + ' gold. This cannot be undone.',
+        yes: 'Expand',
+        onYes: function () {
+          const r = buyVaultSlots(hero);
+          if (!r.ok) { toast(r.reason); return; }
+          toast('The Vault now holds ' + fmtNum(r.cap) + '.');
+          refresh();
+        }
+      });
+      return;
+    }
+
     return inherited.call(this, act, node, ev);
   };
 })();
