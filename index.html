@@ -347,6 +347,28 @@ ul{ margin:0; padding:0; list-style:none; }
   border:1px solid currentColor;
 }
 
+/* ---- drop reveals: the results sheet's showcase for a unique or set piece ---- */
+.showcase-card{
+  background:var(--crypt); border-radius:var(--radius);
+  padding:18px 16px; margin-bottom:14px; text-align:center;
+}
+.showcase-row{ display:flex; align-items:center; justify-content:center; gap:6px; margin-bottom:6px; }
+.showcase-name{ font-size:1.25rem; font-weight:700; line-height:1.3; margin:2px 0; word-break:break-word; }
+.showcase-slot{ font-size:.875rem; color:var(--ash); }
+.showcase-power{ font-size:.875rem; color:var(--bone); line-height:1.5; margin:8px 0 0; }
+.showcase-new{ font-size:.875rem; font-weight:600; color:var(--corona); margin-top:10px; }
+/* One pulse in the item's rarity colour (--glow, set per item). Its length
+   comes from --dur, which is 0ms under reduced motion, so it vanishes there
+   and the rarity border is left as the static highlight. */
+.showcase-glow{ animation:showcase-pulse calc(var(--dur) * 5) var(--ease) 1 both; }
+@keyframes showcase-pulse{
+  0%   { box-shadow:0 0 0 0 var(--glow, transparent); }
+  35%  { box-shadow:0 0 26px 4px var(--glow, transparent); }
+  100% { box-shadow:0 0 0 0 var(--glow, transparent); }
+}
+/* Marks a unique or set find in the descent log. */
+.ico-mark{ width:14px; height:14px; vertical-align:-0.15em; margin-right:1px; }
+
 /* CLAUDE.md: every tap target is at least 44px tall. */
 button[data-act]{ min-height:44px; }
 #tabs .tab{ min-height:var(--tab-h); }
@@ -811,6 +833,42 @@ const BALANCE = {
     championMult: 1.3,
     godMult: 1.3
   },
+
+  /* --- Deep Guardians and strata (SCOPES.md 1) ---
+     Below the story, every ten floors is a named stratum with a Guardian at
+     its bottom. Each Deep Guardian reuses one of the four story Guardians'
+     tests, so the maths is proven; only the weight is its own, tuned so a
+     par hero spends about what the story Guardians cost (68-75% of the
+     pool). A first kill pays Renown, Starshards and a rare-or-better item.
+     It never pays a skill point - one every ten floors forever would fill
+     every tree - nor a lore page, since every floor below 40 is Act IV. */
+  deep: {
+    firstFloor: 50,
+    every: 10,
+    storyEnds: 40,
+    namedTo: 100,            // below this, The Unnamed Deep
+    signatureWeight: 4,      // a stratum's signature omen, against 1 for the rest of its type
+    firstKillRenown: 15,
+    firstKillShards: 3,      // plus 1 for every shardsPerFloors floors
+    shardsPerFloors: 20,
+    weights: { stonebound: 10, drummer: 10, onebefore: 10, hush: 12, hearthkeeper: 10, stairwright: 10 }
+  },
+
+  /* --- Wandering Horror twists (SCOPES.md 3) ---
+     Each named Horror bends its own encounter one way. Text lives in HORRORS;
+     the numbers live here. Only the encounter itself is touched, except that
+     Mother of Worms brings extra packs onto the path when it is rolled. */
+  horrorFx: {
+    hulk:        { costMult: 1.4, extraItems: 1 },
+    worms:       { costMult: 0.8, brood: 2 },
+    stag:        { timeMult: 0.5, namedWeightMult: 4 },   // unique and set weights, instead of the usual 2
+    smolder:     { goldMult: 3 },
+    friar:       { lorePage: true },
+    chainwraith: { noCrit: true, starshards: 2 },
+    bellmaw:     { costMult: 1.25, ilvlBonus: 5 },
+    rot:         { recoveryTest: true }
+  },
+  bestiary: { firstKillRenown: 5 },
 
   /* --- SPEC 10.1: skill tree --- */
   tree: {
@@ -2831,6 +2889,13 @@ const ACHIEVEMENTS = {
                desc:'Reach floor 100',
                check:{ k:'deepest', value:100 },
                reward:{ k:'title', title:'abyssal' } },
+  deep_first: { id:'deep_first', name:'Beneath the Story', renown:20,
+                desc:'Defeat a Deep Guardian',
+                check:{ k:'deep_guardians', value:1 } },
+  deep_all: { id:'deep_all', name:'Warden of the Deep', renown:40,
+              desc:'Defeat all six Deep Guardians',
+              check:{ k:'deep_guardians', value:6 },
+              reward:{ k:'title', title:'deepwarden' } },
   warden_25: { id:'warden_25', name:"Warden's Rest", renown:15,
                desc:'Defeat the Hollow Warden 25 times',
                check:{ k:'guardian_kills', guardian:'warden', value:25 } },
@@ -2845,6 +2910,10 @@ const ACHIEVEMENTS = {
                  desc:'Defeat 100 Wandering Horrors',
                  check:{ k:'horrors', value:100 },
                  reward:{ k:'title', title:'horrorbane' } },
+  bestiary: { id:'bestiary', name:'Every Name Known', renown:30,
+              desc:'Defeat each of the eight named Wandering Horrors',
+              check:{ k:'horrors_named', value:8 },
+              reward:{ k:'title', title:'huntmaster' } },
   unbroken: { id:'unbroken', name:'The Unbroken', renown:20,
               desc:'Clear 10 descents in a row without falling',
               check:{ k:'clear_streak', value:10 },
@@ -2924,6 +2993,8 @@ const TITLES = {
   abyssal:      { id:'abyssal',      name:'the Abyssal',     from:'reach_100' },
   choirbreaker: { id:'choirbreaker', name:'Choirbreaker',    from:'vael_25' },
   horrorbane:   { id:'horrorbane',   name:'the Horrorbane',  from:'horrors_100' },
+  huntmaster:   { id:'huntmaster',   name:'the Huntmaster',  from:'bestiary' },
+  deepwarden:   { id:'deepwarden',   name:'the Deepwarden',  from:'deep_all' },
   unbroken:     { id:'unbroken',     name:'the Unbroken',    from:'unbroken' },
   gilded:       { id:'gilded',       name:'the Gilded',      from:'gilded' },
   defiant:      { id:'defiant',      name:'the Defiant',     from:'defiant' },
@@ -4031,10 +4102,125 @@ const GUARDIAN_NAMES = {
 };
 
 /* SPEC 9.2 - each Wandering Horror takes a name by seed. */
-const HORROR_NAMES = [
-  'The Wailing Hulk', 'Mother of Worms', 'The Glass Stag', 'Old Smolder',
-  'The Faceless Friar', 'The Chainwraith', 'The Bellmaw', 'Grandmother Rot'
+/* The eight named Wandering Horrors (SPEC 9.2, SCOPES.md 3). The order is
+   fixed: a Horror is picked from HORROR_NAMES by index, so reordering would
+   change which Horror an existing seed rolls. Twist numbers are in
+   BALANCE.horrorFx. */
+const HORROR_ORDER = ['hulk', 'worms', 'stag', 'smolder', 'friar', 'chainwraith', 'bellmaw', 'rot'];
+const HORRORS = {
+  hulk:        { id:'hulk',        name:'The Wailing Hulk',
+                 twist:'Costs 40% more HP; drops a third item',
+                 lore:'You hear it floors before you see it. The miners took the sound for the mountain settling.' },
+  worms:       { id:'worms',       name:'Mother of Worms',
+                 twist:'Costs 20% less, but her brood comes first: two extra packs',
+                 lore:'Where she has passed, the floor keeps moving for hours. Nothing she leaves behind stays small.' },
+  stag:        { id:'stag',        name:'The Glass Stag',
+                 twist:'Takes half the time; unique and set weights ×4',
+                 lore:'It crosses the black glass without a sound and leaves no mark on it. Those who follow it come back carrying something.' },
+  smolder:     { id:'smolder',     name:'Old Smolder',
+                 twist:'Gold ×3',
+                 lore:'It was burning before the town had a name, and it has never once run short of fuel.' },
+  friar:       { id:'friar',       name:'The Faceless Friar',
+                 twist:'Drops a missing lore page for the act, if one is missing',
+                 lore:'It carries pages it did not write, and gives them up only when it has no hands left to hold them.' },
+  chainwraith: { id:'chainwraith', name:'The Chainwraith',
+                 twist:"Can't be crit; drops 2 Starshards",
+                 lore:'It is made of links never forged for anything living to wear. It does not flinch, because there is nothing in it to flinch.' },
+  bellmaw:     { id:'bellmaw',     name:'The Bellmaw',
+                 twist:'Costs 25% more; its items roll 5 item levels higher',
+                 lore:'Its mouth rings like a struck bell. Whatever it swallows comes back up heavier than it went down.' },
+  rot:         { id:'rot',         name:'Grandmother Rot',
+                 twist:'Recovery lowers what it costs',
+                 lore:'She is never in a hurry. What she wears away, rest puts back.' }
+};
+const HORROR_NAMES = HORROR_ORDER.map(function (id) { return HORRORS[id].name; });
+
+/* A Horror's id from its name, for paths rolled before Horrors carried one. */
+function horrorIdForName(name) {
+  for (const id of HORROR_ORDER) if (HORRORS[id].name === name) return id;
+  return null;
+}
+function horrorIdOf(enc) {
+  if (!enc || enc.kind !== 'horror') return null;
+  return enc.horrorId || horrorIdForName(enc.name);
+}
+/* The twist numbers for this encounter; an empty object for anything that
+   is not a named Horror, so callers never need to check. */
+function horrorFxOf(enc) {
+  const id = horrorIdOf(enc);
+  return (id && BALANCE.horrorFx[id]) || {};
+}
+
+/* ---- Deep Guardians (SCOPES.md 1) ----
+   One at the bottom of each stratum below the story. `test` names the story
+   Guardian whose cost maths it reuses. Past floor 100 they return in the
+   same order, as distinct kills, so the endless pit keeps its milestones. */
+const DEEP_GUARDIAN_ORDER = ['stonebound', 'drummer', 'onebefore', 'hush', 'hearthkeeper', 'stairwright'];
+const DEEP_GUARDIANS = {
+  stonebound:   { id:'stonebound',   name:'The Stonebound',    test:'warden',
+                  line:'It grew into the rock instead of cutting through it.' },
+  drummer:      { id:'drummer',      name:'The Drummer Below', test:'vael',
+                  line:'The slow pull on the chains keeps time with something. This is what.' },
+  onebefore:    { id:'onebefore',    name:'The One Before',    test:'champion',
+                  line:'The marks in the glass were old when the First Champion found them. It made them.' },
+  hush:         { id:'hush',         name:'The Hush',          test:'god',
+                  line:'Something down here speaks. Something else keeps it quiet.' },
+  hearthkeeper: { id:'hearthkeeper', name:'The Hearthkeeper',  test:'warden',
+                  line:'Someone has kept a fire burning this deep for a very long time.' },
+  stairwright:  { id:'stairwright',  name:'The Stairwright',   test:'vael',
+                  line:'One hand cut every stair from the surface down. It is still cutting.' }
+};
+/* What each test asks of the hero, for the Descend tab. */
+const GUARDIAN_TEST_TEXT = {
+  warden: 'Guard', vael: 'Might', champion: 'Power and Recovery', god: 'Guard, Might and Recovery'
+};
+
+/* "stonebound_2" -> "stonebound". */
+function deepBaseId(id) { return typeof id === 'string' ? id.replace(/_\d+$/, '') : id; }
+function isDeepGuardian(id) { return !!DEEP_GUARDIANS[deepBaseId(id)]; }
+
+/* The Deep Guardian on floor f, or null. Its name is also recorded in
+   GUARDIAN_NAMES so every screen that already names Guardians by id keeps
+   working without knowing about the deep ones. */
+function deepGuardianOnFloor(f) {
+  const D = BALANCE.deep;
+  if (f < D.firstFloor || (f - D.firstFloor) % D.every !== 0) return null;
+  const k = (f - D.firstFloor) / D.every;
+  const base = DEEP_GUARDIAN_ORDER[k % DEEP_GUARDIAN_ORDER.length];
+  const cycle = Math.floor(k / DEEP_GUARDIAN_ORDER.length) + 1;
+  const id = cycle > 1 ? base + '_' + cycle : base;
+  const def = DEEP_GUARDIANS[base];
+  if (!GUARDIAN_NAMES[id]) GUARDIAN_NAMES[id] = cycle > 1 ? def.name + ', Returned' : def.name;
+  return { id: id, base: base, floor: f, weight: D.weights[base], factor: def.test,
+           storyId: null, skillPoint: 0, deep: true };
+}
+
+/* ---- Strata (SCOPES.md 1) ----
+   The deep pit's answer to acts: a name for every ten floors below the story,
+   and an omen that turns up more often there. Each echoes the Echo card at
+   the bottom of its stratum. Past floor 100 there is only The Unnamed Deep. */
+const STRATA = [
+  { id:'uncut',     name:'The Uncut Stone',    minFloor:41, maxFloor:50,  signature:'twisting_tunnels' },
+  { id:'pulse',     name:'The Pulse',          minFloor:51, maxFloor:60,  signature:'swarm' },
+  { id:'tally',     name:'The Tally Halls',    minFloor:61, maxFloor:70,  signature:'cache_of_the_fallen' },
+  { id:'listening', name:'The Listening Dark', minFloor:71, maxFloor:80,  signature:'quiet_halls' },
+  { id:'warm',      name:'The Warm Galleries', minFloor:81, maxFloor:90,  signature:'wellspring' },
+  { id:'stair',     name:'The Endless Stair',  minFloor:91, maxFloor:100, signature:'starfall_surge' }
 ];
+const UNNAMED_DEEP = { id:'unnamed', name:'The Unnamed Deep', signature:null };
+
+function stratumForFloor(f) {
+  if (f <= BALANCE.deep.storyEnds) return null;
+  for (const s of STRATA) if (f >= s.minFloor && f <= s.maxFloor) return s;
+  return UNNAMED_DEEP;
+}
+/* The line under the floor number: the act on the story's floors, the
+   stratum below them. Lore still follows actForFloor, where every floor
+   below 40 is Act IV. */
+function floorLabel(f) {
+  const s = stratumForFloor(f);
+  return s ? s.name : actForFloor(f).display;
+}
 
 function ascensions() { return (state && state.account && state.account.ascensions) || 0; }
 
@@ -4062,9 +4248,12 @@ function actForFloor(f) {
   for (const a of ACTS) if (f >= a.minFloor && f <= a.maxFloor) return a;
   return ACTS[ACTS.length - 1];
 }
+/* The story Guardians first, then the Deep Guardians below them. Deep ones
+   are kept out of BALANCE.guardians on purpose: totalSkillPoints counts only
+   what is listed there, which is what keeps them from granting points. */
 function guardianOnFloor(f) {
   for (const id in BALANCE.guardians) if (BALANCE.guardians[id].floor === f) return BALANCE.guardians[id];
-  return null;
+  return deepGuardianOnFloor(f);
 }
 function familiesFor(f) {
   for (const b of FAMILY_BANDS) if (f >= b.minFloor && f <= b.maxFloor) return b.families;
@@ -4120,6 +4309,9 @@ function rollOmens(rng, f, allowHorror, opts) {
   }
 
   const weights = omenTypeWeights(f);
+  // Below the story, each stratum's signature omen turns up more often.
+  const stratum = stratumForFloor(f);
+  const signature = stratum ? stratum.signature : null;
   let guard = 0;
   while (chosen.length < slots && guard < 400) {
     guard++;
@@ -4132,6 +4324,10 @@ function rollOmens(rng, f, allowHorror, opts) {
       // Gilded Path: Glittering Veins is twice as likely among boons.
       id = rng.weighted(OMENS_BY_TYPE.boon.map(function (b) {
         return [b, b === 'glittering_veins' ? 2 : 1];
+      }));
+    } else if (signature && OMENS_BY_TYPE[type].indexOf(signature) >= 0) {
+      id = rng.weighted(OMENS_BY_TYPE[type].map(function (o) {
+        return [o, o === signature ? BALANCE.deep.signatureWeight : 1];
       }));
     } else {
       id = rng.pick(OMENS_BY_TYPE[type]);
@@ -4197,8 +4393,16 @@ function rollEncounters(seed, f, omenIds) {
   if (gd) {
     shuffled.push({ kind: 'guardian', guardianId: gd.id, weight: gd.weight });
   } else if (fx.horror) {
-    shuffled.push({ kind: 'horror', weight: E.weights.horror,
-                    name: rngFrom(seed + ':horrorname').pick(HORROR_NAMES) });
+    const hname = rngFrom(seed + ':horrorname').pick(HORROR_NAMES);
+    const hid = horrorIdForName(hname);
+    // Mother of Worms brings her brood: extra packs just before her. They
+    // come from their own stream, so every other path rolls exactly as it did.
+    const brood = (BALANCE.horrorFx[hid] && BALANCE.horrorFx[hid].brood) || 0;
+    const brng = rngFrom(seed + ':brood');
+    for (let i = 0; i < brood; i++) {
+      shuffled.push({ kind: 'pack', family: brng.pick(families), weight: E.weights.pack });
+    }
+    shuffled.push({ kind: 'horror', weight: E.weights.horror, name: hname, horrorId: hid });
   }
 
   for (const e of shuffled) e.name = encounterName(e);
@@ -4717,13 +4921,18 @@ function buildTimeline(snap, floor, path, startAt) {
     let crit = critRng.next() < critChance;
     // The Smiling Mask: the first three encounters of every descent always crit.
     if (snap.specials.smiling_mask && timeline.length < 3) crit = true;
-    const len = slot * (crit ? BALANCE.time.critSlotMult : 1);
+    // A named Horror's twist: the Chainwraith can't be crit (that outranks
+    // the Mask), and the Glass Stag passes in half the time.
+    const hfx = horrorFxOf(enc);
+    if (hfx.noCrit) crit = false;
+    const len = slot * (crit ? BALANCE.time.critSlotMult : 1) * (hfx.timeMult || 1);
     timeline.push({
       index: i,
       kind: enc.kind,
       name: enc.name,
       family: enc.family || null,
       guardianId: enc.guardianId || null,
+      horrorId: horrorIdOf(enc),
       weight: enc.weight,
       startsAt: t,
       endsAt: t + len,
@@ -4741,10 +4950,12 @@ function guardianFactor(gid, D, st) {
   const M = BALANCE.guardianMath;
   const rec = 1 + st.recovery / 100;
   const P = st.power;
-  if (gid === 'warden') return D / Math.max(st.guard, 0.0001);
-  if (gid === 'vael') return (D / P) * clamp(D / Math.max(st.might, 0.0001), M.vaelClampLo, M.vaelClampHi);
-  if (gid === 'champion') return (D / P) * M.championMult / rec;
-  if (gid === 'god') return Math.sqrt(D / Math.max(st.guard, 0.0001)) *
+  // A Deep Guardian takes the test of the story Guardian it is modelled on.
+  const test = isDeepGuardian(gid) ? DEEP_GUARDIANS[deepBaseId(gid)].test : gid;
+  if (test === 'warden') return D / Math.max(st.guard, 0.0001);
+  if (test === 'vael') return (D / P) * clamp(D / Math.max(st.might, 0.0001), M.vaelClampLo, M.vaelClampHi);
+  if (test === 'champion') return (D / P) * M.championMult / rec;
+  if (test === 'god') return Math.sqrt(D / Math.max(st.guard, 0.0001)) *
                              Math.sqrt(D / Math.max(st.might, 0.0001)) * M.godMult / rec;
   return D / P;
 }
@@ -4756,13 +4967,18 @@ function encounterCost(snap, ctx, enc, floor, seed, opts) {
   const D = dangerOf(floor) * (1 - dangerReductionFor(snap, ctx, enc));
   const atPar = parHp(floor) * BALANCE.cost.atParCoef * enc.weight;
 
-  const factor = enc.guardianId
+  const hfx = horrorFxOf(enc);
+  let factor = enc.guardianId
     ? guardianFactor(enc.guardianId, D, st)
     : D / Math.max(st.power, 0.0001);
+  // Grandmother Rot: Recovery lowers her cost. At 0% Recovery she costs what
+  // any Horror does, so she is never harsher than the baseline.
+  if (hfx.recoveryTest) factor /= (1 + st.recovery / 100);
 
   let cost = atPar * factor;
   if (floor <= BALANCE.cost.shallowMaxFloor) cost *= BALANCE.cost.shallowMult;
   cost *= snap.fx.cost;
+  if (hfx.costMult) cost *= hfx.costMult;
   cost *= (1 - Math.min(costReductionFor(snap, ctx, enc, st), BALANCE.caps.costRed));
 
   // crit multiplier, adjustable by nodes (Vital Strikes, Opportunist - Phase 2)
@@ -4831,6 +5047,8 @@ function encounterRewards(snap, ctx, enc, floor, seed) {
   }
   // Clean Kill doubles a crit's gold.
   if (snap.specials.clean_kill && enc.crit) goldMult *= 2;
+  const hfx = horrorFxOf(enc);
+  if (hfx.goldMult) goldMult *= hfx.goldMult;          // Old Smolder
 
   const gold = Math.round(
     R.goldCoef * g(floor) * enc.weight * (1 + goldFrac) *
@@ -4843,9 +5061,11 @@ function encounterRewards(snap, ctx, enc, floor, seed) {
   const dropMult = (1 + findFrac) * snap.fx.item * rewardMult(floor);
   const items = [];
   const rarityMults = rarityMultsFor(snap, ctx, enc);
+  // The Bellmaw's items roll higher than the floor they came from.
+  const dropIlvl = floor + (hfx.ilvlBonus || 0);
   function drop(opts) {
     items.push(rollItem(rng, Object.assign({
-      floor: floor, ilvl: floor, classId: snap.classId,
+      floor: floor, ilvl: dropIlvl, classId: snap.classId,
       find: findFrac, rarityMults: rarityMults
     }, opts || {})));
   }
@@ -4859,6 +5079,7 @@ function encounterRewards(snap, ctx, enc, floor, seed) {
     let n = enc.kind === 'horror' ? R.drops.horrorCount : R.drops.guardianCount;
     // The Lure: Wandering Horrors drop one extra item.
     if (enc.kind === 'horror' && snap.specials.the_lure) n += 1;
+    n += hfx.extraItems || 0;                            // The Wailing Hulk
     for (let i = 0; i < n; i++) drop(i === 0 ? { minRarity: 'rare' } : {});
   }
   // Lightfinger Bracers: a crit against an elite drops one extra item.
@@ -4876,7 +5097,8 @@ function encounterRewards(snap, ctx, enc, floor, seed) {
   }
 
   let starshards = 0;
-  if (enc.kind === 'horror') starshards = rng.int(R.starshards.horror[0], R.starshards.horror[1]);
+  if (enc.kind === 'horror') starshards = rng.int(R.starshards.horror[0], R.starshards.horror[1]) +
+                                          (hfx.starshards || 0);   // The Chainwraith
   if (enc.kind === 'guardian') starshards = rng.int(R.starshards.guardian[0], R.starshards.guardian[1]);
   if (starshards > 0) {
     for (const entry of ctx.effects) {
@@ -4956,12 +5178,17 @@ function grantLorePage(page) {
    for finishing the story. One page keeps the guarantee that a Guardian is
    worth something to the Codex without settling the whole act. */
 function rollLorePages(enc, floor, rng) {
+  // Deep Guardians give no pages: every floor below 40 is Act IV, and a
+  // Guardian every ten floors would hand that act over by itself.
+  if (enc.kind === 'guardian' && isDeepGuardian(enc.guardianId)) return [];
   const act = actForFloor(floor);
   if (!act) return [];
   const missing = missingLorePages(act.id);
   if (!missing.length) return [];
 
-  if (enc.kind !== 'guardian') {
+  // A Guardian always yields a page, and so does the Faceless Friar.
+  const guaranteed = enc.kind === 'guardian' || !!horrorFxOf(enc).lorePage;
+  if (!guaranteed) {
     let chance = 0;
     if (enc.kind === 'elite') chance = BALANCE.lore.eliteChance;
     else if (enc.kind === 'horror') chance = BALANCE.lore.horrorChance;
@@ -4994,7 +5221,11 @@ function rarityMultsFor(snap, ctx, enc) {
     const e = entry.e;
     if (e.k === 'rarity_mult') m[e.rarity] = (m[e.rarity] || 1) * e.value;
   }
-  if (enc && enc.kind === 'horror') { m.unique *= 2; m.set *= 2; }
+  // Horrors double unique and set weights; the Glass Stag quadruples them.
+  if (enc && enc.kind === 'horror') {
+    const k = horrorFxOf(enc).namedWeightMult || 2;
+    m.unique *= k; m.set *= k;
+  }
   // Dark Bargain doubles the rare weight on the descent it primed.
   if (snap.specials.dark_bargain) m.rare *= 2;
   // Star-Touched and Starbound arrive as rarity_mult effects above.
@@ -5116,20 +5347,20 @@ function tallyAutoSalvage(bucket, res) {
    the Armory learns about it (SPEC 17.4) - recording it at each call site
    meant a path could be added later that quietly forgot to. */
 function addItem(hero, item) {
-  recordArmory(item);
+  const firstFind = recordArmory(item);
   if (autoSalvages(item)) {
     const y = salvageYield(item);
     hero.ash += y.ash;
     hero.starshards += y.shards;
     contractEvent('salvage', { count: 1 });
-    return { added: false, salvaged: y, auto: true };
+    return { added: false, salvaged: y, auto: true, firstFind: firstFind };
   }
-  if (inventoryFree(hero) > 0) { hero.inventory.push(item); return { added: true }; }
+  if (inventoryFree(hero) > 0) { hero.inventory.push(item); return { added: true, firstFind: firstFind }; }
   const y = salvageYield(item);
   hero.ash += y.ash;
   hero.starshards += y.shards;
   contractEvent('salvage', { count: 1 });
-  return { added: false, salvaged: y };
+  return { added: false, salvaged: y, firstFind: firstFind };
 }
 
 /* ============================================================
@@ -5244,16 +5475,39 @@ function applyEncounter(hero, d, enc) {
   d.rewards.gold += rw.gold;
   d.rewards.xp += rw.xp;
   d.rewards.starshards += rw.starshards;
+  // addItem records the Armory itself, and reports whether this was a first
+  // find - a separate recordArmory call here would always pre-empt that.
   for (const it of rw.items) {
-    recordArmory(it);
     const res = addItem(hero, it);
-    if (res.added) d.rewards.items.push(it);
-    else tallyAutoSalvage(d.rewards.autoSalvaged, res);
+    if (res.added) {
+      d.rewards.items.push(it);
+      if (res.firstFind) {
+        // A descent saved before this existed has no firstFinds field.
+        if (!d.rewards.firstFinds) d.rewards.firstFinds = [];
+        d.rewards.firstFinds.push(it.id);
+      }
+    } else {
+      tallyAutoSalvage(d.rewards.autoSalvaged, res);
+    }
   }
 
   if (enc.kind === 'elite') { d.stacks.elitesKilled++; contractEvent('elite'); }
   if (enc.crit) d.stacks.crits++;
-  if (enc.kind === 'horror') { contractEvent('horror'); bumpTotal('horrors'); }
+  if (enc.kind === 'horror') {
+    contractEvent('horror'); bumpTotal('horrors');
+    // The Bestiary counts each named Horror, account-wide. The first kill of
+    // each one pays Renown and fills its page.
+    const hid = horrorIdOf(enc);
+    if (hid) {
+      const first = totalOf('horror:' + hid) === 0;
+      bumpTotal('horror:' + hid);
+      if (first) {
+        const ren = grantRenown(BALANCE.bestiary.firstKillRenown, 'bestiary');
+        if (!d.bestiaryNew) d.bestiaryNew = [];            // older saved descents lack it
+        d.bestiaryNew.push({ id: hid, renown: ren ? ren.amount : 0, unlocks: ren ? ren.unlocks : [] });
+      }
+    }
+  }
   if (enc.kind === 'guardian') bumpTotal('guardian:' + enc.guardianId);
   if (enc.kind === 'guardian' || enc.kind === 'horror') {
     hero.counters.bossesSlain = (hero.counters.bossesSlain || 0) + 1;
@@ -5394,6 +5648,7 @@ function endDescent(hero, outcome, killer) {
     gold: d.rewards.gold,
     xp: d.rewards.xp,
     items: d.rewards.items.slice(),
+    firstFinds: (d.rewards.firstFinds || []).slice(),
     starshards: d.rewards.starshards,
     autoSalvaged: d.rewards.autoSalvaged,
     levelUps: d.levelUps,
@@ -5407,8 +5662,17 @@ function endDescent(hero, outcome, killer) {
     hadBoss: d.timeline.some(function (e) { return e.kind === 'guardian' || e.kind === 'horror'; }),
     hpLeftPct: ctx.stats.maxHp > 0 ? (Math.max(0, d.hp) / ctx.stats.maxHp) * 100 : 0,
     killedBy: killer ? killer.name : null,
+    bestiaryNew: (d.bestiaryNew || []).map(function (b) { return b.id; }),
     log: d.log.slice()
   };
+
+  // Renown from new Bestiary pages was granted as each Horror fell; it is
+  // gathered here so the results sheet reports it with the rest.
+  for (const b of (d.bestiaryNew || [])) {
+    if (!b.renown) continue;
+    results.renown = (results.renown || 0) + b.renown;
+    results.renownUnlocks = (results.renownUnlocks || []).concat(b.unlocks || []);
+  }
 
   // The Deserter's Locket: retreating once at least 75% of the encounters
   // have resolved still opens the end chest (SPEC 12.2).
@@ -5418,10 +5682,13 @@ function endDescent(hero, outcome, killer) {
   if (outcome === 'clear' || locketChest) {
     const chest = chestRewards(snap, ctx, d.floor, d.seed);
     for (const it of chest) {
-      recordArmory(it);
       const res = addItem(hero, it);
-      if (res.added) results.items.push(it);
-      else tallyAutoSalvage(results.autoSalvaged, res);
+      if (res.added) {
+        results.items.push(it);
+        if (res.firstFind) results.firstFinds.push(it.id);
+      } else {
+        tallyAutoSalvage(results.autoSalvaged, res);
+      }
     }
   }
 
@@ -5431,7 +5698,27 @@ function endDescent(hero, outcome, killer) {
     if (gd) {
       const prior = hero.guardianKills[gd.id] || 0;
       hero.guardianKills[gd.id] = prior + 1;
-      if (prior === 0) {
+      if (prior === 0 && gd.deep) {
+        // A hero's first kill of a Deep Guardian: Renown, Starshards and a
+        // rare-or-better item. No skill point, no story card and no lore
+        // page (SCOPES.md 1).
+        const Dp = BALANCE.deep;
+        const ren = grantRenown(Dp.firstKillRenown, 'first kill');
+        if (ren) {
+          results.renown = (results.renown || 0) + ren.amount;
+          results.renownUnlocks = (results.renownUnlocks || []).concat(ren.unlocks);
+        }
+        const shards = Dp.firstKillShards + Math.floor(d.floor / Dp.shardsPerFloors);
+        results.starshards += shards;                      // credited to the hero below
+        results.deepFirstKill = { id: gd.id, shards: shards };
+        const drop = rollItem(rngFrom(d.seed + ':deepfirst'),
+          { floor: d.floor, ilvl: d.floor, classId: hero.classId, minRarity: 'rare' });
+        const res = addItem(hero, drop);
+        if (res.added) {
+          results.items.push(drop);
+          if (res.firstFind) results.firstFinds.push(drop.id);
+        }
+      } else if (prior === 0) {
         results.skillPoint = true;
         // SPEC 17.3 - the account's first kill of the First Champion dates
         // Aldric Venn's plaque.
@@ -5441,7 +5728,10 @@ function endDescent(hero, outcome, killer) {
         // SPEC 16.1 - each hero's first kill of a story Guardian pays Renown.
         const amount = BALANCE.renown.guardianFirstKill[gd.id] || 0;
         const ren = grantRenown(amount, 'first kill');
-        if (ren) { results.renown = (results.renown || 0) + amount; results.renownUnlocks = ren.unlocks; }
+        if (ren) {
+          results.renown = (results.renown || 0) + amount;
+          results.renownUnlocks = (results.renownUnlocks || []).concat(ren.unlocks);
+        }
         if (STORY_CARDS[gd.storyId] && state.account.codex.indexOf(gd.storyId) < 0) {
           state.account.codex.push(gd.storyId);
           results.storyCard = gd.storyId;
@@ -5454,7 +5744,10 @@ function endDescent(hero, outcome, killer) {
                        rollItem(wrng, { floor: d.floor, ilvl: d.floor,
                                         classId: hero.classId, minRarity: 'rare' });
           const res = addItem(hero, drop);
-          if (res.added) results.items.push(drop);
+          if (res.added) {
+            results.items.push(drop);
+            if (res.firstFind) results.firstFinds.push(drop.id);
+          }
         }
       }
     }
@@ -5738,14 +6031,19 @@ function forecast(hero, floor, pathIndex) {
   const built = buildTimeline(snap, floor, path, startAt);
 
   let min = 0, max = 0, expected = 0;
-  let expGold = 0, expXp = 0, expItems = 0;
+  let expGold = 0, expXp = 0, expItems = 0, timeSaved = 0;
   const R = BALANCE.rewards;
+  const slotMs = built.duration / Math.max(path.encounters.length, 1);
 
   for (const enc of built.timeline) {
     // HP-dependent effects use current HP (SPEC 7.6).
     const ctx = { effects: effectsAt(snap, enc.startsAt, []), hp: hp, elitesKilled: 0 };
     ctx.stats = statsAt(snap, ctx);
-    const critChance = clamp(ctx.stats.crit / 100, 0, BALANCE.caps.crit);
+    // A named Horror's twist has to show in the forecast too (pillar 9):
+    // the Chainwraith can't be crit, so no crit discount is expected on it.
+    const hfx = horrorFxOf(enc);
+    const critChance = hfx.noCrit ? 0 : clamp(ctx.stats.crit / 100, 0, BALANCE.caps.crit);
+    if (hfx.timeMult) timeSaved += slotMs * (1 - hfx.timeMult);
 
     min += encounterCost(snap, ctx, enc, floor, path.seed, { roll: BALANCE.cost.rollLo, forceNoCrit: true });
     max += encounterCost(snap, ctx, enc, floor, path.seed, { roll: BALANCE.cost.rollHi, forceNoCrit: true });
@@ -5755,13 +6053,14 @@ function forecast(hero, floor, pathIndex) {
     const st = ctx.stats;
     const goldFrac = (st.goldFind + st.fortune) / 100;
     const findFrac = (st.itemFind + st.fortune) / 100;
-    expGold += R.goldCoef * g(floor) * enc.weight * (1 + goldFrac) * snap.fx.gold * rewardMult(floor);
+    expGold += R.goldCoef * g(floor) * enc.weight * (1 + goldFrac) * snap.fx.gold * rewardMult(floor) *
+      (hfx.goldMult || 1);
     expXp += R.xpCoef * g(floor) * enc.weight * (1 + st.xpBonus / 100) * rewardMult(floor);
 
     const dropMult = (1 + findFrac) * snap.fx.item * rewardMult(floor);
     if (enc.kind === 'pack') expItems += Math.min(R.drops.packChance * dropMult, 1);
     else if (enc.kind === 'elite') expItems += R.drops.eliteCount + Math.min(R.drops.eliteExtraChance * dropMult, 1);
-    else if (enc.kind === 'horror') expItems += R.drops.horrorCount;
+    else if (enc.kind === 'horror') expItems += R.drops.horrorCount + (hfx.extraItems || 0);
     else if (enc.kind === 'guardian') expItems += R.drops.guardianCount;
   }
 
@@ -5773,7 +6072,7 @@ function forecast(hero, floor, pathIndex) {
     Math.min(R.drops.chestExtraChance * (1 + chestFind) * snap.fx.item * rewardMult(floor), 1);
 
   const critAvg = clamp(chestCtx.stats.crit / 100, 0, BALANCE.caps.crit);
-  const time = built.duration * (1 - BALANCE.forecast.critCostFactor * critAvg);
+  const time = built.duration * (1 - BALANCE.forecast.critCostFactor * critAvg) - timeSaved;
 
   // Risk (SPEC 7.6)
   let risk;
@@ -6032,12 +6331,15 @@ function recordDescent(hero, results) {
    ============================================================ */
 
 /* The Armory (SPEC 17.4) remembers every unique and set piece ever found. */
+/* Returns true only when this is the account's first find of the item,
+   so the results sheet can say "New to the Armory". */
 function recordArmory(item) {
-  if (!item) return;
+  if (!item) return false;
   const id = item.uniqueId || (item.rarity === 'set' ? item.name : null);
-  if (!id) return;
+  if (!id) return false;
   if (!state.account.armory) state.account.armory = [];
-  if (state.account.armory.indexOf(id) < 0) state.account.armory.push(id);
+  if (state.account.armory.indexOf(id) < 0) { state.account.armory.push(id); return true; }
+  return false;
 }
 function uniquesFound() {
   const found = state.account.armory || [];
@@ -6051,6 +6353,20 @@ function wearingFullSet(hero) {
   const counts = equippedSetCounts(hero);
   for (const id in counts) if (counts[id] >= 3) return true;
   return false;
+}
+
+/* How many of the eight named Horrors the account has killed. */
+function namedHorrorsKilled() {
+  let n = 0;
+  for (const id of HORROR_ORDER) if (totalOf('horror:' + id) > 0) n++;
+  return n;
+}
+/* How many of the six Deep Guardians the account has killed. Their later
+   returns past floor 100 are separate kills but not separate Guardians. */
+function deepGuardiansKilled() {
+  let n = 0;
+  for (const id of DEEP_GUARDIAN_ORDER) if (totalOf('guardian:' + id) > 0) n++;
+  return n;
 }
 
 function lorePagesFound() {
@@ -6082,6 +6398,8 @@ function achievementMet(check, hero, results) {
     case 'lore_pages':    return lorePagesFound() >= check.value;
     case 'ascensions':    return (acct.ascensions || 0) >= check.value;
     case 'class_depth':   return (getRecord('deepest', check.classId) || { value: 0 }).value >= check.value;
+    case 'horrors_named': return namedHorrorsKilled() >= check.value;
+    case 'deep_guardians':return deepGuardiansKilled() >= check.value;
     default:              return false;
   }
 }
@@ -7030,7 +7348,14 @@ function simulate(opts) {
   const rarityCounts = { common: 0, magic: 0, rare: 0, unique: 0, set: 0 };
   let deaths = 0, clears = 0;
 
+  /* Simulated descents run the real engine, and the real engine records
+     things on the account as it goes: the Armory, lifetime totals, contract
+     progress. save() is already blocked while simulating, but the changes
+     would sit in memory and the next real save would keep them - simulated
+     uniques in the Armory, inflated totals feeding achievements. So the
+     simulator works on a throwaway copy and the real state is put back. */
   const savedState = state;
+  state = JSON.parse(JSON.stringify(savedState));
   try {
     for (let i = 0; i < runs; i++) {
       const hero = opts.makeHero();
@@ -7909,8 +8234,20 @@ function renderRiteRow(hero) {
     '</div>';
 }
 
-/* Every floor the hero may pick, in labelled bands. The four acts name
-   floors 1-40; below that the pit has no acts, so it falls back to tens.
+/* Pillar 9: a named Horror's twist is shown on its path before the player
+   commits, alongside the "A Horror Stirs" omen chip. */
+function pathHorrorLine(path) {
+  const enc = (path.encounters || []).find(function (e) { return e.kind === 'horror'; });
+  const id = horrorIdOf(enc);
+  if (!id) return '';
+  return '<p class="small" style="margin:8px 0 0">' +
+    '<span style="font-weight:600">' + esc(HORRORS[id].name) + '</span>' +
+    '<span class="muted"> · ' + esc(HORRORS[id].twist) + '</span>' +
+  '</p>';
+}
+
+/* Every floor the hero may pick, in labelled bands: the four acts, then the
+   named strata, then The Unnamed Deep in tens.
    Returns [{ label, floors:[n,...] }]. */
 function floorBands(cap) {
   const bands = [];
@@ -7925,7 +8262,13 @@ function floorBands(cap) {
     const end = Math.min(start + 9, cap);
     const floors = [];
     for (let f = start; f <= end; f++) floors.push(f);
-    bands.push({ label: 'Floors ' + fmtNum(start) + '–' + fmtNum(end), floors: floors });
+    // A named stratum is labelled by name; The Unnamed Deep repeats, so its
+    // bands carry their floor range to tell them apart.
+    const s = stratumForFloor(start);
+    const label = s && s !== UNNAMED_DEEP
+      ? s.name
+      : UNNAMED_DEEP.name + ' · ' + fmtNum(start) + '–' + fmtNum(end);
+    bands.push({ label: label, floors: floors });
   }
   return bands;
 }
@@ -8001,7 +8344,7 @@ function renderTownDescend(hero) {
         'style="text-align:center;background:none;border:0;padding:4px 0;min-height:44px;color:inherit" ' +
         'aria-label="Choose a floor. Currently floor ' + f + '">' +
         '<div class="display" style="font-size:1.75rem;line-height:1.1">Floor ' + f + '</div>' +
-        '<div class="display" style="font-size:1rem;color:var(--ash)">' + esc(act.display) + '</div>' +
+        '<div class="display" style="font-size:1rem;color:var(--ash)">' + esc(floorLabel(f)) + '</div>' +
         (cap > 1 ? '<div class="tiny" style="color:var(--corona);margin-top:2px">Tap to choose</div>' : '') +
       '</button>' +
       '<button class="btn btn-ghost" data-act="floor" data-d="1" aria-label="Next floor" ' +
@@ -8011,8 +8354,15 @@ function renderTownDescend(hero) {
       '<span class="muted">Danger <span class="num" style="color:var(--bone)">' + fmtNum(dangerOf(f)) + '</span></span>' +
       (gd ? '<span class="risk risk-deadly">' + icon('ico-boss') + esc(GUARDIAN_NAMES[gd.id]) + '</span>' : '') +
     '</div>' +
+    // A Deep Guardian has no story card, so it is introduced here: one line
+    // of who it is, and the stat it tests.
+    (gd && gd.deep
+      ? '<p class="small muted" style="margin:8px 0 0">' + esc(DEEP_GUARDIANS[gd.base].line) +
+        ' It tests your ' + esc(GUARDIAN_TEST_TEXT[gd.factor]) + '.</p>'
+      : '') +
   '</div>';
 
+  html += renderNextGoals(hero);
 
   if (fallen) {
     html += '<div class="card" style="margin-top:10px;border-color:var(--blood-light)">' +
@@ -8037,6 +8387,7 @@ function renderTownDescend(hero) {
       '</div>' +
       (p.omens.length ? '<div class="chips" style="margin-top:8px">' +
         p.omens.map(omenChip).join('') + '</div>' : '') +
+      pathHorrorLine(p) +
     '</button>';
   }).join('');
 
@@ -8509,7 +8860,16 @@ function showResults(r) {
       }).join('') + '</div>'
     : '<p class="muted small" style="margin:0">Nothing worth carrying.</p>';
 
-  let body =
+  // The first unique or set piece found leads the sheet. It stays in the
+  // Found list below too, which remains the full record of the descent.
+  const showcaseItem = r.items.find(function (i) {
+    return i.rarity === 'unique' || i.rarity === 'set';
+  });
+  const showcaseHtml = showcaseItem
+    ? resultsShowcaseHtml(showcaseItem, (r.firstFinds || []).indexOf(showcaseItem.id) >= 0)
+    : '';
+
+  let body = showcaseHtml +
     '<div class="row wrap" style="gap:14px;margin-bottom:12px">' +
       '<span class="small num">' + icon('ico-hp') + ' -' + fmtNum(r.hpSpent) + ' HP</span>' +
       '<span class="small num">' + icon('ico-clock') + ' ' + fmtTime(r.timeTaken) + '</span>' +
@@ -8529,6 +8889,15 @@ function showResults(r) {
       (r.levelUps > 1 ? r.levelUps + ' levels. ' : '') + 'You have skill points to spend.</p>';
   }
   if (r.skillPoint) body += '<p class="small" style="color:var(--corona)">First kill: +1 skill point.</p>';
+  if (r.deepFirstKill) {
+    body += '<p class="small" style="color:var(--corona)">First kill of ' +
+      esc(GUARDIAN_NAMES[r.deepFirstKill.id] || 'a Deep Guardian') + ': +' +
+      fmtNum(r.deepFirstKill.shards) + ' Starshards.</p>';
+  }
+  if (r.bestiaryNew && r.bestiaryNew.length) {
+    body += '<p class="small" style="color:var(--corona)">New in the Bestiary: ' +
+      r.bestiaryNew.map(function (id) { return esc(HORRORS[id] ? HORRORS[id].name : id); }).join(', ') + '.</p>';
+  }
   if (r.bankedTask && r.bankedTask.amount > 0) {
     const t = taskDef(r.bankedTask.id);
     body += '<p class="small muted">' + esc(t ? t.name : 'The day’s work') + ' ended when you ' +
@@ -8614,12 +8983,17 @@ function showAway(facts) {
   if (facts.restocked) lines.push('The Market restocked.');
   if (!lines.length) lines.push('Nothing stirred while you were gone.');
 
+  // The haul by rarity, best item named first.
+  const itemsSummary = (facts.results && facts.results.items && facts.results.items.length)
+    ? awayItemsSummaryHtml(facts.results.items)
+    : '';
+
   openSheet({
     title: 'While you were away',
     body: '<p class="small muted">Away for ' + fmtTime(facts.away) + '.</p>' +
           '<div class="stack-s">' + lines.map(function (l) {
             return '<p class="small" style="margin:0">' + esc(l) + '</p>';
-          }).join('') + '</div>',
+          }).join('') + '</div>' + itemsSummary,
     foot: '<button class="btn btn-primary btn-block btn-lg" data-act="ok">Continue</button>',
     onAct: function (a) {
       if (a !== 'ok') return;
@@ -8815,6 +9189,111 @@ function heroSortRow() {
 
 function heroPowerDeltaSafe(hero, item) {
   try { return powerDelta(hero, item); } catch (e) { return 0; }
+}
+
+/* ============================================================
+   EQUIP PREVIEW - the item sheet's "what happens to me" block.
+   The sheet already lists the item's own numbers. This shows the hero's:
+   every stat before and after the swap, worked out by running heroStats on
+   a copy of the hero with the change made. That is the same calculation
+   the game uses, so percent affixes, class multipliers, set bonuses,
+   keystones and caps all land exactly as they would in play. For an item
+   already worn, it shows what taking it off would do instead.
+   ============================================================ */
+function heroEquipPreview(hero, item, removing) {
+  const before = heroStats(hero);
+  const clone = JSON.parse(JSON.stringify(hero));
+  clone.equipment[item.slot] = removing ? null : item;
+  return { before: before, after: heroStats(clone), clone: clone };
+}
+
+/* Set bonuses that would start or stop. The set block above shows what is
+   active now, not what would be after the swap. */
+function heroSetBonusChanges(hero, clone) {
+  const was = equippedSetCounts(hero), will = equippedSetCounts(clone);
+  const ids = Object.keys(was).concat(Object.keys(will)).filter(function (id, i, a) { return a.indexOf(id) === i; });
+  const out = [];
+  for (const id of ids) {
+    const s = SETS[id];
+    if (!s) continue;
+    for (const n of [2, 3]) {
+      const had = (was[id] || 0) >= n, has = (will[id] || 0) >= n;
+      if (has && !had) out.push({ gain: true,  text: s.name + ' (' + n + '): ' + s['bonus' + n].text });
+      if (had && !has) out.push({ gain: false, text: s.name + ' (' + n + '): ' + s['bonus' + n].text });
+    }
+  }
+  return out;
+}
+
+function heroEquipChangeBlock(hero, item, removing) {
+  const replaced = removing ? item : hero.equipment[item.slot];
+  const p = heroEquipPreview(hero, item, removing);
+  const B = p.before, A = p.after;
+
+  let intro;
+  if (removing) intro = 'If you take it off';
+  else intro = 'If you equip it';
+  let sub = '';
+  if (!removing) {
+    sub = replaced
+      ? 'Replaces ' + heroItemName(replaced) + '.'
+      : 'Fills your empty ' + heroSlotLabel[item.slot] + ' slot.';
+  }
+
+  // Every stat that moves, Power first. Whole numbers for the combat stats,
+  // percentages for the rest; a change too small to show is left out.
+  const rows = [];
+  ['power'].concat(heroCoreStats, heroPercentStats).forEach(function (key) {
+    const whole = key === 'power' || heroIsCore(key);
+    const b = whole ? Math.round(B[key] || 0) : (B[key] || 0);
+    const a = whole ? Math.round(A[key] || 0) : (A[key] || 0);
+    const d = a - b;
+    if (whole ? d === 0 : Math.abs(d) < 0.05) return;
+    const up = d > 0;
+    const fmt = whole ? fmtNum : fmtPct;
+    rows.push('<div class="row-between small" style="gap:8px;align-items:baseline' +
+        (key === 'power' ? ';font-weight:600' : '') + '">' +
+      '<span style="min-width:0">' + esc(heroStatLabel[key]) + '</span>' +
+      '<span class="num" style="white-space:nowrap;text-align:right">' +
+        '<span class="muted">' + fmt(b) + ' → </span>' + fmt(a) +
+        ' <span style="color:var(--' + (up ? 'corona' : 'blood-light') + ')">' +
+          (up ? '▲ ' : '▼ ') + fmt(Math.abs(d)) + '</span>' +
+      '</span>' +
+    '</div>');
+  });
+
+  // What Power means in play: an ordinary encounter's HP cost is divided by
+  // Power, so the cost changes by before / after. Guardians test other stats,
+  // hence "most".
+  let meaning = '';
+  if (B.power > 0 && A.power > 0) {
+    const change = (B.power / A.power - 1) * 100;
+    if (Math.abs(change) >= 0.5) {
+      meaning = '<p class="small" style="margin:6px 0 0">Most encounters would cost about ' +
+        fmtPct(Math.abs(change)) + (change < 0 ? ' less' : ' more') + ' HP.</p>';
+    }
+  }
+
+  // Set bonuses starting or stopping, and a unique power that would be lost.
+  const extras = [];
+  heroSetBonusChanges(hero, p.clone).forEach(function (c) {
+    extras.push('<div class="small" style="color:var(--' + (c.gain ? 'corona' : 'blood-light') + ')">' +
+      (c.gain ? '▲ Starts ' : '▼ Ends ') + esc(c.text) + '</div>');
+  });
+  if (replaced && replaced.rarity === 'unique' && replaced.uniqueId && UNIQUES[replaced.uniqueId]) {
+    extras.push('<div class="small" style="color:var(--blood-light)">▼ Loses ' +
+      esc(heroItemName(replaced)) + ': ' + esc(UNIQUES[replaced.uniqueId].power.text) + '</div>');
+  }
+
+  let html = '<div style="font-weight:600">' + esc(intro) + '</div>';
+  if (sub) html += '<div class="small muted" style="margin-top:2px">' + esc(sub) + '</div>';
+  if (rows.length) html += '<div class="stack-s" style="margin-top:8px">' + rows.join('') + '</div>';
+  html += meaning;
+  if (extras.length) html += '<div class="stack-s" style="margin-top:8px">' + extras.join('') + '</div>';
+  if (!rows.length && !extras.length) {
+    html += '<p class="small muted" style="margin:6px 0 0">Your stats would not change.</p>';
+  }
+  return html;
 }
 
 function heroSortedIndices(hero) {
@@ -11641,6 +12120,7 @@ function halls3RenderCodex() {
   const bits = ['Cards ' + cardsFound + ' of ' + HALLS2_ALL_CARDS.length];
   if (lorePages.length) bits.push('Pages ' + pagesFound + ' of ' + lorePages.length);
   bits.push('Echoes ' + echoesFound + ' of ' + echoFloors.length);
+  bits.push('Horrors ' + namedHorrorsKilled() + ' of ' + HORROR_ORDER.length);
 
   let html = '<p class="muted small" style="margin:10px 2px 0">' + esc(bits.join(' · ')) + '</p>';
 
@@ -11660,10 +12140,38 @@ function halls3RenderCodex() {
     }
   });
 
-  html += '<h3 class="display" style="font-size:1.125rem;margin:18px 0 8px">Echoes from Below</h3>';
+  // Collections take the reading face; the blackletter is kept for act
+  // names, which is all CLAUDE.md allows it for on this screen.
+  html += '<h3 style="font-size:1.125rem;margin:18px 0 8px">Echoes from Below</h3>';
   html += '<div class="card stack-s">' + echoFloors.map(halls3EchoRow).join('') + '</div>';
 
+  html += '<h3 style="font-size:1.125rem;margin:18px 0 8px">Bestiary</h3>';
+  html += '<div class="card stack-s">' + HORROR_ORDER.map(hallsBestiaryRow).join('') + '</div>';
+
   return html;
+}
+
+/* One named Wandering Horror (SCOPES.md 3). Unmet, it stays a locked row
+   and gives nothing away. Once killed, it shows its twist, its lore and how
+   many times the account has killed it. Found rows carry no icon, like the
+   rest of the Codex. */
+function hallsBestiaryRow(id) {
+  const h = HORRORS[id];
+  const kills = totalOf('horror:' + id);
+  if (!kills) {
+    return '<div class="row muted" style="min-height:44px">' +
+      icon('ico-lock') +
+      '<div class="grow">Unknown Horror</div>' +
+    '</div>';
+  }
+  return '<div class="row-indent" style="padding-top:6px;padding-bottom:6px">' +
+    '<div class="row-between" style="gap:10px">' +
+      '<span style="font-weight:600">' + esc(h.name) + '</span>' +
+      '<span class="tiny muted num" style="flex:0 0 auto">Slain ' + fmtNum(kills) + '</span>' +
+    '</div>' +
+    '<div class="small" style="margin-top:2px;color:var(--ash)">' + esc(h.twist) + '</div>' +
+    '<div class="small" style="margin-top:4px">' + esc(h.lore) + '</div>' +
+  '</div>';
 }
 
 /* ============================================================
@@ -12936,14 +13444,10 @@ function heroOpenItemSheet(hero, item, loc) {
     body += '<div class="small' + (has3 ? '' : ' muted') + '" style="margin-top:4px">(3) ' + esc(s.bonus3.text) + '</div>';
   }
 
+  // Your stats before and after, for every slot - relics included, since
+  // their stats reach the hero through the same calculation.
   body += '<div class="divider"></div>';
-  if (isThisEquipped) {
-    body += '<div class="small muted">Currently equipped.</div>';
-  } else if (item.slot === 'relic') {
-    body += heroRelicChangeBlock(hero, item);
-  } else {
-    body += '<div style="font-weight:600">' + powerArrow(powerDelta(hero, item)) + '</div>';
-  }
+  body += heroEquipChangeBlock(hero, item, isThisEquipped);
   body += '</div>';
 
   // Sell and Salvage live here now that the inventory card is a single line.
@@ -14420,6 +14924,12 @@ function achievementProgress(check, hero) {
         return clamped(rec ? rec.value : 0, check.value);
       }
 
+      case 'horrors_named':
+        return clamped(namedHorrorsKilled(), check.value);
+
+      case 'deep_guardians':
+        return clamped(deepGuardiansKilled(), check.value);
+
       // No meaningful running tally for these — deliberately untracked.
       case 'banes_cleared':
       case 'boss_low_hp':
@@ -14917,6 +15427,284 @@ function townRenderVault(hero) {
     return inherited.call(this, act, node, ev);
   };
 })();
+
+
+/* ---- The next-goal line, SCOPES.md §4 ----
+
+   A compact card between the floor stepper and the path cards on the
+   Descend tab, showing up to three tappable nudges in priority order:
+
+     1. Something to spend right now (unspent skill points, then
+        unspent Abyssal points — counted separately).
+     2. The next Guardian this hero hasn't beaten.
+     3. The unearned achievement closest to done.
+     4. Lore pages still missing in the act of the floor being viewed.
+
+   nextGoals(hero) is the pure selection logic (SPEC/CLAUDE.md "a pure
+   engine" spirit — no DOM, easy to test standalone). renderNextGoals()
+   turns its output into HTML, and the onAct wrapper below routes taps.
+   Reads only data that already exists; writes nothing, so it needs no
+   save() and no state.version bump. */
+
+/* The first floor at/after hero.deepest carrying a Guardian this hero
+   has not yet killed. Bounded scan (10 floors) rather than an infinite
+   one — Deep Guardians below floor 40 are a later feature and will be
+   picked up automatically through guardianOnFloor(), same as the
+   floors 10/20/30/40 story Guardians, since this never hardcodes which
+   floors carry one. Returns null if none turns up in range (normal
+   once every Guardian within reach is cleared). */
+function nextGuardianFloor(hero) {
+  if (!hero) return null;
+  const from = hero.deepest || 1;
+  for (let f = from; f <= from + 10; f++) {
+    const gd = guardianOnFloor(f);
+    if (gd && ((hero.guardianKills && hero.guardianKills[gd.id]) || 0) === 0) return f;
+  }
+  return null;
+}
+
+/* Up to three goals, in priority order. Returns
+   [{ kind, text, data }], where kind is one of
+   'skill' | 'abyssal' | 'guardian' | 'achievement' | 'lore' and data
+   carries whatever the tap handler needs (only 'guardian' needs one:
+   the floor to jump to). */
+function nextGoals(hero) {
+  const goals = [];
+  if (!hero) return goals;
+
+  // 1. Something to spend right now — skill points and Abyssal points
+  // are separate goals, so a hero sitting on both sees both.
+  const sp = unspentSkillPoints(hero);
+  if (sp > 0) {
+    goals.push({
+      kind: 'skill',
+      text: fmtNum(sp) + ' skill point' + (sp === 1 ? '' : 's') + ' to spend',
+      data: {}
+    });
+  }
+  const ap = abyssalUnspent(hero);
+  if (ap > 0) {
+    goals.push({
+      kind: 'abyssal',
+      text: fmtNum(ap) + ' Abyssal point' + (ap === 1 ? '' : 's') + ' to spend',
+      data: {}
+    });
+  }
+
+  // 2. The next Guardian this hero hasn't beaten.
+  if (goals.length < 3) {
+    const gf = nextGuardianFloor(hero);
+    if (gf !== null) {
+      const gd = guardianOnFloor(gf);
+      const name = (gd && GUARDIAN_NAMES[gd.id]) || 'the Guardian';
+      const from = hero.deepest || 1;
+      const diff = gf - from;
+      goals.push({
+        kind: 'guardian',
+        text: diff > 0
+          ? (fmtNum(diff) + ' floor' + (diff === 1 ? '' : 's') + ' to ' + name)
+          : (name + ' waits on floor ' + fmtNum(gf)),
+        data: { f: gf }
+      });
+    }
+  }
+
+  // 3. The unearned achievement closest to done, by percentage. Only
+  // achievements with a real running tally (max > 1) and some progress
+  // already made (cur > 0) count as a nudge — a 0% one isn't.
+  if (goals.length < 3) {
+    const earned = (state.account && state.account.achievements) || {};
+    let best = null, bestPct = -1;
+    for (const id in ACHIEVEMENTS) {
+      if (earned[id]) continue;
+      const a = ACHIEVEMENTS[id];
+      const prog = achievementProgress(a.check, hero);
+      // cur >= max means met but not yet awarded - achievements are only
+      // checked when a descent ends, so tempering to +10 at the Forge sits
+      // at 10 / 10 until the next one. Finished is not a goal.
+      if (!prog || prog.max <= 1 || prog.cur <= 0 || prog.cur >= prog.max) continue;
+      const pct = prog.cur / prog.max;
+      if (pct > bestPct) { bestPct = pct; best = { a: a, prog: prog }; }
+    }
+    if (best) {
+      goals.push({
+        kind: 'achievement',
+        text: best.a.name + ' · ' + fmtNum(best.prog.cur) + ' / ' + fmtNum(best.prog.max),
+        data: {}
+      });
+    }
+  }
+
+  // 4. Lore pages still missing in the act of the floor being viewed
+  // (not the hero's deepest — the floor currently selected in the
+  // stepper). Floors past 40 all fall under Act IV via actForFloor()'s
+  // own fallback.
+  if (goals.length < 3) {
+    const act = actForFloor(selectedFloor(hero));
+    const missing = missingLorePages(act.id).length;
+    if (missing > 0) {
+      // act.display is e.g. "III. The Shattered Cage" — the roman
+      // numeral is the part before the period. Reusing that existing
+      // content field keeps the numeral itself out of code, per
+      // CLAUDE.md's "content as data."
+      const numeral = (act.display.split('.')[0] || '').trim();
+      goals.push({
+        kind: 'lore',
+        text: fmtNum(missing) + ' page' + (missing === 1 ? '' : 's') + ' left in Act ' + numeral,
+        data: {}
+      });
+    }
+  }
+
+  return goals.slice(0, 3);
+}
+
+const NEXT_GOAL_ICON = {
+  skill: 'ico-plus',
+  abyssal: 'ico-plus',
+  guardian: 'ico-boss',
+  achievement: 'ico-star',
+  lore: 'ico-halls'
+};
+
+/* Renders the card, or '' when there is nothing to nudge the player
+   toward (no empty card — SCOPES.md §4). Each goal is its own 44px+
+   tap target with 8px between them; text is a single ellipsised line
+   so three goals can never push the Descend button down at 360px. */
+function renderNextGoals(hero) {
+  const goals = nextGoals(hero);
+  if (!goals.length) return '';
+
+  return '<div class="card" style="margin-top:10px">' +
+    goals.map(function (g, i) {
+      const fAttr = (g.data && g.data.f !== undefined) ? ' data-f="' + g.data.f + '"' : '';
+      return '<button type="button" class="card-tap row" data-act="goal" data-kind="' + esc(g.kind) + '"' + fAttr +
+        ' style="min-height:44px' + (i ? ';margin-top:8px' : '') + '">' +
+        icon(NEXT_GOAL_ICON[g.kind] || 'ico-star') +
+        '<div class="grow small" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' +
+          esc(g.text) +
+        '</div>' +
+        icon('ico-chevron-right') +
+      '</button>';
+    }).join('') +
+  '</div>';
+}
+
+/* Wraps VIEWS.descend.onAct so the taps route where SCOPES.md §4 says:
+   skill points -> Hero/Skills, Abyssal points -> Hero/Stats, a
+   Guardian goal -> selects its floor (or the deepest unlocked one, if
+   its floor isn't reachable yet), an achievement -> Halls/Renown, lore
+   pages -> Halls/Codex. Same pattern as the Town dispatcher wrap
+   further down the file (search "const inherited = VIEWS.town.onAct"):
+   keep the inherited handler and hand back anything not owned here. */
+(function () {
+  const inherited = VIEWS.descend.onAct;
+  VIEWS.descend.onAct = function (act, node, ev) {
+    if (act === 'goal') {
+      const hero = state && state.hero;
+      if (!hero) return;
+      const kind = node.dataset.kind;
+      if (kind === 'skill') { heroTab = 'skills'; setTab('hero'); return; }
+      if (kind === 'abyssal') { heroTab = 'stats'; setTab('hero'); return; }
+      if (kind === 'guardian') {
+        const f = Math.min(parseInt(node.dataset.f, 10) || 1, maxSelectableFloor(hero));
+        descendUi.floor = f;
+        descendUi.path = 0;
+        refresh();
+        return;
+      }
+      if (kind === 'achievement') { halls3Tab = 'renown'; setTab('halls'); return; }
+      if (kind === 'lore') { halls3Tab = 'codex'; setTab('halls'); return; }
+      return;
+    }
+    return inherited.call(this, act, node, ev);
+  };
+})();
+
+
+/* Drop reveals (SCOPES.md 5): the results-sheet showcase card for the
+   best unique or set piece found this descent. Larger than a list row,
+   and never colour-alone — the letter badge and the rarity border (both
+   read from RARITIES, via the existing town2* helpers) carry the rarity
+   as well as the text colour. `isFirstFind` adds the "New to the Armory"
+   line; it comes from r.firstFinds, which hand edits 3-4 populate. */
+function resultsShowcaseHtml(item, isFirstFind) {
+  const rd = RARITIES[item.rarity];
+  if (!rd) return '';
+  const border = town2RarityBorderStyle(item); // e.g. "border:3px double var(--r-unique)"
+  const glow = '--glow:var(--r-' + item.rarity + ')';
+  const slotLabel = (typeof heroSlotLabel !== 'undefined' && heroSlotLabel[item.slot]) || '';
+
+  let powerHtml = '';
+  if (item.rarity === 'unique' && item.uniqueId && UNIQUES[item.uniqueId]) {
+    powerHtml = '<p class="showcase-power">' + esc(UNIQUES[item.uniqueId].power.text) + '</p>';
+  } else if (item.rarity === 'set' && item.setId && SETS[item.setId]) {
+    powerHtml = '<p class="showcase-power">' + esc(SETS[item.setId].name) + '</p>';
+  }
+
+  return (
+    '<div class="showcase-card showcase-glow" style="' + border + ';' + glow + '">' +
+      '<div class="showcase-row">' + townBadge(item) + town2ChainIcon(item) + '</div>' +
+      '<div class="showcase-name ' + rarityClass(item.rarity) + '">' + esc(item.name) + '</div>' +
+      (slotLabel ? '<div class="showcase-slot">' + esc(slotLabel) + '</div>' : '') +
+      powerHtml +
+      (isFirstFind ? '<div class="showcase-new">New to the Armory</div>' : '') +
+    '</div>'
+  );
+}
+
+/* Drop reveals (SCOPES.md 5): the away card's item line —
+   "Found: Bellmaw's Grasp — 4 magic · 2 rare · 1 unique." — with the
+   best item named first. Set and unique rank equally for "best"; both
+   outrank rare, which outranks magic, which outranks common. */
+function awayBestRank(rarity) {
+  return RARITY_ORDER.indexOf(rarity === 'set' ? 'unique' : rarity);
+}
+function awayItemsSummaryHtml(items) {
+  if (!items || !items.length) return '';
+  let best = items[0];
+  for (let i = 1; i < items.length; i++) {
+    if (awayBestRank(items[i].rarity) > awayBestRank(best.rarity)) best = items[i];
+  }
+  const counts = {};
+  for (const it of items) counts[it.rarity] = (counts[it.rarity] || 0) + 1;
+  const parts = RARITY_ORDER
+    .filter(function (r) { return counts[r]; })
+    .map(function (r) { return fmtNum(counts[r]) + ' ' + r; });
+  return '<p class="small" style="margin:10px 0 0">Found: ' +
+    '<span class="' + rarityClass(best.rarity) + '" style="font-weight:600">' + esc(best.name) + '</span>' +
+    ' — ' + parts.join(' · ') + '.</p>';
+}
+
+/* Descent log (SCOPES.md 5): redeclared in full, per your note that this
+   is fine since it's short. Reproduces every existing behaviour (the
+   death/save classes, the "Found: a, b." join, the lore-page line) and
+   adds one thing: a star icon in the item's rarity colour before the
+   name of any unique or set piece, so the line stands out while
+   scrolling. The icon sits inside the same coloured <span> as the name,
+   so it inherits the rarity colour via currentColor — no new colour
+   rule needed, and rarity is still never colour-alone since the badge
+   and border already carry it everywhere this item is shown in full. */
+function logLine(entry) {
+  let cls = 'small';
+  let text = esc(entry.text);
+  if (entry.kind === 'death') cls += ' risk-deadly';
+  if (entry.kind === 'save') cls += ' risk-risky';
+  let items = '';
+  if (entry.items && entry.items.length) {
+    items = ' <span class="small">Found: ' + entry.items.map(function (i) {
+      const notable = i.rarity === 'unique' || i.rarity === 'set';
+      return '<span class="' + rarityClass(i.rarity) + '">' +
+        (notable ? icon('ico-star', 'ico-mark') + ' ' : '') + esc(i.name) + '</span>';
+    }).join(', ') + '.</span>';
+  }
+  let pages = '';
+  if (entry.pages && entry.pages.length) {
+    pages = ' <span class="small" style="color:var(--corona)">Lore page: ' +
+      entry.pages.map(esc).join(', ') + '.</span>';
+  }
+  return '<div class="' + cls + '" style="padding:3px 0">' + text + items + pages + '</div>';
+}
 
 document.addEventListener('DOMContentLoaded', boot);
 </script>
