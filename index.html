@@ -369,6 +369,65 @@ ul{ margin:0; padding:0; list-style:none; }
 /* Marks a unique or set find in the descent log. */
 .ico-mark{ width:14px; height:14px; vertical-align:-0.15em; margin-right:1px; }
 
+/* ---- the live descent log (SCOPES-DESCENT D6) ---- */
+.log-tag{
+  display:inline-block; padding:0 5px; border-radius:4px;
+  border:1px solid var(--corona); color:var(--corona);
+  font-size:.75rem; font-weight:700; line-height:1.5; vertical-align:.05em;
+}
+.log-level{ color:var(--corona); font-weight:600; }
+/* The line that just arrived glows once. Its length comes from --dur, which
+   is 0ms under reduced motion, so there it simply appears. */
+.log-new{ animation:log-arrive calc(var(--dur) * 6) var(--ease) 1 both; border-radius:4px; }
+@keyframes log-arrive{
+  0%   { background:var(--track); box-shadow:inset 3px 0 0 var(--corona); }   /* the log sits on raised */
+  100% { background:transparent;   box-shadow:inset 3px 0 0 transparent; }
+}
+
+/* ---- the live descent track (SCOPES-DESCENT D5) ----
+   Pending marks are hollow and resolved ones filled: shape carries the
+   difference, not colour. Resolved marks sit on the corona fill, where bone
+   alone is under 3:1, so they are ringed in abyss. Loot pips are plain -
+   rarity is shown by the haul's letter badges, never by colour here. */
+.live-track{ overflow:visible; }
+.track-pack{
+  position:absolute; transform:translate(-50%,-50%);
+  width:6px; height:6px; border-radius:50%;
+  background:transparent; border:1px solid var(--edge);
+}
+.track-pack.resolved{ background:var(--bone); border-color:var(--abyss); }
+.track-elite{
+  position:absolute; transform:translate(-50%,-50%) rotate(45deg);
+  width:8px; height:8px;
+  background:transparent; border:1px solid var(--edge);
+}
+.track-elite.resolved{ background:var(--bone); border-color:var(--abyss); }
+.track-boss{
+  position:absolute; transform:translate(-50%,-50%);
+  width:16px; height:16px; border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  background:var(--abyss); border:1px solid var(--edge);
+  color:var(--edge); opacity:.7; box-sizing:border-box;
+}
+.track-boss .ico{ width:11px; height:11px; }
+.track-boss.resolved{ border:2px solid var(--bone); color:var(--bone); opacity:1; }
+.track-crit{
+  position:absolute; top:0; transform:translate(-50%,0);
+  color:var(--brass); pointer-events:none;
+}
+.track-crit .ico{ width:8px; height:8px; }
+.track-pip{
+  position:absolute; top:29px; transform:translate(-50%,0);
+  width:3px; height:3px; border-radius:50%;
+  background:var(--ash); pointer-events:none;
+}
+.track-hero{
+  position:absolute; transform:translate(-50%,-50%);
+  width:2px; height:22px; border-radius:1px;
+  background:var(--corona); pointer-events:none;
+  transition:left var(--dur) linear;
+}
+
 /* CLAUDE.md: every tap target is at least 44px tall. */
 button[data-act]{ min-height:44px; }
 #tabs .tab{ min-height:var(--tab-h); }
@@ -810,7 +869,18 @@ const BALANCE = {
 
   /* --- SPEC 7.7 --- */
   retreatHoldMs: 1500,
-  logVisibleLines: 5,
+  logVisibleLines: 4,            // four, since the log's lines grew a voice (SCOPES-DESCENT D7)
+
+  /* --- the live descent view (SCOPES-DESCENT D3, D4, D6) --- */
+  live: {
+    paceMinResolved: 2,          // no pace verdict until this many fights are over
+    paceBetter: 0.85,            // HP spent under 85% of what was expected so far
+    paceHot: 1.15,               // over 115%
+    lowHpFrac: 0.25,             // "Low HP" below a quarter of Max HP
+    locketFraction: 0.75         // the Deserter's Locket keeps the chest past this share of
+                                 // encounters; the engine's rule reads it too, so the retreat
+                                 // line can't disagree with what actually happens
+  },
 
   /* --- SPEC 8: HP and death --- */
   hp: {
@@ -5549,9 +5619,11 @@ function applyEncounter(hero, d, enc) {
   const levels = grantXp(hero, rw.xp);
   d.levelUps += levels;
 
+  // The line has a voice of its own (SCOPES-DESCENT D7), chosen by seed. The
+  // crit is shown as a tag from the `crit` flag, so it isn't in the text.
   d.log.unshift({
     t: enc.endsAt,
-    text: (enc.crit ? 'Crit! ' : '') + enc.name + '. -' + fmtNum(cost) + ' HP.',
+    text: encounterVoiceLine(enc, d.seed, d.timeline) + ' -' + fmtNum(cost) + ' HP.',
     kind: enc.kind,
     crit: enc.crit,
     cost: cost,
@@ -5559,6 +5631,12 @@ function applyEncounter(hero, d, enc) {
     // Finding a page is a story moment, so the log calls it out (SPEC 14.4).
     pages: pages.map(function (p) { return p.title; })
   });
+  // A level-up mid-descent gets a line of its own (D6); stats still wait for
+  // the descent to end (SPEC 4). Newest first, so it sits above the fight
+  // that earned it.
+  if (levels > 0) {
+    d.log.unshift({ t: enc.endsAt, text: 'You reach level ' + fmtNum(hero.level) + '.', kind: 'level' });
+  }
   return 'ok';
 }
 
@@ -5682,7 +5760,7 @@ function endDescent(hero, outcome, killer) {
   // The Deserter's Locket: retreating once at least 75% of the encounters
   // have resolved still opens the end chest (SPEC 12.2).
   const locketChest = outcome === 'retreat' && snap.specials.the_deserters_locket &&
-    d.timeline.length > 0 && (d.resolved / d.timeline.length) >= 0.75;
+    d.timeline.length > 0 && (d.resolved / d.timeline.length) >= BALANCE.live.locketFraction;
 
   if (outcome === 'clear' || locketChest) {
     const chest = chestRewards(snap, ctx, d.floor, d.seed);
@@ -6021,6 +6099,22 @@ function settle() {
    Uses the same timeline and rules the descent would use if it
    started now, so what the player sees is what they get.
    ============================================================ */
+/* The forecast's view of one encounter (SPEC 7.6): its cost at the low and
+   high rolls with no crit, and the expected cost after the average crit
+   discount. The pre-descent forecast and the live pace (SCOPES-DESCENT D3)
+   both use this, so they can never disagree. The Chainwraith can't be
+   crit, so no crit discount is expected on it. */
+function encounterExpectation(snap, ctx, enc, floor, seed) {
+  const critChance = horrorFxOf(enc).noCrit ? 0 : clamp(ctx.stats.crit / 100, 0, BALANCE.caps.crit);
+  const opts = function (roll) { return { roll: roll, forceNoCrit: true }; };
+  const mid = encounterCost(snap, ctx, enc, floor, seed, opts(1.0));
+  return {
+    min: encounterCost(snap, ctx, enc, floor, seed, opts(BALANCE.cost.rollLo)),
+    max: encounterCost(snap, ctx, enc, floor, seed, opts(BALANCE.cost.rollHi)),
+    expected: mid * (1 - BALANCE.forecast.critCostFactor * critChance)
+  };
+}
+
 function forecast(hero, floor, pathIndex) {
   const paths = getFloorPaths(hero, floor);
   const path = paths[pathIndex];
@@ -6047,13 +6141,12 @@ function forecast(hero, floor, pathIndex) {
     // A named Horror's twist has to show in the forecast too (pillar 9):
     // the Chainwraith can't be crit, so no crit discount is expected on it.
     const hfx = horrorFxOf(enc);
-    const critChance = hfx.noCrit ? 0 : clamp(ctx.stats.crit / 100, 0, BALANCE.caps.crit);
     if (hfx.timeMult) timeSaved += slotMs * (1 - hfx.timeMult);
 
-    min += encounterCost(snap, ctx, enc, floor, path.seed, { roll: BALANCE.cost.rollLo, forceNoCrit: true });
-    max += encounterCost(snap, ctx, enc, floor, path.seed, { roll: BALANCE.cost.rollHi, forceNoCrit: true });
-    const mid = encounterCost(snap, ctx, enc, floor, path.seed, { roll: 1.0, forceNoCrit: true });
-    expected += mid * (1 - BALANCE.forecast.critCostFactor * critChance);
+    const e = encounterExpectation(snap, ctx, enc, floor, path.seed);
+    min += e.min;
+    max += e.max;
+    expected += e.expected;
 
     const st = ctx.stats;
     const goldFrac = (st.goldFind + st.fortune) / 100;
@@ -8477,46 +8570,235 @@ function renderTownDescend(hero) {
 }
 
 /* ---- the live view, SPEC 7.7 ---- */
+/* ============================================================
+   THE LIVE DESCENT - SPEC 7.7, SCOPES-DESCENT D0-D6
+   The card redraws itself each time an encounter resolves (D0). Nothing
+   else on the screen is rebuilt then, so a retreat hold already under way
+   is never cancelled by a redraw. Between resolutions, once a second, only
+   the parts driven by the clock move: the time left, the time bar and the
+   bar across the current fight.
+   ============================================================ */
+
+/* The encounter being fought now, by the clock. Encounters run back to back,
+   so this is normally the first unresolved one; in the moment between an
+   encounter's end and the next settle the clock can be a step ahead. */
+function liveCurrentIndex(d) {
+  const t = now();
+  for (let i = d.resolved; i < d.timeline.length; i++) {
+    if (t < d.timeline[i].endsAt) return i;
+  }
+  return d.timeline.length - 1;
+}
+
+const LIVE_KIND_WORD = { pack: 'pack', elite: 'elite', horror: 'Wandering Horror', guardian: 'Guardian' };
+
+function liveFightPct(enc) {
+  return clamp((now() - enc.startsAt) / Math.max(enc.endsAt - enc.startsAt, 1), 0, 1) * 100;
+}
+
+/* The track (liveTrackHtml, liveTrackTick) is SCOPES-DESCENT D5, further down. */
+
+/* D1 - what the hero is fighting now, and what comes next. The crits and HP
+   costs of fights still to come are already decided by the seed; showing
+   them would spoil each one before it lands, so they stay hidden. */
+function liveNowHtml(d) {
+  const i = liveCurrentIndex(d);
+  const cur = d.timeline[i];
+  if (!cur) return '';
+  const next = d.timeline[i + 1];
+  const kind = function (e) { return '<span class="muted"> · ' + esc(LIVE_KIND_WORD[e.kind] || e.kind) + '</span>'; };
+  return '<div style="margin-top:12px">' +
+    '<div class="small"><span class="muted">Fighting · </span>' +
+      '<span style="font-weight:600">' + esc(cur.name) + '</span>' + kind(cur) + '</div>' +
+    '<div class="bar" style="margin-top:6px;height:6px"><div class="bar-fill" id="live-now-fill" ' +
+      'data-i="' + i + '" style="width:' + liveFightPct(cur) + '%;background:var(--bone)"></div></div>' +
+    (next ? '<div class="small" style="margin-top:6px"><span class="muted">Next · </span>' +
+      esc(next.name) + kind(next) + '</div>' : '') +
+  '</div>';
+}
+
+/* D6 - a Guardian or Wandering Horror is next: say so before it arrives. */
+function liveBossBannerHtml(d) {
+  const next = d.timeline[liveCurrentIndex(d) + 1];
+  if (!next || (next.kind !== 'guardian' && next.kind !== 'horror')) return '';
+  let text;
+  if (next.kind === 'horror') {
+    const id = horrorIdOf(next);
+    const twist = id ? HORRORS[id].twist : '';
+    text = next.name + ' stirs' + (twist ? ': ' + twist.charAt(0).toLowerCase() + twist.slice(1) : '') + '.';
+  } else {
+    const deep = isDeepGuardian(next.guardianId) ? DEEP_GUARDIANS[deepBaseId(next.guardianId)] : null;
+    text = next.name + ' waits' + (deep ? '. It tests your ' + GUARDIAN_TEST_TEXT[deep.test] : '') + '.';
+  }
+  return '<div class="panel small row" style="margin-top:10px;gap:8px;align-items:flex-start;' +
+      'border-left:3px solid var(--blood-light)">' +
+    '<span style="color:var(--blood-light);flex:0 0 auto;display:inline-flex">' + icon('ico-boss') + '</span>' +
+    '<span>' + esc(text) + '</span>' +
+  '</div>';
+}
+
+/* D2 - what this descent has earned so far. Items show as rarity letter
+   badges with counts, because rarity is never shown by colour alone. */
+function liveHaulHtml(d) {
+  const R = d.rewards;
+  const bits = [];
+  if (R.gold) bits.push('<span class="num">' + fmtNum(R.gold) + '</span> gold');
+  if (R.xp) bits.push('<span class="num">' + fmtNum(R.xp) + '</span> XP');
+  if (R.starshards) bits.push('<span class="num">' + fmtNum(R.starshards) + '</span> Starshard' + (R.starshards === 1 ? '' : 's'));
+  const pages = (d.lorePages || []).length;
+  if (pages) bits.push(fmtNum(pages) + ' lore page' + (pages === 1 ? '' : 's'));
+
+  const counts = {};
+  for (const it of R.items) counts[it.rarity] = (counts[it.rarity] || 0) + 1;
+  const badges = RARITY_ORDER.filter(function (r) { return counts[r]; }).map(function (r) {
+    return '<span class="row" style="display:inline-flex;gap:3px">' + itemBadge({ rarity: r }) +
+      '<span class="num">×' + fmtNum(counts[r]) + '</span></span>';
+  }).join('');
+  const salvaged = R.autoSalvaged && R.autoSalvaged.ash
+    ? '<div class="small muted" style="margin-top:4px">+<span class="num">' + fmtNum(R.autoSalvaged.ash) + '</span> Ash from salvage</div>'
+    : '';
+
+  if (!bits.length && !badges && !salvaged) {
+    return '<div class="small muted" style="margin-top:10px">So far · nothing yet.</div>';
+  }
+  return '<div style="margin-top:10px">' +
+    '<div class="small"><span class="muted">So far · </span>' + (bits.join(' · ') || '<span class="muted">no gold yet</span>') + '</div>' +
+    (badges ? '<div class="row wrap" style="gap:10px;margin-top:6px">' + badges + '</div>' : '') +
+    salvaged +
+  '</div>';
+}
+
+/* D3 - how the run is going against the forecast, and what is still ahead.
+   The forecast's own per-encounter maths (encounterExpectation) is run on the
+   fights already over, using the HP the descent started with as the forecast
+   did, and compared with the HP actually spent. What is ahead uses the
+   values in effect now, so it moves when an emergency rite changes them. */
+function livePace(d) {
+  const L = BALANCE.live;
+  const snap = d.snapshot;
+  let expSoFar = 0, min = 0, max = 0, exp = 0;
+  for (let i = 0; i < d.timeline.length; i++) {
+    const enc = d.timeline[i];
+    const done = i < d.resolved;
+    const ctx = { effects: effectsAt(snap, enc.startsAt, d.emergency),
+                  hp: done ? d.hpAtStart : d.hp,
+                  elitesKilled: done ? 0 : d.stacks.elitesKilled };
+    ctx.stats = statsAt(snap, ctx);
+    const e = encounterExpectation(snap, ctx, enc, d.floor, d.seed);
+    if (done) expSoFar += e.expected;
+    else { min += e.min; max += e.max; exp += e.expected; }
+  }
+  const spent = Math.max(0, d.hpAtStart - d.hp);
+  let word = null;
+  if (d.resolved >= L.paceMinResolved && expSoFar > 0) {
+    const r = spent / expSoFar;
+    word = r < L.paceBetter ? 'better' : (r > L.paceHot ? 'hot' : 'course');
+  }
+  // The same thresholds as the forecast's risk label (SPEC 7.6), from here on.
+  const ahead = d.resolved < d.timeline.length;
+  const risk = !ahead ? null : (max < d.hp ? 'safe' : (exp < d.hp ? 'risky' : 'deadly'));
+  return { spent: spent, word: word, min: min, max: max, exp: exp, risk: risk };
+}
+
+const LIVE_PACE_WORD = {
+  better: { text: 'better than expected', colour: 'verdant' },
+  course: { text: 'on course',            colour: 'bone' },
+  hot:    { text: 'running hot',          colour: 'brass' }
+};
+
+function livePaceHtml(d, p) {
+  if (!p.risk) return '';
+  let html = '<div class="small" style="margin-top:10px">';
+  if (p.word) {
+    const w = LIVE_PACE_WORD[p.word];
+    html += '<div><span class="num">' + fmtNum(Math.round(p.spent)) + '</span> HP spent · ' +
+      '<span style="font-weight:600;color:var(--' + w.colour + ')">' + w.text + '</span></div>';
+  }
+  html += '<div style="margin-top:4px">About <span class="num">' + fmtNum(Math.round(p.min)) + '–' +
+      fmtNum(Math.round(p.max)) + '</span> HP of fighting left. You have <span class="num">' +
+      fmtNum(Math.max(0, Math.floor(d.hp))) + '</span>. ' + riskLabel(p.risk) + '</div>';
+  if (p.risk === 'deadly') {
+    html += '<div style="margin-top:4px;color:var(--blood-light)">' +
+      'The rest of this path is expected to cost more HP than you have.</div>';
+  }
+  return html + '</div>';
+}
+
+/* D4 - the stakes of the one real choice, beside the button that makes it.
+   A fall halves the gold and XP gathered so far (SPEC 8.2); that is only
+   mentioned once the run is going badly, so it doesn't nag on safe runs. */
+function liveRetreatHtml(hero, p) {
+  const d = hero.descent;
+  const R = d.rewards;
+  const kept = [];
+  if (R.gold) kept.push(fmtNum(R.gold) + ' gold');
+  if (R.xp) kept.push(fmtNum(R.xp) + ' XP');
+  if (R.items.length) kept.push(fmtNum(R.items.length) + ' item' + (R.items.length === 1 ? '' : 's'));
+  const keptText = kept.length > 1
+    ? kept.slice(0, -1).join(', ') + ' and ' + kept[kept.length - 1]
+    : kept[0];
+
+  const total = d.timeline.length;
+  const locket = d.snapshot.specials.the_deserters_locket && total > 0 &&
+    d.resolved / total >= BALANCE.live.locketFraction;
+  let main = 'Retreat now: ' + (keptText ? 'keep ' + keptText + '.' : 'nothing earned yet.') + ' ' +
+    (locket ? 'The Deserter’s Locket keeps the end chest.' : 'Lose the end chest.');
+
+  const extras = [];
+  if (d.floor >= hero.deepest) extras.push('Floor ' + fmtNum(d.floor + 1) + ' stays locked.');
+  const gd = d.timeline.slice(d.resolved).find(function (e) { return e.kind === 'guardian'; });
+  if (gd) extras.push(gd.name + ' stays standing.');
+  if (p && (p.word === 'hot' || p.risk === 'deadly') && (R.gold || R.xp)) extras.push('A fall would halve the gold and XP.');
+
+  return '<div class="small" style="background:var(--crypt);border-radius:var(--radius);padding:8px 10px;margin-bottom:8px">' +
+    esc(main) + (extras.length ? ' <span class="muted">' + esc(extras.join(' ')) + '</span>' : '') +
+  '</div>';
+}
+
+/* The card itself: floor and time, the track, the fight in progress, a
+   boss warning, encounters and HP, the haul, the pace, the omens. */
+function liveCardHtml(hero, p) {
+  const d = hero.descent;
+  const st = activeStats(hero);
+  const hp = Math.max(0, Math.floor(d.hp));
+  // D6 - low HP says so in words as well as colour.
+  const low = hp < st.maxHp * BALANCE.live.lowHpFrac;
+  return '<div class="row-between">' +
+      '<div><div class="display" style="font-size:1.375rem">Floor ' + d.floor + '</div>' +
+        '<div class="tiny muted">' + esc(d.pathName) + '</div></div>' +
+      '<div style="text-align:right">' +
+        '<div class="num" id="live-left">' + fmtTime(Math.max(0, d.endsAt - now())) + '</div>' +
+        '<div class="tiny muted">left</div></div>' +
+    '</div>' +
+    liveTrackHtml(hero, d) +
+    liveNowHtml(d) +
+    liveBossBannerHtml(d) +
+    '<div class="row-between small num" style="margin-top:10px">' +
+      '<span>' + d.resolved + ' / ' + d.timeline.length + ' encounters</span>' +
+      '<span' + (low ? ' style="color:var(--blood-light);font-weight:600"' : '') + '>' +
+        (low ? 'Low HP · ' : '') + fmtNum(hp) + ' / ' + fmtNum(st.maxHp) + ' HP</span>' +
+    '</div>' +
+    liveHaulHtml(d) +
+    livePaceHtml(d, p) +
+    (d.omens.length ? '<div class="chips" style="margin-top:10px">' + d.omens.map(omenChip).join('') + '</div>' : '');
+}
+
+function liveLogHtml(d) {
+  const lines = d.log.slice(0, BALANCE.logVisibleLines).map(logLine).join('');
+  return lines || '<p class="muted small" style="margin:0">Descending.</p>';
+}
+function liveLogMoreHtml(d) {
+  return d.log.length > BALANCE.logVisibleLines
+    ? '<button class="btn btn-ghost btn-block btn-sm" data-act="log" style="margin-top:8px">Show the whole log</button>'
+    : '';
+}
+
 function renderLiveDescent(hero) {
   const d = hero.descent;
-  const total = d.timeline.length;
-  const done = d.resolved;
-  const left = Math.max(0, d.endsAt - now());
-  const st = activeStats(hero);
-  const pct = total ? clamp((now() - d.startedAt) / Math.max(d.endsAt - d.startedAt, 1), 0, 1) : 0;
-
-  const markers = d.timeline.map(function (enc, i) {
-    const at = clamp((enc.endsAt - d.startedAt) / Math.max(d.endsAt - d.startedAt, 1), 0, 1);
-    const boss = enc.kind === 'guardian' || enc.kind === 'horror';
-    const size = boss ? 10 : 6;
-    const colour = i < done ? 'var(--bone)' : 'var(--edge)';
-    return '<i style="position:absolute;left:' + (at * 100) + '%;top:50%;' +
-      'width:' + size + 'px;height:' + size + 'px;margin-left:-' + (size / 2) + 'px;margin-top:-' + (size / 2) + 'px;' +
-      'border-radius:50%;background:' + colour + '"></i>';
-  }).join('');
-
-  const lines = d.log.slice(0, BALANCE.logVisibleLines).map(logLine).join('');
+  const p = livePace(d);
   const emergency = emergencyRites(hero);
 
-  return '<div class="card">' +
-      '<div class="row-between">' +
-        '<div><div class="display" style="font-size:1.375rem">Floor ' + d.floor + '</div>' +
-          '<div class="tiny muted">' + esc(d.pathName) + '</div></div>' +
-        '<div style="text-align:right">' +
-          '<div class="num" id="live-left">' + fmtTime(left) + '</div>' +
-          '<div class="tiny muted">left</div></div>' +
-      '</div>' +
-      '<div style="position:relative;margin-top:14px">' +
-        '<div class="bar bar-lg"><div class="bar-fill" id="live-progress" ' +
-          'style="width:' + (pct * 100) + '%;background:var(--corona)"></div></div>' +
-        markers +
-      '</div>' +
-      '<div class="row-between small num" style="margin-top:8px">' +
-        '<span>' + done + ' / ' + total + ' encounters</span>' +
-        '<span>' + fmtNum(Math.max(0, Math.floor(d.hp))) + ' / ' + fmtNum(st.maxHp) + ' HP</span>' +
-      '</div>' +
-      (d.omens.length ? '<div class="chips" style="margin-top:10px">' + d.omens.map(omenChip).join('') + '</div>' : '') +
-    '</div>' +
+  return '<div class="card" id="live-card" data-n="' + d.resolved + '">' + liveCardHtml(hero, p) + '</div>' +
 
     (emergency.length ? '<div class="section-title">Emergency rites</div>' +
       '<div class="row wrap" style="gap:8px">' +
@@ -8530,15 +8812,46 @@ function renderLiveDescent(hero) {
       '</div>' : '') +
 
     '<div class="section-title">The descent</div>' +
-    '<div class="panel" id="live-log">' + (lines || '<p class="muted small" style="margin:0">Descending.</p>') + '</div>' +
-    (d.log.length > BALANCE.logVisibleLines
-      ? '<button class="btn btn-ghost btn-block btn-sm" data-act="log" style="margin-top:8px">' +
-        'Show the whole log</button>' : '') +
+    '<div class="panel" id="live-log">' + liveLogHtml(d) + '</div>' +
+    '<div id="live-log-more">' + liveLogMoreHtml(d) + '</div>' +
 
     '<div class="dock">' +
+      '<div id="live-retreat">' + liveRetreatHtml(hero, p) + '</div>' +
       '<button class="btn btn-danger btn-block btn-lg btn-hold" data-act="retreat-hold">' +
         '<span class="fill"></span><span class="lbl">Hold to retreat</span></button>' +
     '</div>';
+}
+
+/* Once a second, from the descent view's tick. D0: when an encounter has
+   resolved since the card was drawn, redraw the card, the log and the retreat
+   line - never the whole screen. */
+function liveDescentTick(hero) {
+  const d = hero.descent;
+  const leftEl = el('live-left');
+  if (leftEl) leftEl.textContent = fmtTime(Math.max(0, d.endsAt - now()));
+  liveTrackTick(d);
+  const fill = el('live-now-fill');
+  if (fill) {
+    const enc = d.timeline[parseInt(fill.dataset.i, 10)];
+    if (enc) fill.style.width = liveFightPct(enc) + '%';
+  }
+
+  const card = el('live-card');
+  if (!card || card.dataset.n === String(d.resolved)) return;
+  const p = livePace(d);
+  card.innerHTML = liveCardHtml(hero, p);
+  card.dataset.n = String(d.resolved);
+  const log = el('live-log');
+  if (log) {
+    log.innerHTML = liveLogHtml(d);
+    // D6 - the line that just arrived glows once.
+    const first = log.firstElementChild;
+    if (first) first.classList.add('log-new');
+  }
+  const more = el('live-log-more');
+  if (more) more.innerHTML = liveLogMoreHtml(d);
+  const ret = el('live-retreat');
+  if (ret) ret.innerHTML = liveRetreatHtml(hero, p);
 }
 
 function logLine(entry) {
@@ -8570,20 +8883,7 @@ VIEWS.descend = {
   tick: function () {
     const hero = state.hero;
     if (!hero || !hero.descent) return;
-    const d = hero.descent;
-    const leftEl = el('live-left');
-    if (leftEl) leftEl.textContent = fmtTime(Math.max(0, d.endsAt - now()));
-    const bar = el('live-progress');
-    if (bar) {
-      const pct = clamp((now() - d.startedAt) / Math.max(d.endsAt - d.startedAt, 1), 0, 1);
-      bar.style.width = (pct * 100) + '%';
-    }
-    // The log only changes when an encounter resolves, which refresh() handles.
-    const log = el('live-log');
-    if (log && d.log.length) {
-      const html = d.log.slice(0, BALANCE.logVisibleLines).map(logLine).join('');
-      if (log.dataset.n !== String(d.resolved)) { log.innerHTML = html; log.dataset.n = String(d.resolved); }
-    }
+    liveDescentTick(hero);
   },
   after: function (host) {
     const hold = host.querySelector('[data-act="retreat-hold"]');
@@ -15715,14 +16015,20 @@ function awayItemsSummaryHtml(items) {
    and border already carry it everywhere this item is shown in full. */
 function logLine(entry) {
   let cls = 'small';
-  let text = esc(entry.text);
+  // SCOPES-DESCENT D6: a crit is a tag, not a word run into the sentence.
+  // Lines written before carry "Crit! " in their text; it becomes the tag.
+  let raw = entry.text || '';
+  if (entry.crit && raw.indexOf('Crit! ') === 0) raw = raw.slice(6);
+  let text = (entry.crit ? '<span class="log-tag">Crit</span> ' : '') + esc(raw);
   if (entry.kind === 'death') cls += ' risk-deadly';
   if (entry.kind === 'save') cls += ' risk-risky';
+  if (entry.kind === 'level') cls += ' log-level';
   let items = '';
   if (entry.items && entry.items.length) {
     items = ' <span class="small">Found: ' + entry.items.map(function (i) {
       const notable = i.rarity === 'unique' || i.rarity === 'set';
-      return '<span class="' + rarityClass(i.rarity) + '">' +
+      return '<span class="' + rarityClass(i.rarity) + '"' +
+        (i.rarity === 'rare' ? ' style="font-weight:600"' : '') + '>' +      // a rare stands out a little
         (notable ? icon('ico-star', 'ico-mark') + ' ' : '') + esc(i.name) + '</span>';
     }).join(', ') + '.</span>';
   }
@@ -15732,6 +16038,303 @@ function logLine(entry) {
       entry.pages.map(esc).join(', ') + '.</span>';
   }
   return '<div class="' + cls + '" style="padding:3px 0">' + text + items + pages + '</div>';
+}
+
+// ============================================================
+// D5 - a readable track (SCOPES-DESCENT.md D5)
+//
+// JS section below is ready to paste before:
+//   document.addEventListener('DOMContentLoaded', boot);
+// CSS section (further down, clearly marked) is plain CSS - paste
+// it into the <style> element, near the other "---- bars ----" rules.
+//
+// Provides:
+//   liveTrackHtml(hero, d)  - full markup for the time bar + marks.
+//                             Call wherever renderLiveDescent builds
+//                             the bar + markers block.
+//   liveTrackTick(d)        - once-a-second clock-only update. Call
+//                             from VIEWS.descend.tick() in place of
+//                             (or alongside) the existing inline
+//                             '#live-progress' width update.
+//
+// Reads only hero.descent's timeline/resolved/log/startedAt/endsAt.
+// Writes nothing to state. Pure presentation.
+// ============================================================
+
+// ---- pixel layout ----
+// The bar is positioned absolutely inside a fixed-height wrapper so
+// marks above (crit stars) and below (loot pips) the bar have their
+// own reserved bands, independent of the bar's own 14px (.bar-lg)
+// height. Everything else is centred on TRACK_BAR_MID.
+//
+//   0 ............... 8   crit star band
+//   9 ............... 25  bar band (the bar itself spans 10-24; boss
+//                          badges are 16px and spill ~1px over each
+//                          side of the bar - see report)
+//   29 .............. 32  loot pip band
+//   0 ............... 34  wrapper (TRACK_H)
+const TRACK_H = 34;
+const TRACK_BAR_TOP = 10;
+const TRACK_BAR_MID = TRACK_BAR_TOP + 7; // 14px bar, so its own centre
+
+function trackPct(d, t) {
+  return clamp((t - d.startedAt) / Math.max(d.endsAt - d.startedAt, 1), 0, 1);
+}
+
+// Finds the one log entry an already-resolved encounter produced, so
+// the track can tell whether it dropped loot. Encounters that ended
+// in a death or a save leave no matching entry (applyEncounter logs
+// kind 'death'/'save' instead of the encounter's own kind in that
+// case), which correctly draws no pip for them.
+// Only ever called for i < d.resolved - never for a pending
+// encounter, so a still-to-come crit or drop can never leak early.
+function trackLogEntryFor(d, enc) {
+  for (let i = 0; i < d.log.length; i++) {
+    const e = d.log[i];
+    if (e.t === enc.endsAt && e.kind === enc.kind) return e;
+  }
+  return null;
+}
+
+function trackMarkHtml(d, enc, i) {
+  const resolved = i < d.resolved;
+  const at = trackPct(d, enc.endsAt) * 100;
+  const boss = enc.kind === 'guardian' || enc.kind === 'horror';
+
+  // enc.crit is decided in advance by the seed. Gating it on `resolved`
+  // is what keeps a not-yet-fought encounter from spoiling its own
+  // result on the track.
+  const crit = resolved && enc.crit;
+  const entry = resolved ? trackLogEntryFor(d, enc) : null;
+  const looted = !!(entry && entry.items && entry.items.length);
+
+  let mark;
+  if (boss) {
+    const iconId = enc.kind === 'guardian' ? 'ico-boss' : 'ico-horror';
+    mark = '<span class="track-boss' + (resolved ? ' resolved' : '') + '" style="left:' +
+      at + '%;top:' + TRACK_BAR_MID + 'px">' + icon(iconId) + '</span>';
+  } else if (enc.kind === 'elite') {
+    mark = '<i class="track-elite' + (resolved ? ' resolved' : '') + '" style="left:' +
+      at + '%;top:' + TRACK_BAR_MID + 'px"></i>';
+  } else {
+    mark = '<i class="track-pack' + (resolved ? ' resolved' : '') + '" style="left:' +
+      at + '%;top:' + TRACK_BAR_MID + 'px"></i>';
+  }
+
+  const star = crit
+    ? '<i class="track-crit" style="left:' + at + '%">' + icon('ico-star') + '</i>'
+    : '';
+  const pip = looted ? '<i class="track-pip" style="left:' + at + '%"></i>' : '';
+
+  return mark + star + pip;
+}
+
+// The whole track: time bar + every encounter's mark. Re-render from
+// scratch each time an encounter resolves (d.resolved changes) - it
+// only ever draws the state it's handed.
+function liveTrackHtml(hero, d) {
+  const total = d.timeline.length;
+  const done = d.resolved;
+  const pct = trackPct(d, now()) * 100;
+
+  const marks = d.timeline.map(function (enc, i) {
+    return trackMarkHtml(d, enc, i);
+  }).join('');
+
+  return '<div class="live-track" style="position:relative;height:' + TRACK_H +
+      'px;margin:14px 0 10px" role="img" aria-label="' +
+      esc(fmtNum(done) + ' of ' + fmtNum(total) + ' encounters done') + '">' +
+    '<div class="bar bar-lg" style="position:absolute;left:0;right:0;top:' +
+      TRACK_BAR_TOP + 'px">' +
+      '<div class="bar-fill" id="live-progress" style="width:' + pct +
+        '%;background:var(--corona)"></div>' +
+    '</div>' +
+    marks +
+    '<span id="live-hero-mark" class="track-hero" style="left:' + pct +
+      '%;top:' + TRACK_BAR_MID + 'px"></span>' +
+  '</div>';
+}
+
+// Once a second: move the fill and the hero marker from the clock.
+// Never touches the encounter marks themselves - those only change
+// when liveTrackHtml is re-run on resolve.
+function liveTrackTick(d) {
+  const pct = trackPct(d, now()) * 100;
+  const bar = el('live-progress');
+  if (bar) bar.style.width = pct + '%';
+  const hero = el('live-hero-mark');
+  if (hero) hero.style.left = pct + '%';
+}
+
+// ============================================================
+const LOG_VOICE = {
+  families: {
+    hollowed: {
+      pack: [
+        'The Hollowed miners drop their picks and go still.',
+        "The miners' lamps gutter, and their shapes go with them.",
+        "What's left of the miners kneels back into the dark."
+      ],
+      elite: [
+        'The Hollowed foreman crumples, keys still in his fist.',
+        "The foreman's hollow chest caves in, and he stops.",
+        'The Hollowed foreman goes down, and the tunnel quiets.'
+      ]
+    },
+    crawlers: {
+      pack: [
+        'The Crawler swarm breaks apart and pours back into the cracks.',
+        'The swarm scatters into the dark, and the floor stops moving.',
+        'The crawlers curl inward, one after another, and stop.'
+      ],
+      elite: [
+        "The matriarch's brood scatters into the dark.",
+        'The Crawler matriarch folds in on herself and goes still.',
+        'The matriarch stops clicking, and the tunnel goes quiet.'
+      ]
+    },
+    ashborn: {
+      pack: [
+        'The Ashborn whelps scatter, smoking, into the red dark.',
+        'The whelps go out like embers, one after another.',
+        "What's left of the whelps cools to grey on the stone."
+      ],
+      elite: [
+        'The Ashborn brute buckles and turns to ash where it stands.',
+        "The brute's fire gutters, and its bulk goes still.",
+        'The Ashborn brute cracks open and falls dark.'
+      ]
+    },
+    choir: {
+      pack: [
+        "The Choir acolytes' hymn breaks off mid-verse.",
+        'The acolytes go quiet, one voice at a time.',
+        "The acolytes' song dies in their throats."
+      ],
+      elite: [
+        "The Choir zealot's voice cracks, and he stops singing.",
+        'The zealot falls silent mid-hymn.',
+        'The Choir zealot goes down still mouthing the words.'
+      ]
+    },
+    starspawn: {
+      pack: [
+        'The Starspawn drifters flicker once and wink out.',
+        'The drifters dim like snuffed lamps and are gone.',
+        'The Starspawn drifters scatter into the black glass.'
+      ],
+      elite: [
+        'The Starspawn stalker folds into the dark and is gone.',
+        "The stalker's cold light goes out.",
+        'The Starspawn stalker drops, and the glass around it stills.'
+      ]
+    },
+    shardlings: {
+      pack: [
+        'The Shardling cluster shatters and settles into dust.',
+        'The cluster comes apart in a scatter of glass.',
+        'The shardlings crack and fall still, piece by piece.'
+      ],
+      elite: [
+        'The Shardling colossus splits down the middle and stills.',
+        'The colossus buckles, and its glass hide crazes over.',
+        'The Shardling colossus comes down in a slow fall of glass.'
+      ]
+    },
+    heralds: {
+      pack: [
+        'The heralds fall, and their chains ring once and settle.',
+        'The Heralds of the chain fall still, links unspooling.',
+        'The heralds go down still wrapped in their own chains.'
+      ],
+      elite: [
+        'The Herald of the deep sinks back into the black glass.',
+        "The Herald's chains snap taut, then fall silent.",
+        'The Herald of the deep goes down, and its chains stop pulling.'
+      ]
+    }
+  },
+
+  horrors: {
+    hulk:        'The Wailing Hulk drops, and the tunnels stop shaking.',
+    worms:       'Mother of Worms curls in on herself, and the floor stops moving.',
+    stag:        'The Glass Stag drops, and for once it leaves a mark.',
+    smolder:     'Old Smolder burns down to embers and goes still.',
+    friar:       'The Faceless Friar goes still, and its pages come free.',
+    chainwraith: 'The Chainwraith comes apart, link by link, and stops.',
+    bellmaw:     "The Bellmaw's ringing fades, and its jaw falls slack.",
+    rot:         'Grandmother Rot settles back into the dark, unhurried.'
+  },
+
+  guardians: {
+    // Story Guardians (SPEC/GUARDIAN_NAMES: warden, vael, champion, god).
+    // Written so a replay reading never implies the fight is over for good —
+    // the hero can meet each of these again.
+    warden:       'The Hollow Warden falls, and the way down stands open.',
+    vael:         "High Cantor Vael's hymn breaks off, and the crack stops widening.",
+    champion:     'The First Champion falls, and the chains fall quiet.',
+    god:          'The Thing That Fell is driven back into its chains.',
+    // Deep Guardians (DEEP_GUARDIAN_ORDER).
+    stonebound:   'The Stonebound cracks, and the rock lets go of it.',
+    drummer:      'The Drummer Below stops keeping time, and the chains go slack.',
+    onebefore:    'The One Before falls, and no new marks are cut.',
+    hush:         'The Hush breaks, and something down here finally speaks.',
+    hearthkeeper: 'The Hearthkeeper falls, and the fire gutters for a while.',
+    stairwright:  'The Stairwright stops cutting, and the stair holds still.'
+  }
+};
+
+/* The sentence for a resolved encounter, chosen by seed so a replay reads
+   the same. enc.index is the encounter's fixed place in the descent's
+   timeline (already used elsewhere for ':cost:'/':loot:'/':lore:' seeds),
+   so ':voice:' + enc.index gives a stream of its own that never collides
+   with those. Falls back to the plain name for anything unrecognised —
+   an old saved path, a family/Horror/Guardian id LOG_VOICE doesn't have a
+   line for yet, or a future addition — so the log can never break. */
+/* Which of a family's lines each encounter gets. A path often holds several
+   packs of one family, and with three lines each a straight pick repeats
+   back to back too often; so an encounter never repeats the line the same
+   family and kind used last. Worked forward along the timeline from the
+   seed, it comes out the same every time. */
+function voiceLineIndex(timeline, pos, seed) {
+  const last = {};
+  let pick = 0;
+  for (let j = 0; j <= pos; j++) {
+    const e = timeline[j];
+    const fam = LOG_VOICE.families[e.family];
+    const lines = fam && fam[e.kind];
+    if ((e.kind !== 'pack' && e.kind !== 'elite') || !lines || !lines.length) continue;
+    const key = e.family + ':' + e.kind;
+    let i = Math.floor(rngFrom(seed + ':voice:' + e.index).next() * lines.length);
+    if (lines.length > 1 && i === last[key]) i = (i + 1) % lines.length;
+    last[key] = i;
+    if (j === pos) pick = i;
+  }
+  return pick;
+}
+
+function encounterVoiceLine(enc, seed, timeline) {
+  if (!enc) return '';
+  try {
+    if (enc.kind === 'pack' || enc.kind === 'elite') {
+      const fam = LOG_VOICE.families[enc.family];
+      const lines = fam && fam[enc.kind];
+      const pos = timeline ? timeline.indexOf(enc) : -1;
+      if (lines && lines.length) {
+        return pos >= 0 ? lines[voiceLineIndex(timeline, pos, seed)]
+                        : rngFrom(seed + ':voice:' + enc.index).pick(lines);
+      }
+    } else if (enc.kind === 'horror') {
+      const hid = horrorIdOf(enc);
+      const line = hid && LOG_VOICE.horrors[hid];
+      if (line) return line;
+    } else if (enc.kind === 'guardian') {
+      const gid = enc.guardianId && deepBaseId(enc.guardianId);
+      const line = gid && LOG_VOICE.guardians[gid];
+      if (line) return line;
+    }
+  } catch (e) { /* fall through to the plain name below */ }
+  return enc.name + '.';
 }
 
 document.addEventListener('DOMContentLoaded', boot);
