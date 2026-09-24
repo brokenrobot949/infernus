@@ -384,6 +384,31 @@ ul{ margin:0; padding:0; list-style:none; }
   100% { background:transparent;   box-shadow:inset 3px 0 0 transparent; }
 }
 
+/* CLAUDE.md gives the coin icon brass. Nothing applied it, so the coin was
+   grey everywhere, the status strip included. */
+.ico.coin{ color:var(--brass); }
+
+/* ---- the live descent card: sections, and colour that means something ----
+   Gold is brass (the coin's colour), XP is corona (the XP bar's), HP is blood
+   (the HP bar's) and HP lost is danger red. An encounter's kind carries the
+   same colour as its mark on the track - elites brass, Horrors corona,
+   Guardians danger red - and always its word too, never colour alone. */
+.live-label{ font-size:.75rem; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--ash); }
+.live-section{ margin-top:12px; padding-top:12px; border-top:1px solid var(--track); }
+.live-tile{ background:var(--raised); border-radius:var(--radius); padding:10px 12px; }
+.kind-chip{
+  display:inline-flex; align-items:center; min-height:22px; padding:0 8px;
+  border-radius:999px; border:1px solid var(--edge); color:var(--ash);
+  font-size:.75rem; font-weight:600; white-space:nowrap; vertical-align:middle;
+}
+.kind-elite{ color:var(--brass); border-color:var(--brass); }
+.kind-horror{ color:var(--corona); border-color:var(--corona); }
+.kind-guardian{ color:var(--blood-light); border-color:var(--blood-light); }
+.val-gold{ color:var(--brass); }
+.val-xp{ color:var(--corona); }
+.val-loss{ color:var(--blood-light); }
+.bar-thin{ height:6px; }
+
 /* ---- the live descent track (SCOPES-DESCENT D5) ----
    Pending marks are hollow and resolved ones filled: shape carries the
    difference, not colour. Resolved marks sit on the corona fill, where bone
@@ -402,6 +427,9 @@ ul{ margin:0; padding:0; list-style:none; }
   background:transparent; border:1px solid var(--edge);
 }
 .track-elite.resolved{ background:var(--bone); border-color:var(--abyss); }
+/* Kinds carry their colour, as in the floor picker and the "Fighting" tag. */
+.track-elite{ border-color:var(--brass); }
+.track-elite.resolved{ background:var(--brass); border-color:var(--abyss); }
 .track-boss{
   position:absolute; transform:translate(-50%,-50%);
   width:16px; height:16px; border-radius:50%;
@@ -411,6 +439,8 @@ ul{ margin:0; padding:0; list-style:none; }
 }
 .track-boss .ico{ width:11px; height:11px; }
 .track-boss.resolved{ border:2px solid var(--bone); color:var(--bone); opacity:1; }
+.track-boss.is-horror{ color:var(--corona); border-color:var(--corona); }
+.track-boss.is-guardian{ color:var(--blood-light); border-color:var(--blood-light); }
 .track-crit{
   position:absolute; top:0; transform:translate(-50%,0);
   color:var(--brass); pointer-events:none;
@@ -8601,19 +8631,26 @@ function liveFightPct(enc) {
 /* D1 - what the hero is fighting now, and what comes next. The crits and HP
    costs of fights still to come are already decided by the seed; showing
    them would spoil each one before it lands, so they stay hidden. */
+/* An encounter's kind as a small tag in its track colour, with its word. */
+function liveKindChip(e) {
+  return '<span class="kind-chip kind-' + e.kind + '">' + esc(LIVE_KIND_WORD[e.kind] || e.kind) + '</span>';
+}
+
 function liveNowHtml(d) {
   const i = liveCurrentIndex(d);
   const cur = d.timeline[i];
   if (!cur) return '';
   const next = d.timeline[i + 1];
-  const kind = function (e) { return '<span class="muted"> · ' + esc(LIVE_KIND_WORD[e.kind] || e.kind) + '</span>'; };
-  return '<div style="margin-top:12px">' +
-    '<div class="small"><span class="muted">Fighting · </span>' +
-      '<span style="font-weight:600">' + esc(cur.name) + '</span>' + kind(cur) + '</div>' +
-    '<div class="bar" style="margin-top:6px;height:6px"><div class="bar-fill" id="live-now-fill" ' +
+  return '<div class="live-tile" style="margin-top:12px">' +
+    '<div class="live-label">Fighting</div>' +
+    '<div class="row-between" style="gap:8px;margin-top:4px">' +
+      '<span style="font-weight:700;min-width:0">' + esc(cur.name) + '</span>' + liveKindChip(cur) +
+    '</div>' +
+    '<div class="bar bar-thin" style="margin-top:8px"><div class="bar-fill" id="live-now-fill" ' +
       'data-i="' + i + '" style="width:' + liveFightPct(cur) + '%;background:var(--bone)"></div></div>' +
-    (next ? '<div class="small" style="margin-top:6px"><span class="muted">Next · </span>' +
-      esc(next.name) + kind(next) + '</div>' : '') +
+    (next ? '<div class="row-between small" style="gap:8px;margin-top:8px">' +
+      '<span style="min-width:0"><span class="muted">Next · </span>' + esc(next.name) + '</span>' +
+      liveKindChip(next) + '</div>' : '') +
   '</div>';
 }
 
@@ -8639,14 +8676,25 @@ function liveBossBannerHtml(d) {
 
 /* D2 - what this descent has earned so far. Items show as rarity letter
    badges with counts, because rarity is never shown by colour alone. */
+/* Gold in brass with its coin and XP in corona, the colours they carry
+   everywhere else in the game. Used by the haul and the retreat line alike. */
+function liveGoldHtml(n) {
+  return '<span class="row" style="display:inline-flex;gap:4px">' + icon('ico-coin', 'coin') +
+    '<span class="num val-gold" style="font-weight:600">' + fmtNum(n) + '</span></span>';
+}
+function liveXpHtml(n) {
+  return '<span class="val-xp" style="font-weight:600"><span class="num">' + fmtNum(n) + '</span> XP</span>';
+}
+
 function liveHaulHtml(d) {
   const R = d.rewards;
   const bits = [];
-  if (R.gold) bits.push('<span class="num">' + fmtNum(R.gold) + '</span> gold');
-  if (R.xp) bits.push('<span class="num">' + fmtNum(R.xp) + '</span> XP');
-  if (R.starshards) bits.push('<span class="num">' + fmtNum(R.starshards) + '</span> Starshard' + (R.starshards === 1 ? '' : 's'));
+  if (R.gold) bits.push(liveGoldHtml(R.gold));
+  if (R.xp) bits.push(liveXpHtml(R.xp));
+  if (R.starshards) bits.push('<span class="row" style="display:inline-flex;gap:4px">' + icon('ico-star') +
+    '<span class="num" style="font-weight:600">' + fmtNum(R.starshards) + '</span></span>');
   const pages = (d.lorePages || []).length;
-  if (pages) bits.push(fmtNum(pages) + ' lore page' + (pages === 1 ? '' : 's'));
+  if (pages) bits.push('<span style="color:var(--corona)">' + fmtNum(pages) + ' lore page' + (pages === 1 ? '' : 's') + '</span>');
 
   const counts = {};
   for (const it of R.items) counts[it.rarity] = (counts[it.rarity] || 0) + 1;
@@ -8658,12 +8706,13 @@ function liveHaulHtml(d) {
     ? '<div class="small muted" style="margin-top:4px">+<span class="num">' + fmtNum(R.autoSalvaged.ash) + '</span> Ash from salvage</div>'
     : '';
 
+  const head = '<div class="live-label">So far</div>';
   if (!bits.length && !badges && !salvaged) {
-    return '<div class="small muted" style="margin-top:10px">So far · nothing yet.</div>';
+    return '<div class="live-section">' + head + '<div class="small muted" style="margin-top:4px">Nothing yet.</div></div>';
   }
-  return '<div style="margin-top:10px">' +
-    '<div class="small"><span class="muted">So far · </span>' + (bits.join(' · ') || '<span class="muted">no gold yet</span>') + '</div>' +
-    (badges ? '<div class="row wrap" style="gap:10px;margin-top:6px">' + badges + '</div>' : '') +
+  return '<div class="live-section">' + head +
+    (bits.length ? '<div class="row wrap" style="gap:14px;margin-top:6px">' + bits.join('') + '</div>' : '') +
+    (badges ? '<div class="row wrap" style="gap:10px;margin-top:8px">' + badges + '</div>' : '') +
     salvaged +
   '</div>';
 }
@@ -8708,15 +8757,18 @@ const LIVE_PACE_WORD = {
 
 function livePaceHtml(d, p) {
   if (!p.risk) return '';
-  let html = '<div class="small" style="margin-top:10px">';
+  // The verdict and the risk label lead, in their colours; the figures follow.
+  let html = '<div class="live-section small">' +
+    '<div class="row-between" style="gap:8px"><span class="live-label">Pace</span>' + riskLabel(p.risk) + '</div>';
   if (p.word) {
     const w = LIVE_PACE_WORD[p.word];
-    html += '<div><span class="num">' + fmtNum(Math.round(p.spent)) + '</span> HP spent · ' +
-      '<span style="font-weight:600;color:var(--' + w.colour + ')">' + w.text + '</span></div>';
+    html += '<div style="margin-top:6px"><span style="font-weight:700;color:var(--' + w.colour + ')">' +
+      w.text.charAt(0).toUpperCase() + w.text.slice(1) + '</span> · ' +
+      '<span class="num val-loss">' + fmtNum(Math.round(p.spent)) + '</span> HP spent</div>';
   }
-  html += '<div style="margin-top:4px">About <span class="num">' + fmtNum(Math.round(p.min)) + '–' +
-      fmtNum(Math.round(p.max)) + '</span> HP of fighting left. You have <span class="num">' +
-      fmtNum(Math.max(0, Math.floor(d.hp))) + '</span>. ' + riskLabel(p.risk) + '</div>';
+  html += '<div style="margin-top:4px">About <span class="num" style="font-weight:600">' + fmtNum(Math.round(p.min)) + '–' +
+      fmtNum(Math.round(p.max)) + '</span> HP of fighting left. You have <span class="num" style="font-weight:600">' +
+      fmtNum(Math.max(0, Math.floor(d.hp))) + '</span>.</div>';
   if (p.risk === 'deadly') {
     html += '<div style="margin-top:4px;color:var(--blood-light)">' +
       'The rest of this path is expected to cost more HP than you have.</div>';
@@ -8730,28 +8782,32 @@ function livePaceHtml(d, p) {
 function liveRetreatHtml(hero, p) {
   const d = hero.descent;
   const R = d.rewards;
-  const kept = [];
-  if (R.gold) kept.push(fmtNum(R.gold) + ' gold');
-  if (R.xp) kept.push(fmtNum(R.xp) + ' XP');
-  if (R.items.length) kept.push(fmtNum(R.items.length) + ' item' + (R.items.length === 1 ? '' : 's'));
-  const keptText = kept.length > 1
-    ? kept.slice(0, -1).join(', ') + ' and ' + kept[kept.length - 1]
-    : kept[0];
-
   const total = d.timeline.length;
   const locket = d.snapshot.specials.the_deserters_locket && total > 0 &&
     d.resolved / total >= BALANCE.live.locketFraction;
-  let main = 'Retreat now: ' + (keptText ? 'keep ' + keptText + '.' : 'nothing earned yet.') + ' ' +
-    (locket ? 'The Deserter’s Locket keeps the end chest.' : 'Lose the end chest.');
 
-  const extras = [];
-  if (d.floor >= hero.deepest) extras.push('Floor ' + fmtNum(d.floor + 1) + ' stays locked.');
+  // What you would give up, in danger red; what you would keep, in the
+  // colours the haul uses. Keeping and losing read apart at a glance.
+  const losses = [];
+  if (!locket) losses.push('Lose the end chest.');
+  if (d.floor >= hero.deepest) losses.push('Floor ' + fmtNum(d.floor + 1) + ' stays locked.');
   const gd = d.timeline.slice(d.resolved).find(function (e) { return e.kind === 'guardian'; });
-  if (gd) extras.push(gd.name + ' stays standing.');
-  if (p && (p.word === 'hot' || p.risk === 'deadly') && (R.gold || R.xp)) extras.push('A fall would halve the gold and XP.');
+  if (gd) losses.push(gd.name + ' stays standing.');
 
+  const keepBits = [];
+  if (R.gold) keepBits.push(liveGoldHtml(R.gold));
+  if (R.xp) keepBits.push(liveXpHtml(R.xp));
+  if (R.items.length) keepBits.push('<span style="font-weight:600"><span class="num">' + fmtNum(R.items.length) +
+    '</span> item' + (R.items.length === 1 ? '' : 's') + '</span>');
+
+  const fall = p && (p.word === 'hot' || p.risk === 'deadly') && (R.gold || R.xp);
   return '<div class="small" style="background:var(--crypt);border-radius:var(--radius);padding:8px 10px;margin-bottom:8px">' +
-    esc(main) + (extras.length ? ' <span class="muted">' + esc(extras.join(' ')) + '</span>' : '') +
+    '<div class="row wrap" style="gap:4px 10px;align-items:center"><span style="font-weight:700">Retreat now keeps</span>' +
+      (keepBits.length ? keepBits.join('') : '<span class="muted">nothing yet</span>') +
+      (locket ? '<span style="color:var(--verdant);font-weight:600">and the end chest (Deserter’s Locket)</span>' : '') +
+    '</div>' +
+    (losses.length ? '<div class="val-loss" style="margin-top:4px">' + esc(losses.join(' ')) + '</div>' : '') +
+    (fall ? '<div class="val-loss" style="margin-top:2px;font-weight:600">A fall would halve the gold and XP.</div>' : '') +
   '</div>';
 }
 
@@ -8763,20 +8819,38 @@ function liveCardHtml(hero, p) {
   const hp = Math.max(0, Math.floor(d.hp));
   // D6 - low HP says so in words as well as colour.
   const low = hp < st.maxHp * BALANCE.live.lowHpFrac;
+  const hpPct = st.maxHp > 0 ? clamp(hp / st.maxHp, 0, 1) * 100 : 0;
   return '<div class="row-between">' +
       '<div><div class="display" style="font-size:1.375rem">Floor ' + d.floor + '</div>' +
         '<div class="tiny muted">' + esc(d.pathName) + '</div></div>' +
+      // Time left in corona, the colour of the time bar it belongs to.
       '<div style="text-align:right">' +
-        '<div class="num" id="live-left">' + fmtTime(Math.max(0, d.endsAt - now())) + '</div>' +
+        '<div class="num" id="live-left" style="color:var(--corona);font-size:1.25rem;font-weight:700">' +
+          fmtTime(Math.max(0, d.endsAt - now())) + '</div>' +
         '<div class="tiny muted">left</div></div>' +
     '</div>' +
     liveTrackHtml(hero, d) +
     liveNowHtml(d) +
     liveBossBannerHtml(d) +
-    '<div class="row-between small num" style="margin-top:10px">' +
-      '<span>' + d.resolved + ' / ' + d.timeline.length + ' encounters</span>' +
-      '<span' + (low ? ' style="color:var(--blood-light);font-weight:600"' : '') + '>' +
-        (low ? 'Low HP · ' : '') + fmtNum(hp) + ' / ' + fmtNum(st.maxHp) + ' HP</span>' +
+    // HP and encounters as two tiles. HP carries a bar in blood, the HP
+    // bar's colour; below a quarter it says "Low HP" as well as turning red.
+    '<div class="grid-2" style="margin-top:10px">' +
+      '<div class="live-tile">' +
+        '<div class="row-between" style="gap:6px"><span class="live-label"' +
+          (low ? ' style="color:var(--blood-light)"' : '') + '>' + (low ? 'Low HP' : 'HP') + '</span>' +
+          '<span style="color:var(--blood);display:inline-flex">' + icon('ico-hp') + '</span></div>' +
+        '<div class="num" style="font-weight:700;margin-top:2px' + (low ? ';color:var(--blood-light)' : '') + '">' +
+          fmtNum(hp) + '<span class="muted" style="font-weight:400"> / ' + fmtNum(st.maxHp) + '</span></div>' +
+        '<div class="bar bar-thin" style="margin-top:6px"><div class="bar-fill" style="width:' + hpPct + '%"></div></div>' +
+      '</div>' +
+      '<div class="live-tile">' +
+        '<div class="row-between" style="gap:6px"><span class="live-label">Encounters</span>' +
+          '<span style="color:var(--corona);display:inline-flex">' + icon('ico-descend') + '</span></div>' +
+        '<div class="num" style="font-weight:700;margin-top:2px">' + fmtNum(d.resolved) +
+          '<span class="muted" style="font-weight:400"> / ' + fmtNum(d.timeline.length) + '</span></div>' +
+        '<div class="bar bar-thin bar-xp" style="margin-top:6px"><div class="bar-fill" style="width:' +
+          (d.timeline.length ? d.resolved / d.timeline.length * 100 : 0) + '%"></div></div>' +
+      '</div>' +
     '</div>' +
     liveHaulHtml(d) +
     livePaceHtml(d, p) +
@@ -16019,7 +16093,12 @@ function logLine(entry) {
   // Lines written before carry "Crit! " in their text; it becomes the tag.
   let raw = entry.text || '';
   if (entry.crit && raw.indexOf('Crit! ') === 0) raw = raw.slice(6);
-  let text = (entry.crit ? '<span class="log-tag">Crit</span> ' : '') + esc(raw);
+  // The HP an encounter cost sits at the end of its line; it reads in danger
+  // red so the numbers stand apart from the prose.
+  const costAt = raw.match(/ (-[\d,]+ HP)\.$/);
+  const body = costAt ? raw.slice(0, costAt.index) : raw;
+  let text = (entry.crit ? '<span class="log-tag">Crit</span> ' : '') + esc(body) +
+    (costAt ? ' <span class="num val-loss" style="font-weight:600">' + esc(costAt[1]) + '</span>.' : '');
   if (entry.kind === 'death') cls += ' risk-deadly';
   if (entry.kind === 'save') cls += ' risk-risky';
   if (entry.kind === 'level') cls += ' log-level';
@@ -16111,7 +16190,7 @@ function trackMarkHtml(d, enc, i) {
   let mark;
   if (boss) {
     const iconId = enc.kind === 'guardian' ? 'ico-boss' : 'ico-horror';
-    mark = '<span class="track-boss' + (resolved ? ' resolved' : '') + '" style="left:' +
+    mark = '<span class="track-boss is-' + enc.kind + (resolved ? ' resolved' : '') + '" style="left:' +
       at + '%;top:' + TRACK_BAR_MID + 'px">' + icon(iconId) + '</span>';
   } else if (enc.kind === 'elite') {
     mark = '<i class="track-elite' + (resolved ? ' resolved' : '') + '" style="left:' +
