@@ -568,6 +568,11 @@ button[data-act]{ min-height:44px; }
     <path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M8 10V7.4C8 5 9.8 3.2 12 3.2C14.2 3.2 16 5 16 7.4V10"/>
     <path fill="currentColor" fill-rule="evenodd" d="M5.5 10H18.5V20.5H5.5ZM11.1 13.9A1.1 1.1 0 1 0 13.3 13.9A1.1 1.1 0 1 0 11.1 13.9M11.5 15.3H12.5L13.1 18.4H10.9Z"/>
   </symbol>
+  <!-- An open eye: something on this floor is watching. Marks a Wandering
+       Horror in the floor picker, apart from the Guardian's horned mark. -->
+  <symbol id="ico-horror" viewBox="0 0 24 24">
+    <path fill="currentColor" fill-rule="evenodd" d="M12 5C6.6 5 2.6 9.3 1.4 12C2.6 14.7 6.6 19 12 19C17.4 19 21.4 14.7 22.6 12C21.4 9.3 17.4 5 12 5ZM12 8.3A3.7 3.7 0 1 1 12 15.7A3.7 3.7 0 1 1 12 8.3ZM12 10.4A1.6 1.6 0 1 0 12 13.6A1.6 1.6 0 1 0 12 10.4Z"/>
+  </symbol>
   <!-- A banded strongbox. The Vault needs its own mark: the padlock already
        means "this item is locked" everywhere in the gear lists. -->
   <symbol id="ico-vault" viewBox="0 0 24 24">
@@ -8277,6 +8282,24 @@ function floorBands(cap) {
    journey - a hero fifty floors down had fifty taps to reach a Guardian.
    Tapping the floor number opens this instead: every floor at once,
    grouped, with the Guardians marked and the current one highlighted. */
+/* The Wandering Horror waiting on one of a floor's paths, or null. It only
+   reads paths already rolled. A floor's paths are set the first time it is
+   viewed and saved so a reload can't change them; rolling every floor early
+   just to find its Horrors would save all of them, which at floor 120 grows
+   the save about eighty-fold (5 KB to 390 KB) and makes Export unwieldy. */
+function floorHorror(hero, f) {
+  const fl = hero.floors && hero.floors[String(f)];
+  if (!fl || !fl.paths) return null;
+  for (const p of fl.paths) {
+    const enc = (p.encounters || []).find(function (e) { return e.kind === 'horror'; });
+    if (enc) {
+      const id = horrorIdOf(enc);
+      return id ? HORRORS[id].name : 'A Wandering Horror';
+    }
+  }
+  return null;
+}
+
 function openFloorPicker(hero) {
   const cap = maxSelectableFloor(hero);
   const current = selectedFloor(hero);
@@ -8286,12 +8309,15 @@ function openFloorPicker(hero) {
       '<div class="floor-grid">' +
         band.floors.map(function (f) {
           const gd = guardianOnFloor(f);
+          const horror = gd ? null : floorHorror(hero, f);   // never both: Guardian floors carry no Horror
           const cls = 'floor-tile' + (gd ? ' boss' : '') + (f === current ? ' sel' : '');
           return '<button type="button" class="' + cls + '" data-act="floorpick" data-f="' + f + '"' +
             (f === current ? ' aria-current="true"' : '') +
-            ' aria-label="Floor ' + f + (gd ? ', ' + esc(GUARDIAN_NAMES[gd.id]) : '') + '">' +
+            ' aria-label="Floor ' + f + (gd ? ', ' + esc(GUARDIAN_NAMES[gd.id]) : '') +
+              (horror ? ', ' + esc(horror) + ' waits here' : '') + '">' +
             '<span>' + fmtNum(f) + '</span>' +
             (gd ? '<span style="color:var(--blood-light)">' + icon('ico-boss') + '</span>' : '') +
+            (horror ? '<span style="color:var(--corona)">' + icon('ico-horror') + '</span>' : '') +
           '</button>';
         }).join('') +
       '</div>';
@@ -8300,7 +8326,9 @@ function openFloorPicker(hero) {
   openSheet({
     title: 'Choose a floor',
     body: '<p class="tiny muted" style="margin:0 0 10px">You can return to any floor you have reached. ' +
-      'Guardian floors are outlined in red.</p>' + body,
+      'Guardian floors are outlined in red. An eye marks a floor with a Wandering Horror on one of its paths. ' +
+      'A floor’s paths are set the first time you view it, so floors you haven’t looked at yet show no eye.</p>' +
+      body,
 
     /* The sheet carries its own dispatcher: delegate() is bound to #view,
        and sheets live outside it. */
