@@ -1422,6 +1422,7 @@ const BALANCE = {
        it can never be worth more than it costs. */
     offerings: {
       durationMs: 2 * 60 * 60 * 1000,
+      renewMinGold: 1,           // renewing costs the used-up share of the price, never less
       list: {
         vigil:     { id: 'vigil',     name: 'Vigil of the Flame', coef: 24, icon: 'ico-chapel',
                      text: 'HP regenerates twice as fast while you are not descending',
@@ -15818,6 +15819,38 @@ function buyOffering(hero, id) {
   return { ok: true, offering: hero.offering, cost: cost };
 }
 
+/* Renewing restarts the running Offering's two hours from now. It costs
+   the share of the full price that the time already used up represents,
+   so renewing early costs exactly what keeping it going would have: the
+   same rate per hour, and the time left on it is never wasted. */
+function offeringRenewCost(hero) {
+  const b = activeOffering(hero);
+  if (!b) return 0;
+  const D = BALANCE.town.offerings.durationMs;
+  const used = clamp(D - (b.until - now()), 0, D);
+  return Math.max(BALANCE.town.offerings.renewMinGold, Math.ceil(offeringCost(hero, b.id) * used / D));
+}
+
+/* `quoted` is the price the player was shown. The price only rises while
+   they read, so if it has moved past the quote nothing is charged and the
+   caller shows the new price instead - never more than was shown, and a
+   sheet left open for an hour can't renew at the old price. */
+function renewOffering(hero, quoted) {
+  const b = activeOffering(hero);
+  if (!b) return { ok: false, reason: 'That Offering has already ended.' };
+  if (hero.descent) return { ok: false, reason: 'Not during a descent.' };
+  const cost = offeringRenewCost(hero);
+  if (quoted !== undefined && cost > quoted) return { ok: false, repriced: true, cost: cost };
+  if (hero.gold < cost) return { ok: false, reason: 'Not enough gold.' };
+  // Bank the HP earned so far first, as buyOffering does, so a Vigil's
+  // doubled stretch up to now is kept when its window restarts.
+  setHp(hero, currentHp(hero, heroStats(hero)));
+  hero.gold -= cost;
+  hero.offering = { id: b.id, from: now(), until: now() + BALANCE.town.offerings.durationMs };
+  save();
+  return { ok: true, offering: hero.offering, cost: cost };
+}
+
 /* Ashen Favour lifts the Ash from salvaging, never the Starshards, and
    only in town. It wraps salvageYield, which stays untouched and pure, so
    the auto-salvage of a drop that will not fit - which happens inside a
@@ -15846,12 +15879,16 @@ function townRenderOfferings(hero) {
             '<div class="small muted">' + esc(def.text) + '</div>' +
           '</div>' +
         '</div>' +
-        '<div class="small" style="margin-top:8px;color:' + townAccent('chapel') + '"' +
-          ' data-town-cd="' + active.until + '" data-town-cd-tmpl="offering">' +
-          'Ends in ' + fmtTime(left) +
+        '<div class="row-between" style="margin-top:10px;gap:10px">' +
+          '<div class="small" style="color:' + townAccent('chapel') + '"' +
+            ' data-town-cd="' + active.until + '" data-town-cd-tmpl="offering">' +
+            'Ends in ' + fmtTime(left) +
+          '</div>' +
+          townRenewButton(hero) +
         '</div>' +
       '</div>' +
-      '<p class="tiny muted" style="margin-top:8px">Making another ends this one early.</p>';
+      '<p class="tiny muted" style="margin-top:8px">Renew to reset it to ' + fmtTime(B.durationMs) +
+        '; you pay only for the time used up. Making a different one ends this one early.</p>';
   } else {
     out += '<p class="tiny muted">Each lasts ' + fmtTime(B.durationMs) +
       '. Only one at a time, and none of them follow you into the pit.</p>';
@@ -15881,6 +15918,16 @@ function townRenderOfferings(hero) {
   }
   out += '</div>';
   return out;
+}
+
+/* The running Offering's Renew button. Its price climbs as the Offering's
+   time is used up, so the town tick rewrites it in place (see below). */
+function townRenewButton(hero) {
+  const cost = offeringRenewCost(hero);
+  const afford = hero.gold >= cost;
+  return '<button class="btn btn-sm' + (afford ? ' btn-primary' : '') + '" data-act="offering-renew"' +
+    ' data-renew-btn="1"' + (afford ? '' : ' disabled') + ' style="flex:0 0 auto">' +
+    'Renew · <span class="num" data-renew-cost="1">' + fmtNum(cost) + '</span> gold</button>';
 }
 
 /* Redeclares townRenderChapel to seat Offerings between Heal and Respec.
@@ -15969,7 +16016,62 @@ function townRenderChapel(hero) {
       });
       return;
     }
+    if (act === 'offering-renew') {
+      const hero = state && state.hero;
+      if (!hero) return;
+      townConfirmRenew(hero);
+      return;
+    }
     return inherited.call(this, act, node, ev);
+  };
+})();
+
+/* Renewing, confirmed. If the price moved while the sheet was open, nothing
+   is charged; the sheet opens again with the new price. */
+function townConfirmRenew(hero) {
+  const b = activeOffering(hero);
+  if (!b) { toast('That Offering has already ended.'); refresh(); return; }
+  const def = offeringDef(b.id);
+  const D = BALANCE.town.offerings.durationMs;
+  // Whole minutes, rounded the way the countdown shows them, so "left" and
+  // "used up" always add up to the full duration on screen.
+  const left = Math.ceil(Math.max(0, b.until - now()) / 60000) * 60000;
+  const quoted = offeringRenewCost(hero);
+  confirmSheet({
+    title: 'Renew the Offering?',
+    body: 'Offer ' + fmtNum(quoted) + ' gold to restart <strong>' + esc(def.name) + '</strong>. ' +
+      'It will last ' + fmtTime(D) + ' from now. It has ' + fmtTime(left) + ' left, so you pay only for the ' +
+      fmtTime(Math.max(0, D - left)) + ' used up.',
+    yes: 'Renew',
+    onYes: function () {
+      const r = renewOffering(hero, quoted);
+      if (r.repriced) { toast('The price is now ' + fmtNum(r.cost) + ' gold.'); townConfirmRenew(hero); return; }
+      if (!r.ok) { toast(r.reason); refresh(); return; }
+      toast(def.name + ' is renewed.');
+      refresh();
+    }
+  });
+}
+
+/* The Renew price climbs as the Offering is used up, so rewrite it in place
+   once a second, alongside the countdowns. Re-render only; the price is
+   always worked out from the stored stamps. */
+(function () {
+  const inherited = VIEWS.town.tick;
+  VIEWS.town.tick = function () {
+    const out = inherited ? inherited.apply(this, arguments) : undefined;
+    const hero = state && state.hero;
+    const btn = document.querySelector('#view [data-renew-btn]');
+    if (hero && btn) {
+      if (!activeOffering(hero)) { renderView(); return out; }
+      const cost = offeringRenewCost(hero);
+      const costEl = btn.querySelector('[data-renew-cost]');
+      if (costEl) costEl.textContent = fmtNum(cost);
+      const afford = hero.gold >= cost;
+      btn.disabled = !afford;
+      btn.classList.toggle('btn-primary', afford);
+    }
+    return out;
   };
 })();
 
