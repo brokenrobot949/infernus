@@ -147,13 +147,17 @@ ul{ margin:0; padding:0; list-style:none; }
   padding:14px calc(12px + var(--sar)) 14px calc(12px + var(--sal));
 }
 
-/* ---- primary action dock ---- */
-.dock{
-  position:sticky; bottom:0;
-  margin:14px -12px -14px;
-  padding:10px 12px 14px;
-  background:linear-gradient(to top,var(--abyss) 62%,rgba(21,18,26,0));
+/* ---- primary action dock ----
+   A view marks its primary action with .dock; renderView lifts it into #dock,
+   a fixed footer between the view and the tab bar, outside the scrolling
+   area, so it stays put while the page scrolls. */
+#dock{
+  flex:0 0 auto;
+  padding:10px calc(12px + var(--sar)) 10px calc(12px + var(--sal));
+  background:var(--abyss);
+  border-top:1px solid var(--track);
 }
+#dock[hidden]{ display:none; }
 
 /* ---- tab bar ---- */
 #tabs{
@@ -498,6 +502,8 @@ ul{ margin:0; padding:0; list-style:none; }
 /* CLAUDE.md: every tap target is at least 44px tall. */
 button[data-act]{ min-height:44px; }
 #tabs .tab{ min-height:var(--tab-h); }
+/* ...and the primary action, 56px (the rule above would otherwise win). */
+button.btn-lg[data-act]{ min-height:56px; }
 
 /* ---- icons ---- */
 /* inline-block so an icon sits inside a run of text instead of breaking the line */
@@ -594,6 +600,240 @@ button[data-act]{ min-height:44px; }
   color:var(--bone);
 }
 .field textarea{ min-height:120px; font-family:ui-monospace,Menlo,Consolas,monospace; font-size:.75rem; }
+/* ============================================================
+   Infernus — Hero tab rework, part "banner" (X = banner)
+   SCOPES-HERO.md H1, H2 (page-button half), H6, H7. SPEC.md §19.3.
+   Prefixes: .hb- (banner), .hs- (stats).
+   ============================================================ */
+
+/* H1: the sigil, its frame ring and the glow behind it only. Border
+   colour is set inline per hero (FRAME_COLOURS[bestFrame()] or --track). */
+.hb-sigil-wrap{ position:relative; width:64px; height:64px; flex:0 0 auto; }
+.hb-sigil-glow{
+  position:absolute; inset:-11px; border-radius:50%;
+  background:radial-gradient(circle, rgba(174,147,255,.38) 0%, rgba(174,147,255,0) 72%);
+  pointer-events:none;
+}
+.hb-sigil-ring{
+  position:relative; width:64px; height:64px; border-radius:50%;
+  border:2px solid var(--track); background:var(--raised);
+  display:flex; align-items:center; justify-content:center;
+}
+
+/* H1: the level / Abyssal-rank bar, slimmer than the default .bar-xp
+   now that it sits in the banner rather than its own Stats card. */
+.hb-bar-slim{ height:6px; }
+
+/* H2: the reminder dot (Gear, Stats) and count pill (Skills) on the
+   segmented control. Colours are set inline so they can flip to abyss
+   shades on the active (corona-background) button. */
+.hb-dot{ display:inline-block; width:6px; height:6px; border-radius:50%; margin-left:5px; vertical-align:middle; }
+.hb-pill{
+  display:inline-grid; place-items:center; min-width:20px; height:18px; padding:0 6px;
+  border-radius:999px; font-size:.75rem; font-weight:700; margin-left:6px; line-height:1;
+}
+
+/* H7: the Power stacked bar and its two-column legend. */
+.hs-stackbar{ display:flex; height:12px; border-radius:6px; overflow:hidden; gap:2px; margin-top:14px; }
+.hs-legend{ display:grid; grid-template-columns:1fr 1fr; gap:9px 12px; margin-top:14px; }
+.hs-legend-item{ display:flex; align-items:center; gap:8px; font-size:.875rem; min-width:0; }
+.hs-legend-sw{ width:10px; height:10px; border-radius:2px; flex:0 0 auto; }
+
+/* H6: compact stat tiles. Background/border/tap state come from the
+   existing .card/.card-tap classes; these only size the two text rows.
+   Colour is bone by default (inherited from body) and ash via the
+   existing .muted utility when a tile dims. */
+.hs-stat-label{ font-size:.875rem; }
+.hs-stat-value{ font-size:1.125rem; font-weight:700; margin-top:4px; }
+/* ============================================================
+   HERO TAB REWORK - Skills page (SCOPES-HERO.md H8, H9, H10)
+   Every selector below is prefixed .ht-. Palette tokens only.
+   ============================================================ */
+
+/* ---- H9: the points bar ---- */
+.ht-sp-pill{
+  background:var(--corona); color:var(--abyss); font-weight:700;
+  font-size:.8125rem; padding:4px 10px; border-radius:999px; line-height:1.4;
+}
+
+/* ---- H10: rite slot cards ---- */
+.ht-rite-card{ min-height:52px; padding:10px 12px; }
+/* Edge, not track: the empty slot is a control, and control borders need 3:1. */
+.ht-rite-dashed{ border:1px dashed var(--edge) !important; }
+
+/* ---- H8: branch tabs ---- */
+.ht-branch-tab{
+  flex:1 1 0; min-width:0; min-height:44px; padding:7px 6px;
+  border-radius:var(--radius); border:1px solid var(--edge);
+  background:var(--raised); text-align:center; color:var(--ash);
+  position:relative;
+}
+.ht-branch-tab-active{ border:2px solid var(--corona); color:var(--corona); }
+.ht-branch-dot{
+  position:absolute; top:6px; right:6px; width:7px; height:7px;
+  border-radius:50%; background:var(--corona);
+}
+.ht-branch-name{
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+
+/* ---- legend line ---- */
+.ht-legend2{
+  display:flex; flex-wrap:wrap; gap:12px 16px; align-items:center;
+  margin-top:12px; color:var(--ash); font-size:.75rem;
+}
+.ht-legend2 .row{ gap:5px; }
+
+/* ---- the tree ---- */
+.ht-tree{ position:relative; margin-top:12px; }
+.ht-tree-line{
+  position:absolute; left:50%; top:0; bottom:0; width:2px;
+  background:var(--track); transform:translateX(-50%); z-index:0;
+}
+.ht-trow{ position:relative; display:flex; gap:12px; z-index:1; }
+.ht-trow + .ht-gate{ margin-top:10px; }
+.ht-gate + .ht-trow{ margin-top:10px; }
+.ht-trow + .ht-trow{ margin-top:10px; }
+
+.ht-gate{ position:relative; z-index:1; display:flex; justify-content:center; }
+.ht-gate-pill{
+  background:var(--raised); border-radius:999px; padding:4px 10px 4px 8px;
+  font-size:.75rem; color:var(--ash); display:inline-flex; align-items:center; gap:5px;
+}
+
+/* ---- node card ---- */
+.ht-node{
+  background:var(--crypt); border-radius:10px; padding:8px;
+  display:flex; gap:8px; position:relative; flex:1 1 0; min-width:0;
+  text-align:left;
+}
+.ht-node-solo{ flex:0 1 65%; margin:0 auto; }
+.ht-node-shape{
+  width:28px; height:28px; flex:0 0 auto;
+  display:flex; align-items:center; justify-content:center; position:relative;
+}
+.ht-node-body{ min-width:0; }
+.ht-node-name{ font-size:.875rem; font-weight:600; color:var(--bone); }
+.ht-node-effect{ font-size:.75rem; color:var(--ash); margin-top:2px; line-height:1.3; }
+.ht-clamp2{
+  display:-webkit-box; -webkit-line-clamp:2; line-clamp:2;
+  -webkit-box-orient:vertical; overflow:hidden;
+}
+.ht-pips{ display:flex; gap:3px; margin-top:6px; }
+.ht-pip{ width:6px; height:6px; border-radius:50%; box-sizing:border-box; flex:0 0 auto; }
+.ht-pip-on{ background:var(--corona); }
+.ht-pip-off{ border:1.5px solid var(--edge); }
+
+.ht-node-badge{
+  position:absolute; top:-7px; right:-7px; width:18px; height:18px; border-radius:50%;
+  background:var(--corona); color:var(--abyss);
+  display:flex; align-items:center; justify-content:center;
+  font-size:.75rem; font-weight:700; line-height:1;
+}
+.ht-node-lock{
+  position:absolute; top:6px; right:6px; width:13px; height:13px; color:var(--ash);
+}
+.ht-node-check{
+  position:absolute; bottom:-1px; right:-1px; width:12px; height:12px;
+  color:var(--corona); background:var(--crypt); border-radius:50%;
+  padding:1px; box-sizing:border-box;
+}
+/* HERO TAB REWORK - GEAR PART (X = gear). SCOPES-HERO H3/H4/H5. */
+
+/* ---- H3: paper doll ---- */
+.hd-doll{
+  display:grid;
+  grid-template-columns:1fr 96px 1fr;
+  grid-auto-rows:minmax(72px,auto);
+  gap:8px;
+}
+/* Left column head-to-foot, figure spanning all 3 rows, right column
+   hands-and-neck. The markup order (helm, armor, boots, figure, weapon,
+   gloves, relic) is fixed, so nth-child placement is safe. */
+.hd-doll > :nth-child(1){ grid-column:1; grid-row:1; }
+.hd-doll > :nth-child(2){ grid-column:1; grid-row:2; }
+.hd-doll > :nth-child(3){ grid-column:1; grid-row:3; }
+.hd-doll > :nth-child(4){ grid-column:2; grid-row:1 / 4; }
+.hd-doll > :nth-child(5){ grid-column:3; grid-row:1; }
+.hd-doll > :nth-child(6){ grid-column:3; grid-row:2; }
+.hd-doll > :nth-child(7){ grid-column:3; grid-row:3; }
+
+.hd-tile{
+  background:var(--crypt);
+  border-radius:var(--radius);
+  padding:8px;
+  min-height:72px;
+  min-width:0;
+  display:flex;
+  flex-direction:column;
+  justify-content:space-between;
+}
+.hd-tile-empty{ justify-content:flex-start; gap:8px; }
+
+.hd-tiletop{ display:flex; align-items:flex-start; justify-content:space-between; gap:4px; }
+.hd-slotlabel{ display:flex; align-items:center; gap:4px; color:var(--ash); font-size:.75rem; min-width:0; }
+.hd-slotlabel .ico{ flex:0 0 auto; }
+.hd-tiletop-right{ display:flex; align-items:center; gap:6px; flex:0 0 auto; color:var(--ash); }
+.hd-arrow{ color:var(--corona); font-size:.8125rem; font-weight:700; line-height:1; }
+
+.hd-itemname{
+  display:flex; align-items:flex-start; gap:4px;
+  font-size:.875rem; font-weight:600; line-height:1.25; margin-top:4px;
+}
+.hd-clamp2{
+  flex:1 1 auto; min-width:0;
+  display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;
+}
+.hd-bagnote{ font-size:.75rem; color:var(--corona); margin-top:2px; }
+
+.hd-figure{ display:flex; align-items:center; justify-content:center; min-width:0; }
+.hd-figure svg{ width:100%; height:100%; display:block; }
+
+/* Visually hidden but still read by a screen reader. */
+.hd-vh{
+  position:absolute; width:1px; height:1px; padding:0; margin:-1px;
+  overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0;
+}
+
+/* ---- H4: Equip upgrades ---- */
+/* Two classes so this beats the base game's `button[data-act]{min-height:44px}`
+   rule (id,class,type = 0,0,1,1) on specificity (0,0,2,0), not just source order. */
+.btn.hd-upgrades-btn{ width:100%; min-height:48px; margin-top:10px; }
+
+.hd-upsummary{ font-size:1rem; font-weight:600; color:var(--bone); margin-bottom:12px; }
+.hd-uprows > * + *{ margin-top:8px; }
+.hd-uprow{
+  display:flex; align-items:flex-start; gap:10px; width:100%;
+  min-height:44px; padding:10px;
+  border-radius:var(--radius); border:1px solid var(--track);
+  background:var(--crypt); text-align:left;
+}
+.hd-checkbox{
+  width:20px; height:20px; flex:0 0 auto; margin-top:2px;
+  border-radius:4px; border:2px solid var(--edge);
+  display:flex; align-items:center; justify-content:center;
+  font-size:.8125rem; font-weight:700; color:transparent;
+}
+.hd-checked{ border-color:var(--corona); background:var(--corona); color:var(--abyss); }
+.hd-uprow-body{ flex:1 1 auto; min-width:0; }
+.hd-upsub{ font-size:.875rem; color:var(--ash); margin-top:2px; }
+.hd-upgain{ font-size:.875rem; color:var(--corona); font-weight:600; margin-top:4px; }
+.hd-uploss{ font-size:.875rem; color:var(--blood-light); margin-top:2px; }
+
+/* ---- H5: set tracker ---- */
+.hd-settracker{ margin-top:14px; }
+.hd-setcard{ line-height:1.4; }
+.hd-ellip{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.hd-setbonus{ margin-top:8px; }
+.hd-set-active{ color:var(--r-set); font-weight:600; white-space:nowrap; }
+.hd-set-need{ color:var(--ash); white-space:nowrap; }
+.hd-setmissing{ margin-top:8px; font-size:.875rem; }
+.hd-setmissing-vault{ color:var(--ash); }
+.hd-baglink{
+  display:inline-flex; align-items:center; min-height:44px;
+  color:var(--corona); font-weight:600; font-size:.875rem;
+  vertical-align:middle;
+}
 </style>
 </head>
 <body>
@@ -764,11 +1004,88 @@ button[data-act]{ min-height:44px; }
     <path fill="currentColor" fill-rule="evenodd" d="M24 1L30.12 9.22L40.26 7.74L38.78 17.88L47 24L38.78 30.12L40.26 40.26L30.12 38.78L24 47L17.88 38.78L7.74 40.26L9.22 30.12L1 24L9.22 17.88L7.74 7.74L17.88 9.22ZM36 24A12 12 0 1 0 12 24A12 12 0 1 0 36 24Z"/>
     <path fill="currentColor" fill-rule="evenodd" d="M15 24Q24 13 33 24Q24 35 15 24ZM26.2 24A2.2 4.4 0 1 0 21.8 24A2.2 4.4 0 1 0 26.2 24Z"/>
   </symbol>
+<!-- ============================================================
+     Infernus — Hero tab rework, part "banner" (X = banner)
+     SCOPES-HERO.md H6: 9 new stat icons (Might, Max HP, gold find
+     and rite cooldown reuse existing ico-slot-weapon / ico-hp /
+     ico-coin / ico-clock and are not duplicated here). Paths copied
+     from HERO-CONCEPT.html's ico-star / ico-shield / ico-hourglass /
+     ico-clover / ico-cross / ico-burst / ico-gem / ico-book / ico-skull.
+     ============================================================ -->
+<symbol id="ico-stat-power" viewBox="0 0 24 24">
+  <path fill="currentColor" d="M12 2L14 10L22 12L14 14L12 22L10 14L2 12L10 10Z"/>
+</symbol>
+<symbol id="ico-stat-guard" viewBox="0 0 24 24">
+  <path fill="none" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round" stroke-linecap="round" d="M12 3L19 5.8V11C19 15.6 16 18.6 12 20.3C8 18.6 5 15.6 5 11V5.8Z"/>
+</symbol>
+<symbol id="ico-stat-haste" viewBox="0 0 24 24">
+  <g fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M7 3h10"/>
+    <path d="M7 21h10"/>
+    <path d="M7.3 3c0 4.4 4.7 5.2 4.7 9s-4.7 4.6-4.7 9"/>
+    <path d="M16.7 3c0 4.4-4.7 5.2-4.7 9s4.7 4.6 4.7 9"/>
+  </g>
+</symbol>
+<symbol id="ico-stat-fortune" viewBox="0 0 24 24">
+  <g fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="9" cy="9" r="3.1"/>
+    <circle cx="15" cy="9" r="3.1"/>
+    <circle cx="9" cy="15" r="3.1"/>
+    <circle cx="15" cy="15" r="3.1"/>
+    <path d="M12 15v6"/>
+  </g>
+</symbol>
+<symbol id="ico-stat-recovery" viewBox="0 0 24 24">
+  <path fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" d="M12 4v16M4 12h16"/>
+</symbol>
+<symbol id="ico-stat-crit" viewBox="0 0 24 24">
+  <g fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round">
+    <path d="M12 3v6M12 15v6M3 12h6M15 12h6"/>
+    <path d="M5.8 5.8l4.1 4.1M14.1 14.1l4.1 4.1M18.2 5.8l-4.1 4.1M9.9 14.1l-4.1 4.1"/>
+  </g>
+</symbol>
+<symbol id="ico-stat-itemfind" viewBox="0 0 24 24">
+  <g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round">
+    <path d="M4 9L8 3.5H16L20 9L12 21Z"/>
+    <path d="M4 9H20M9 3.5L7.5 9L12 21M15 3.5L16.5 9L12 21"/>
+  </g>
+</symbol>
+<symbol id="ico-stat-xp" viewBox="0 0 24 24">
+  <g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round">
+    <path d="M12 6C10.8 4.9 8.7 4.2 5.5 4.2V18.2C8.7 18.2 10.8 18.9 12 20"/>
+    <path d="M12 6C13.2 4.9 15.3 4.2 18.5 4.2V18.2C15.3 18.2 13.2 18.9 12 20"/>
+    <path d="M12 6V20"/>
+  </g>
+</symbol>
+<symbol id="ico-stat-eliteboss" viewBox="0 0 24 24">
+  <path fill="none" stroke="currentColor" stroke-width="1.55" stroke-linejoin="round" stroke-linecap="round" d="M12 3.3A6.9 6.9 0 0 0 5.1 10.2C5.1 12.6 6.2 14.1 7.2 15.2V18.6C7.2 19.1 7.6 19.5 8.1 19.5H9.3V17.3H10.3V19.5H13.7V17.3H14.7V19.5H15.9C16.4 19.5 16.8 19.1 16.8 18.6V15.2C17.8 14.1 18.9 12.6 18.9 10.2A6.9 6.9 0 0 0 12 3.3Z"/>
+  <circle cx="9.3" cy="10.4" r="1.25" fill="currentColor"/>
+  <circle cx="14.7" cy="10.4" r="1.25" fill="currentColor"/>
+</symbol>
+  <!-- HERO TAB REWORK - Skills page (SCOPES-HERO.md H8): node-type shapes.
+       Drawn stroke-only with no fill attribute of their own, so the <svg>
+       that uses them controls fill (style="fill:currentColor" for a filled/
+       maxed node, style="fill:none" for an outlined one). fill is an
+       inherited CSS property, so it flows down through <use> into these
+       paths as long as nothing in between sets its own. -->
+  <symbol id="ico-ht-minor" viewBox="0 0 24 24">
+    <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/>
+  </symbol>
+  <symbol id="ico-ht-notable" viewBox="0 0 24 24">
+    <rect x="4.8" y="4.8" width="14.4" height="14.4" stroke="currentColor" stroke-width="2" stroke-linejoin="round" transform="rotate(45 12 12)"/>
+  </symbol>
+  <symbol id="ico-ht-rite" viewBox="0 0 24 24">
+    <path stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" stroke-linecap="round" d="M12 1.5C14.5 5.5 19 8.5 19 14A7 7 0 0 1 5 14C5 11.5 6.2 9.8 6.2 9.8C6.6 12 8 13 9.4 13C10.8 13 11.4 11.6 10.8 10C10 8 9.6 5.5 12 1.5Z"/>
+  </symbol>
+  <symbol id="ico-ht-keystone" viewBox="0 0 24 24">
+    <path stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" stroke-linecap="round" d="M12 2.2L14.9 9.1L22.5 9.8L16.8 14.7L18.6 22.2L12 18.2L5.4 22.2L7.2 14.7L1.5 9.8L9.1 9.1Z"/>
+  </symbol>
 </svg>
 
 <div id="app">
   <header id="strip"></header>
   <main id="view" tabindex="-1"></main>
+  <div id="dock" hidden></div>
   <nav id="tabs" aria-label="Main"></nav>
 </div>
 
@@ -947,6 +1264,12 @@ const BALANCE = {
     locketFraction: 0.75         // the Deserter's Locket keeps the chest past this share of
                                  // encounters; the engine's rule reads it too, so the retreat
                                  // line can't disagree with what actually happens
+  },
+
+  /* --- the Hero tab (SCOPES-HERO H2, H4) --- */
+  heroTab: {
+    upgradeMinPct: 0.5           // a bag item counts as an upgrade from +0.5% Power, the
+                                 // same line below which the bag shows "no change"
   },
 
   /* --- SPEC 8: HP and death --- */
@@ -7668,10 +7991,21 @@ function refresh() {
 function renderView() {
   const host = el('view');
   const view = VIEWS[ui.tab];
-  if (!view) { host.innerHTML = ''; ui.activeTick = null; return; }
+  if (!view) { host.innerHTML = ''; ui.activeTick = null; mountDock(host); return; }
   host.innerHTML = view.render();
   ui.activeTick = view.tick || null;
   if (view.after) view.after(host);
+  mountDock(host);
+}
+
+/* Moves the view's .dock, if it has one, into the fixed footer. It moves after
+   view.after, so handlers attached there (the retreat hold) travel with it. */
+function mountDock(host) {
+  const slot = el('dock');
+  const dock = host.querySelector('.dock');
+  slot.textContent = '';
+  if (dock) slot.appendChild(dock);
+  slot.hidden = !dock;
 }
 
 function renderTabs() {
@@ -15199,11 +15533,13 @@ function initUI() {
     if (act === 'help') openHelp();
     if (act === 'tab') setTab(node.dataset.tab);
   });
-  // Each view handles its own actions.
-  delegate(el('view'), function (act, node, ev) {
+  // Each view handles its own actions, including those in its dock.
+  function viewAct(act, node, ev) {
     const v = VIEWS[ui.tab];
     if (v && v.onAct) v.onAct(act, node, ev);
-  });
+  }
+  delegate(el('view'), viewAct);
+  delegate(el('dock'), viewAct);
   attachTabResets();
   renderTabs();
   refresh();
@@ -16732,6 +17068,1099 @@ function townRenderMap(hero) {
     if (g) g.innerHTML = pins.svg;
   };
 })();
+/* ============================================================
+   THE HERO TAB REWORK - SCOPES-HERO.md H1-H10, SPEC 19.3
+   Core: the helpers the banner, the reminder dots, the paper doll,
+   Equip upgrades and the Power breakdown all share. Nothing here
+   changes a rule; every figure comes from the game's own stat
+   calculation (heroStats) run on copies of the hero.
+   ============================================================ */
+
+/* Extra actions and tick hooks the Hero tab's pages add. Each page part
+   registers into these rather than redeclaring heroOnAct, so the parts
+   never overwrite one another. */
+const HERO_ACTS = {};
+const HERO_TICKS = [];
+
+(function () {
+  const inherited = VIEWS.hero.onAct;
+  VIEWS.hero.onAct = function (act, node, ev) {
+    const hero = state && state.hero;
+    if (hero && HERO_ACTS[act]) { HERO_ACTS[act](hero, node, ev); return; }
+    return inherited.call(this, act, node, ev);
+  };
+  // Re-render only: rite countdowns and the like. Progress still comes
+  // from timestamps, never from counting ticks.
+  VIEWS.hero.tick = function () {
+    for (const fn of HERO_TICKS) fn(state.hero);
+  };
+})();
+
+/* ---- H4: upgrades waiting in the bag ---- */
+
+/* The bag item that raises Power most for one slot, as
+   { item, gainPct }, or null. Relics are left out: a relic trades one stat
+   for another, which is a choice rather than an upgrade. */
+function heroBestUpgrade(hero, slot) {
+  if (slot === 'relic') return null;
+  let best = null;
+  for (const item of hero.inventory) {
+    if (item.slot !== slot || !canEquip(hero, item)) continue;
+    const gain = heroPowerDeltaSafe(hero, item);
+    if (gain >= BALANCE.heroTab.upgradeMinPct && (!best || gain > best.gainPct)) {
+      best = { item: item, gainPct: gain };
+    }
+  }
+  return best;
+}
+
+/* What a swap would cost beyond Power: set bonuses it would end, and a
+   unique power the replaced item would take with it. Plain text lines. */
+function heroSwapLosses(hero, item) {
+  const clone = heroEquipPreview(hero, item, false).clone;
+  const out = heroSetBonusChanges(hero, clone)
+    .filter(function (c) { return !c.gain; })
+    .map(function (c) { return 'Ends ' + c.text; });
+  const replaced = hero.equipment[item.slot];
+  if (replaced && replaced.rarity === 'unique' && replaced.uniqueId && UNIQUES[replaced.uniqueId]) {
+    out.push('Loses ' + replaced.name + ': ' + UNIQUES[replaced.uniqueId].power.text);
+  }
+  return out;
+}
+
+/* Every suggested swap, one per slot, in slot order:
+   { slot, item, replaced, gainPct, losses }. A swap with losses should
+   start unticked in the Equip upgrades sheet. */
+function heroUpgradeList(hero) {
+  const out = [];
+  for (const slot of BALANCE.items.slots) {
+    const best = heroBestUpgrade(hero, slot);
+    if (!best) continue;
+    out.push({
+      slot: slot,
+      item: best.item,
+      replaced: hero.equipment[slot] || null,
+      gainPct: best.gainPct,
+      losses: heroSwapLosses(hero, best.item)
+    });
+  }
+  return out;
+}
+
+/* The hero's stats with several swaps made at once, for the sheet's
+   "Power before and after". */
+function heroStatsWithSwaps(hero, items) {
+  const clone = JSON.parse(JSON.stringify(hero));
+  for (const item of items) clone.equipment[item.slot] = item;
+  return heroStats(clone);
+}
+
+/* Make the swaps, one at a time through the normal equip rule, so nothing
+   here can do what a player couldn't do by hand. Returns how many landed. */
+function heroApplyUpgrades(hero, items) {
+  let done = 0, reason = '';
+  for (const item of items) {
+    if (hero.inventory.indexOf(item) < 0) continue;
+    const res = equipItem(hero, item);
+    if (res.ok) done++;
+    else if (!reason) reason = res.reason || '';
+  }
+  return { done: done, reason: reason };
+}
+
+/* ---- H2: what needs the player's attention ---- */
+
+/* A new (unopened) item in the bag that would raise Power. Opening an
+   item clears its "new" mark, so a lower-Power item kept on purpose
+   never keeps the dot lit. Cached on a cheap signature, because the
+   check runs every second from the tick. */
+let heroNewUpgradeCache = { sig: '', value: false };
+function heroHasNewUpgrade(hero) {
+  const fresh = hero.inventory.filter(function (it) { return it.isNew && it.slot !== 'relic'; });
+  if (!fresh.length) return false;
+  const sig = fresh.map(function (it) { return it.id; }).join(',') + '|' +
+    BALANCE.items.slots.map(function (s) { return hero.equipment[s] ? hero.equipment[s].id : '-'; }).join(',') + '|' +
+    hero.level + '|' + spentSkillPoints(hero) + '|' + abyssalSpent(hero);
+  if (sig === heroNewUpgradeCache.sig) return heroNewUpgradeCache.value;
+  let value = false;
+  for (const item of fresh) {
+    if (canEquip(hero, item) && heroPowerDeltaSafe(hero, item) >= BALANCE.heroTab.upgradeMinPct) { value = true; break; }
+  }
+  heroNewUpgradeCache = { sig: sig, value: value };
+  return value;
+}
+
+/* { skill, abyssal, upgrade, any, key, label }. `label` is the spoken
+   reason for the Hero tab button; `key` changes whenever the dots do. */
+function heroAttention(hero) {
+  if (!hero) return { skill: 0, abyssal: 0, upgrade: false, any: false, key: '', label: '' };
+  const skill = Math.max(0, unspentSkillPoints(hero));
+  const abyssal = Math.max(0, abyssalUnspent(hero));
+  const upgrade = heroHasNewUpgrade(hero);
+  const bits = [];
+  if (skill) bits.push(fmtNum(skill) + ' skill point' + (skill === 1 ? '' : 's') + ' to spend');
+  if (abyssal) bits.push(fmtNum(abyssal) + ' Abyssal point' + (abyssal === 1 ? '' : 's') + ' to spend');
+  if (upgrade) bits.push('a new upgrade in your bag');
+  return {
+    skill: skill, abyssal: abyssal, upgrade: upgrade,
+    any: bits.length > 0,
+    key: skill + '|' + abyssal + '|' + (upgrade ? 1 : 0),
+    label: bits.join(', ')
+  };
+}
+
+/* The tab bar, with the Hero tab's dot. Redeclared from the shell's
+   version: same buttons, plus the dot and its spoken reason. */
+function renderTabs() {
+  const host = el('tabs');
+  const attn = heroAttention(state && state.hero);
+  host.innerHTML = TAB_LIST.map(function (t) {
+    const cur = t.id === ui.tab;
+    const dot = t.id === 'hero' && attn.any;
+    return '<button class="tab" data-act="tab" data-tab="' + t.id + '"' +
+      (cur ? ' aria-current="page"' : '') +
+      (dot ? ' aria-label="' + esc(t.label + ', ' + attn.label) + '"' : '') + '>' +
+      icon(t.icon) + '<span>' + t.label + '</span>' +
+      (dot ? '<span class="tab-dot" aria-hidden="true"></span>' : '') +
+    '</button>';
+  }).join('');
+  ui.heroAttnKey = attn.key;
+}
+
+/* Once a second, from the strip's redraw: when the dots change (a level-up
+   mid-descent, say), redraw the tab bar, and the Hero tab too if it is
+   showing, so its page buttons agree. */
+(function () {
+  const inherited = renderStrip;
+  renderStrip = function () {
+    inherited.apply(this, arguments);
+    const attn = heroAttention(state && state.hero);
+    if (attn.key === ui.heroAttnKey) return;
+    renderTabs();
+    if (ui.tab === 'hero') renderView();
+  };
+})();
+
+/* ---- H7: where Power comes from ---- */
+
+/* Power built up in a fixed order - level and class, then Abyssal ranks,
+   then skills, then gear - by running the stat calculation on copies of
+   the hero with each layer added in turn. Power is Guard^0.7 x Might^0.3,
+   so what a layer adds depends on what is already there; gear goes last so
+   its figure answers "what is my gear worth?" exactly.
+   Returns { total, parts: [{ id, label, value }] } with whole numbers that
+   always add up to the rounded total. A part can be negative (a keystone
+   that trades Guard away, say). Abyssal ranks appear only when they add
+   something: Blessings never touch Might or Guard, so they never move Power. */
+function heroPowerLayers(hero) {
+  const strip = function (keepAbyssal, keepSkills) {
+    const c = JSON.parse(JSON.stringify(hero));
+    c.equipment = { weapon: null, helm: null, armor: null, gloves: null, boots: null, relic: null };
+    if (!keepSkills) { c.skills = {}; c.timed = []; c.primed = []; }
+    if (!keepAbyssal) c.abyssal = { ranks: (hero.abyssal && hero.abyssal.ranks) || 0, spent: {} };
+    return heroStats(c).power;
+  };
+  const p0 = Math.round(strip(false, false));
+  const p1 = Math.round(strip(true, false));
+  const p2 = Math.round(strip(true, true));
+  const pt = Math.round(heroStats(hero).power);
+  const parts = [{ id: 'base', label: 'Level and class', value: p0 }];
+  if (p1 !== p0) parts.push({ id: 'abyssal', label: 'Abyssal ranks', value: p1 - p0 });
+  parts.push({ id: 'skills', label: 'Skills', value: p2 - p1 });
+  parts.push({ id: 'gear', label: 'Gear', value: pt - p2 });
+  return { total: pt, parts: parts };
+}
+/* ============================================================
+   Infernus — Hero tab rework, part "banner" (X = banner)
+   SCOPES-HERO.md: H1 (hero banner), H2 (the page-button half:
+   dots/pill on Gear/Stats/Skills — the tab-bar dot itself is
+   built elsewhere), H6 (stat icons and colour), H7 (where Power
+   comes from). SPEC.md §19.3 (Hero tab).
+
+   Overrides (same names, last declaration wins):
+     heroHeader(hero)        - H1
+     heroSegControl()        - H2 (page-button half)
+     heroRenderStats(hero)   - H7 layout order + H6 tiles
+     hero2StatTile(key, raw) - H6
+
+   New top-level names, all prefixed hb/hs per the brief:
+     HERO_STAT_LOOK  - {colour, icon} per stat, used by hero2StatTile
+     hbCountPhrase(n, singular, plural)
+     hbRecordLine(hero)
+   ============================================================ */
+
+/* Per-stat colour token (matches a CSS var name) and sprite icon id,
+   in the fixed order the Combat/Attributes tiles are drawn in. */
+const HERO_STAT_LOOK = {
+  power:     { colour: 'corona',      icon: 'ico-stat-power' },
+  might:     { colour: 'blood-light', icon: 'ico-slot-weapon' },
+  guard:     { colour: 'bone',        icon: 'ico-stat-guard' },
+  maxHp:     { colour: 'blood',       icon: 'ico-hp' },
+  haste:     { colour: 'corona',      icon: 'ico-stat-haste' },
+  fortune:   { colour: 'brass',       icon: 'ico-stat-fortune' },
+  recovery:  { colour: 'verdant',     icon: 'ico-stat-recovery' },
+  crit:      { colour: 'blood-light', icon: 'ico-stat-crit' },
+  goldFind:  { colour: 'brass',       icon: 'ico-coin' },
+  itemFind:  { colour: 'bone',        icon: 'ico-stat-itemfind' },
+  xpBonus:   { colour: 'corona',      icon: 'ico-stat-xp' },
+  eliteBoss: { colour: 'blood-light', icon: 'ico-stat-eliteboss' },
+  riteCd:    { colour: 'corona',      icon: 'ico-clock' }
+};
+
+/* "1 descent" vs "34 descents". */
+function hbCountPhrase(n, singular, plural) {
+  return fmtNum(n) + ' ' + (n === 1 ? singular : plural);
+}
+
+/* The banner's quiet record line, from the hero's existing counters
+   (SCOPES-HERO H1). "No descents yet" replaces the whole line rather
+   than showing "0 falls · 0 bosses slain" for a brand new hero. */
+function hbRecordLine(hero) {
+  const c = hero.counters || {};
+  const descents = c.descents || 0;
+  if (descents <= 0) return 'No descents yet';
+  const deaths = c.deaths || 0;
+  const bosses = c.bossesSlain || 0;
+  return hbCountPhrase(descents, 'descent', 'descents') + ' &middot; ' +
+    hbCountPhrase(deaths, 'fall', 'falls') + ' &middot; ' +
+    hbCountPhrase(bosses, 'boss slain', 'bosses slain');
+}
+
+/* ---- H1: the hero banner ----
+   A crypt card at the top of all three Hero pages. Replaces the small
+   header that used to show only the sigil, class and deepest floor. */
+function heroHeader(hero) {
+  const frame = bestFrame();
+  const ringColour = frame ? FRAME_COLOURS[frame] : 'var(--track)';
+  const title = activeTitleName();
+  const xpNext = xpToNext(hero.level);
+
+  let html = '<div class="card" style="margin-bottom:12px">';
+
+  html += '<div class="row" style="gap:14px;align-items:flex-start">';
+  html += '<div class="hb-sigil-wrap">' +
+      '<div class="hb-sigil-glow" aria-hidden="true"></div>' +
+      '<div class="hb-sigil-ring" style="border-color:' + ringColour + '">' +
+        '<svg class="ico" style="width:52px;height:52px;color:var(--corona)" aria-hidden="true">' +
+          '<use href="#sig-' + esc(hero.classId) + '"></use>' +
+        '</svg>' +
+      '</div>' +
+    '</div>';
+  html += '<div class="grow" style="min-width:0">' +
+    '<div style="font-size:1.25rem;font-weight:700;color:var(--bone)">' + esc(hero.name) + '</div>' +
+    '<div class="small" style="margin-top:2px;color:var(--ash)">' +
+      esc(heroClassName(hero.classId)) +
+      (title ? ' &middot; <span style="color:var(--brass)">' + esc(title) + '</span>' : '') +
+    '</div>' +
+    '<div class="small" style="margin-top:2px;color:var(--ash)">' +
+      'Deepest: Floor ' + fmtNum(hero.deepest) + ' &middot; ' +
+      '<span class="display">' + esc(floorLabel(hero.deepest)) + '</span>' +
+    '</div>' +
+    '<div class="tiny" style="margin-top:6px;color:var(--ash)">' + hbRecordLine(hero) + '</div>' +
+  '</div>';
+  html += '</div>'; // row
+
+  /* The progress bar that used to sit at the top of Stats now lives here,
+     so it shows on Gear and Skills too. Same logic as before: below the
+     level cap it is XP toward the next level; at the cap it is XP toward
+     the next Abyssal Rank (SPEC 4). */
+  if (isFinite(xpNext)) {
+    const xpPct = xpNext > 0 ? Math.max(0, Math.min(1, hero.xp / xpNext)) * 100 : 0;
+    html += '<div class="row-between" style="margin-top:14px">' +
+      '<span class="small" style="font-weight:700;color:var(--bone)">Level ' + fmtNum(hero.level) + '</span>' +
+      '<span class="small num" style="color:var(--ash)">' + fmtNum(hero.xp) + ' / ' + fmtNum(xpNext) + ' XP</span>' +
+    '</div>';
+    html += '<div class="bar bar-xp hb-bar-slim" style="margin-top:6px">' +
+      '<div class="bar-fill" style="width:' + xpPct + '%"></div></div>';
+  } else {
+    const per = abyssalPer();
+    const pct = per > 0 ? Math.max(0, Math.min(1, hero.xp / per)) * 100 : 0;
+    html += '<div class="row-between" style="margin-top:14px">' +
+      '<span class="small" style="font-weight:700;color:var(--bone)">Abyssal Rank ' +
+        fmtNum((hero.abyssal && hero.abyssal.ranks) || 0) + '</span>' +
+      '<span class="small num" style="color:var(--ash)">' + fmtNum(hero.xp) + ' / ' + fmtNum(per) + ' XP</span>' +
+    '</div>';
+    html += '<div class="bar bar-xp hb-bar-slim" style="margin-top:6px">' +
+      '<div class="bar-fill" style="width:' + pct + '%"></div></div>';
+  }
+
+  html += '</div>'; // card
+  return html;
+}
+
+/* ---- H2: the page buttons, with reminders ----
+   Same three buttons as before; the tab-bar dot itself is handled by
+   heroAttention/renderTabs (already in the core). This adds the
+   per-button reminder: a dot on Gear/Stats, a count pill on Skills. On
+   the active (corona) button the dot/pill flip to abyss colouring so
+   they still show against the corona background. */
+function heroSegControl() {
+  const attn = heroAttention(state && state.hero);
+  const skillReason = hbCountPhrase(attn.skill, 'skill point', 'skill points') + ' to spend';
+  const abyssalReason = hbCountPhrase(attn.abyssal, 'Abyssal point', 'Abyssal points') + ' to spend';
+  const segs = [
+    { id: 'gear', label: 'Gear', marked: attn.upgrade, kind: 'dot', reason: 'a new upgrade in your bag' },
+    { id: 'stats', label: 'Stats', marked: attn.abyssal > 0, kind: 'dot', reason: abyssalReason },
+    { id: 'skills', label: 'Skills', marked: attn.skill > 0, kind: 'pill', count: attn.skill, reason: skillReason }
+  ];
+  return '<div class="btn-row" style="margin-bottom:14px">' +
+    segs.map(function (s) {
+      const active = heroTab === s.id;
+      let mark = '';
+      if (s.marked && s.kind === 'pill') {
+        mark = '<span class="hb-pill" style="background:' + (active ? 'var(--abyss)' : 'var(--corona)') +
+          ';color:' + (active ? 'var(--corona)' : 'var(--abyss)') + '">' + fmtNum(s.count) + '</span>';
+      } else if (s.marked) {
+        mark = '<span class="hb-dot" aria-hidden="true" style="background:' +
+          (active ? 'var(--abyss)' : 'var(--corona)') + '"></span>';
+      }
+      return '<button class="btn' + (active ? ' btn-primary' : '') + '" data-act="seg" data-seg="' + s.id + '"' +
+        (s.marked ? ' aria-label="' + esc(s.label + ', ' + s.reason) + '"' : '') + '>' +
+        esc(s.label) + mark +
+      '</button>';
+    }).join('') +
+  '</div>';
+}
+
+/* ---- Stats page: H7 (where Power comes from) then H6 (stat tiles) ---- */
+function heroRenderStats(hero) {
+  const st = heroStats(hero);
+  let html = '';
+
+  /* Abyssal points, only when there are any to spend. The XP/level card
+     that used to open this page is gone — it now lives in the banner. */
+  const unspent = abyssalUnspent(hero);
+  if (unspent > 0) {
+    html += '<div class="card">' +
+      '<div class="small" style="font-weight:700;color:var(--bone)">' +
+        hbCountPhrase(unspent, 'Abyssal point', 'Abyssal points') + ' to spend</div>' +
+      '<div class="row wrap" style="gap:6px;margin-top:10px">' +
+        Object.keys(BALANCE.abyssal.options).map(function (id) {
+          const o = BALANCE.abyssal.options[id];
+          return '<button class="btn btn-sm" data-act="abyssal" data-opt="' + id + '">+' +
+            fmtPct(o.per) + ' ' + esc(o.label) + '</button>';
+        }).join('') +
+      '</div>' +
+    '</div>';
+  }
+
+  /* H7: Power built up in a fixed order. heroPowerLayers (in the core)
+     does the real work; this just draws the bar and legend. */
+  const layers = heroPowerLayers(hero);
+  const segColour = { base: 'edge', abyssal: 'ash', skills: 'corona', gear: 'brass' };
+  const positiveSum = layers.parts.reduce(function (sum, p) { return sum + (p.value > 0 ? p.value : 0); }, 0);
+
+  html += '<div class="section-title">Where your Power comes from</div>';
+  html += '<div class="card">' +
+    '<div class="small" style="color:var(--ash)">Power</div>' +
+    '<div class="num" style="font-size:1.75rem;font-weight:700;line-height:1.1;color:var(--bone)">' +
+      fmtNum(layers.total) + '</div>' +
+    '<div class="hs-stackbar">' +
+      layers.parts.filter(function (p) { return p.value > 0; }).map(function (p) {
+        const w = positiveSum > 0 ? (p.value / positiveSum * 100) : 0;
+        return '<div style="width:' + w + '%;background:var(--' + (segColour[p.id] || 'edge') + ')"></div>';
+      }).join('') +
+    '</div>' +
+    '<div class="hs-legend">' +
+      layers.parts.map(function (p, i) {
+        const val = i === 0 ? fmtNum(p.value) : fmtSigned(p.value);
+        return '<span class="hs-legend-item">' +
+          '<span class="hs-legend-sw" style="background:var(--' + (segColour[p.id] || 'edge') + ')"></span>' +
+          esc(p.label) + '&nbsp;<b class="num">' + val + '</b>' +
+        '</span>';
+      }).join('') +
+    '</div>' +
+    '<div class="tiny" style="margin-top:10px;color:var(--ash)">' +
+      'Built up in this order, so Gear shows what your gear adds on top of everything else.</div>' +
+  '</div>';
+
+  /* H6: Combat, then Attributes. Same grouping and help button as before. */
+  html += '<div class="row-between" style="margin:22px 0 8px">' +
+    '<span class="section-title" style="margin:0">Combat</span>' +
+    '<button class="btn btn-sm btn-ghost" data-act="stathelp" aria-label="What the stats do" ' +
+      'style="width:44px;padding:0">' + icon('ico-help') + '</button>' +
+  '</div>';
+  html += '<div class="grid-2 grid-fill-last">' +
+    ['power'].concat(heroCoreStats).map(function (key) {
+      return hero2StatTile(key, key === 'power' ? st.power : st[key]);
+    }).join('') +
+  '</div>';
+
+  html += '<div class="section-title">Attributes</div>';
+  html += '<div class="grid-2 grid-fill-last">' +
+    heroPercentStats.map(function (key) { return hero2StatTile(key, st[key]); }).join('') +
+  '</div>';
+
+  return html;
+}
+
+/* ---- H6: one compact, tappable stat tile ----
+   Label top-left, icon (in the stat's colour) top-right, value below in
+   bone always — colour lives on the icon only. A percent stat pinned at
+   ~0 dims: label and value go ash, the icon goes edge. Combat stats
+   (Power/Might/Guard/Max HP) never dim. */
+function hero2StatTile(key, raw) {
+  const look = HERO_STAT_LOOK[key] || { colour: 'ash', icon: 'ico-help' };
+  const isCombat = key === 'power' || heroIsCore(key);
+  const display = isCombat ? fmtNum(Math.round(raw)) : fmtPct(raw);
+  const dim = !isCombat && Math.abs(raw) < 0.05;
+  const iconColour = dim ? 'var(--edge)' : 'var(--' + look.colour + ')';
+  return '<button class="card card-tap" data-act="stat" data-stat="' + key + '" style="padding:10px 12px">' +
+    '<div class="row-between">' +
+      '<span class="hs-stat-label' + (dim ? ' muted' : '') + '">' + esc(heroStatLabel[key]) + '</span>' +
+      '<svg class="ico" style="width:18px;height:18px;color:' + iconColour + '" aria-hidden="true">' +
+        '<use href="#' + look.icon + '"></use></svg>' +
+    '</div>' +
+    '<div class="hs-stat-value num' + (dim ? ' muted' : '') + '">' + display + '</div>' +
+  '</button>';
+}
+/* ============================================================
+   HERO TAB REWORK - Skills page (SCOPES-HERO.md H8, H9, H10)
+   SPEC 19.3 (rite slots now sit above the tree, not below it;
+   the tree shows one branch at a time instead of three columns
+   side by side - both changes approved in SCOPES-HERO.md).
+
+   Overrides heroRenderSkills, heroRiteSlotsBlock and
+   heroRiteSlotRow. Leaves heroNodeSheet, heroRiteSlotSheet,
+   canLearn and learnNode untouched; the old heroBranchColumn and
+   heroNodeTile simply stop being called.
+
+   Prefix: ht (top-level names), .ht- (CSS classes), ico-ht-
+   (sprite icons).
+   ============================================================ */
+
+/* Which branch the tree is showing. UI-only: never saved, and
+   reset to "pick the best one" every time the hero has no
+   opinion (null) or the remembered branch isn't in this class's
+   tree (e.g. after a respec onto a different class's save). */
+let htBranch = null;
+
+/* Node type -> its shape symbol in the sprite. */
+const htShapeIds = { minor: 'ico-ht-minor', notable: 'ico-ht-notable', rite: 'ico-ht-rite', keystone: 'ico-ht-keystone' };
+
+/* Rite kind, in words, for the H10 cards (heroRiteKindLabel appends
+   " rite", which reads wrong stacked with "cooldown" - this doesn't). */
+const htKindWords = { primed: 'Primed', timed: 'Timed', emergency: 'Emergency', instant: 'Instant' };
+
+/* A node-shape icon at a given size, filled or outlined. The symbols in
+   hero-skills-sprite.svg are drawn stroke-only with no fill attribute of
+   their own, so this is what actually turns them solid or hollow. */
+function htShape(id, size, filled) {
+  return '<svg aria-hidden="true" style="width:' + size + 'px;height:' + size + 'px;flex:0 0 auto;' +
+    'display:inline-block;vertical-align:-0.15em;fill:' + (filled ? 'currentColor' : 'none') + '">' +
+    '<use href="#' + id + '"></use></svg>';
+}
+
+/* ============================================================
+   H9 - the points bar
+   ============================================================ */
+function htPointsBar(hero) {
+  const pts = unspentSkillPoints(hero);
+  let right;
+  if (pts > 0) {
+    right = '<span class="ht-sp-pill num">' + fmtNum(pts) + ' to spend</span>';
+  } else if (!isFinite(xpToNext(hero.level))) {
+    right = '<span class="small muted">All spent</span>';
+  } else {
+    right = '<span class="small muted">All spent &middot; next at level ' + fmtNum(hero.level + 1) + '</span>';
+  }
+  return '<div class="row-between res-sticky">' +
+    '<span class="small" style="color:var(--bone)">Skill points</span>' +
+    right +
+  '</div>';
+}
+
+/* ============================================================
+   H10 - rite slots, now above the tree
+   ============================================================ */
+function heroRiteSlotsBlock(hero) {
+  let html = '<div class="section-title">Rites</div>';
+  if (!learnedRites(hero).length) {
+    html += '<div class="card ht-rite-card ht-rite-dashed">' +
+      '<p class="small muted" style="margin:0">Rites you learn go here. Each branch has its first rite in row 2.</p>' +
+    '</div>';
+    return html;
+  }
+  html += '<div class="stack-s">';
+  const slots = heroRiteSlots(hero);
+  for (let i = 0; i < slots.length; i++) html += heroRiteSlotRow(hero, i, slots[i]);
+  if (riteSlotCount() < BALANCE.tree.riteSlotsRenown) {
+    html += '<div class="card ht-rite-card ht-rite-dashed">' +
+      '<span class="small muted row" style="gap:6px">' + heroIco('ico-lock', 16) +
+        'Opens at Renown rank ' + esc(String(town2UnlockRank('riteslot'))) +
+      '</span>' +
+    '</div>';
+  }
+  html += '</div>';
+  return html;
+}
+
+function heroRiteSlotRow(hero, slotIdx, riteId) {
+  if (!riteId) {
+    return '<button class="card card-tap ht-rite-card ht-rite-dashed row-between" data-act="riteSlot" data-slot="' + slotIdx + '">' +
+      '<span class="small muted">Empty slot</span>' +
+      '<span style="color:var(--corona);flex:0 0 auto">' + icon('ico-plus') + '</span>' +
+    '</button>';
+  }
+  const st = riteState(hero, riteId);
+  if (!st) return '<div class="card ht-rite-card row-between"><span class="small muted">Unknown rite</span></div>';
+  const node = st.node;
+
+  let right;
+  if (st.primed) {
+    right = '<span class="small num" style="color:var(--corona);font-weight:600;flex:0 0 auto">&#10003; Armed</span>';
+  } else if (st.activeUntil && st.activeUntil > now()) {
+    right = '<span class="small num" style="color:var(--corona);font-weight:600;flex:0 0 auto">Active &middot; ' + fmtTime(st.activeUntil - now()) + '</span>';
+  } else if (st.cooldown > 0) {
+    right = '<span class="small num row" style="gap:4px;color:var(--ash);flex:0 0 auto" data-ht-cd="' + riteId + '">' +
+      heroIco('ico-clock', 14) + fmtTime(st.cooldown) +
+    '</span>';
+  } else {
+    right = '<span class="small num" style="color:var(--verdant);font-weight:600;flex:0 0 auto">&#10003; Ready</span>';
+  }
+
+  return '<button class="card card-tap ht-rite-card row-between" data-act="riteSlot" data-slot="' + slotIdx + '">' +
+    '<span style="min-width:0">' +
+      '<span class="small" style="display:block;font-weight:600;color:var(--bone)">' + esc(node.name) + '</span>' +
+      '<span class="tiny muted" style="display:block;margin-top:2px">' +
+        (htKindWords[node.rite.kind] || node.rite.kind) + ' &middot; ' + fmtTime(riteCooldownMs(hero, node)) + ' cooldown' +
+      '</span>' +
+    '</span>' +
+    right +
+  '</button>';
+}
+
+/* Once a second: rewrite the recharging rite cards' countdowns in place.
+   When one finishes, the whole view is re-rendered so it flips to Ready
+   (with the verdant colour and the icon-less label), rather than trying to
+   patch that structural change in place. */
+HERO_TICKS.push(function (hero) {
+  const els = document.querySelectorAll('#view [data-ht-cd]');
+  if (!els.length) return;
+  let done = false;
+  els.forEach(function (elCd) {
+    const riteId = elCd.dataset.htCd;
+    const st = riteState(hero, riteId);
+    if (!st) return;
+    if (st.cooldown > 0) {
+      elCd.innerHTML = heroIco('ico-clock', 14) + fmtTime(st.cooldown);
+    } else {
+      done = true;
+    }
+  });
+  if (done) renderView();
+});
+
+/* ============================================================
+   H8 - the tree, one branch at a time
+   ============================================================ */
+
+/* The branch to show: the remembered one if it still applies to this
+   class's tree, else whichever has the most points (first on a tie). */
+function htPickBranch(hero, tree) {
+  if (htBranch && tree.branches.some(function (b) { return b.id === htBranch; })) return htBranch;
+  let best = tree.branches[0], bestPts = -1;
+  for (const br of tree.branches) {
+    const pts = pointsInBranch(hero, br.id);
+    if (pts > bestPts) { bestPts = pts; best = br; }
+  }
+  return best.id;
+}
+
+function htBranchMax(br) {
+  let n = 0;
+  for (const node of br.nodes) n += node.maxRank;
+  return n;
+}
+
+function htBranchTabs(hero, tree, selId) {
+  let html = '<div class="row" style="gap:8px">';
+  for (const br of tree.branches) {
+    const sel = br.id === selId;
+    const pts = pointsInBranch(hero, br.id);
+    const max = htBranchMax(br);
+    const dot = unspentSkillPoints(hero) > 0 && br.nodes.some(function (n) { return canLearn(hero, n.id).ok; });
+    html += '<button class="ht-branch-tab' + (sel ? ' ht-branch-tab-active' : '') + '" data-act="branch" data-branch="' + br.id + '"' +
+      ' aria-pressed="' + (sel ? 'true' : 'false') + '">' +
+      (dot ? '<span class="ht-branch-dot" aria-hidden="true"></span>' : '') +
+      '<div class="small ht-branch-name" style="font-weight:600">' + esc(br.name) + '</div>' +
+      '<div class="tiny num" style="margin-top:2px">' + fmtNum(pts) + ' / ' + fmtNum(max) + '</div>' +
+    '</button>';
+  }
+  html += '</div>';
+  return html;
+}
+
+function htLegend() {
+  return '<div class="ht-legend2">' +
+    '<span class="row" style="gap:5px">' + htShape('ico-ht-minor', 12, true) + 'Minor</span>' +
+    '<span class="row" style="gap:5px">' + htShape('ico-ht-notable', 12, true) + 'Notable</span>' +
+    '<span class="row" style="gap:5px">' + htShape('ico-ht-rite', 12, true) + 'Rite</span>' +
+    '<span class="row" style="gap:5px">' + htShape('ico-ht-keystone', 12, true) + 'Keystone</span>' +
+  '</div>';
+}
+
+function htGate(hero, branchId, row) {
+  const need = BALANCE.tree.rowRequirements[row] || 0;
+  const have = pointsInBranch(hero, branchId);
+  const open = have >= need;
+  const inner = open
+    ? '<span style="color:var(--verdant)" aria-hidden="true">&#10003;</span><span>Row ' + row + ' &middot; ' + fmtNum(need) + ' points</span>'
+    : heroIco('ico-lock', 12) + '<span>Row ' + row + ' &middot; ' + fmtNum(need) + ' points (you have ' + fmtNum(have) + ')</span>';
+  return '<div class="ht-gate"><span class="ht-gate-pill">' + inner + '</span></div>';
+}
+
+function htNodeCard(hero, br, node) {
+  const rank = hero.skills[node.id] || 0;
+  const maxed = rank >= node.maxRank;
+  const open = rowOpen(hero, br.id, node.row);
+  const learnable = canLearn(hero, node.id).ok;
+  const shapeId = htShapeIds[node.type] || 'ico-ht-minor';
+
+  let border, shapeFilled, shapeColor, corner = '';
+  if (maxed) {
+    border = '1px solid var(--corona)';
+    shapeFilled = true; shapeColor = 'var(--corona)';
+  } else if (!open) {
+    border = '1px dashed var(--edge)';
+    shapeFilled = false; shapeColor = 'var(--edge)';
+    corner = '<svg class="ht-node-lock" aria-hidden="true"><use href="#ico-lock"></use></svg>';
+  } else if (learnable) {
+    border = '2px solid var(--corona)';
+    shapeFilled = false; shapeColor = 'var(--corona)';
+    corner = '<span class="ht-node-badge" aria-hidden="true">+</span>';
+  } else if (rank > 0) {
+    border = '1px solid var(--edge)';
+    shapeFilled = false; shapeColor = 'var(--corona)';
+  } else {
+    border = '1px solid var(--edge)';
+    shapeFilled = false; shapeColor = 'var(--edge)';
+  }
+
+  let pips = '';
+  for (let i = 0; i < node.maxRank; i++) pips += '<span class="ht-pip ' + (i < rank ? 'ht-pip-on' : 'ht-pip-off') + '"></span>';
+
+  const solo = node.type === 'keystone';
+  return '<button class="ht-node' + (solo ? ' ht-node-solo' : '') + '" data-act="node" data-node="' + node.id + '" style="border:' + border + '">' +
+    corner +
+    '<span class="ht-node-shape" style="color:' + shapeColor + '">' +
+      htShape(shapeId, 28, shapeFilled) +
+      (maxed ? '<svg class="ht-node-check" viewBox="0 0 24 24" aria-hidden="true">' +
+        '<path fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" d="M5 12.5L10 17L19 6.5"/></svg>' : '') +
+    '</span>' +
+    '<span class="ht-node-body">' +
+      '<span class="ht-node-name" style="display:block' + (!open ? ';color:var(--ash)' : '') + '">' + esc(node.name) + '</span>' +
+      '<span class="ht-node-effect ht-clamp2">' + esc(node.text) + '</span>' +
+      '<span class="ht-pips">' + pips + '</span>' +
+    '</span>' +
+  '</button>';
+}
+
+function htTreeSection(hero, tree) {
+  const branchId = htPickBranch(hero, tree);
+  const br = tree.branches.find(function (b) { return b.id === branchId; });
+
+  let html = '<div class="section-title">Tree</div>';
+  html += htBranchTabs(hero, tree, branchId);
+  html += '<div class="small muted" style="margin-top:10px">' + esc(br.blurb) + '</div>';
+  html += htLegend();
+
+  html += '<div class="ht-tree"><div class="ht-tree-line" aria-hidden="true"></div>';
+  for (let row = 1; row <= 6; row++) {
+    if (row > 1) html += htGate(hero, br.id, row);
+    const nodes = br.nodes.filter(function (n) { return n.row === row; });
+    if (!nodes.length) continue;
+    const solo = nodes.length === 1;
+    html += '<div class="ht-trow"' + (solo ? ' style="justify-content:center"' : '') + '>' +
+      nodes.map(function (n) { return htNodeCard(hero, br, n); }).join('') +
+    '</div>';
+  }
+  html += '</div>';
+  return html;
+}
+
+/* ============================================================
+   Top-level render (H8 + H9 + H10 assembled in order)
+   ============================================================ */
+function heroRenderSkills(hero) {
+  const tree = TREES[hero.classId];
+  if (!tree) return '<div class="card"><p class="small muted">No skill tree for this class yet.</p></div>';
+
+  let html = htPointsBar(hero);
+  html += heroRiteSlotsBlock(hero);
+  html += htTreeSection(hero, tree);
+  return html;
+}
+
+HERO_ACTS.branch = function (hero, node, ev) {
+  htBranch = node.dataset.branch;
+  renderView();
+};
+/* ============================================================
+   HERO TAB REWORK - GEAR PART (X = gear)
+   SCOPES-HERO.md H3 (paper doll), H4 (upgrade arrows + Equip
+   upgrades), H5 (set tracker). SPEC 19.3.
+
+   Overrides heroRenderGear(hero) (last declaration wins). Its
+   Inventory half is copied byte-for-byte from the live "GEAR -
+   redeclared" version already in index.html: the heading with
+   slot count, heroSortRow() and the list of heroInvTile rows.
+   Only the "Equipped" stack of heroEquipRow rows is replaced,
+   with, in order: the paper doll (hdDoll), the Equip upgrades
+   button (hdUpgradesButton) and the set tracker (hdSetTracker).
+
+   Reused as-is, not reimplemented: heroSortRow, heroInvTile,
+   heroSortedIndices, inventoryCap, inventoryFree, heroBestUpgrade,
+   heroSwapLosses, heroUpgradeList, heroStatsWithSwaps,
+   heroApplyUpgrades, heroStats, canEquip, heroPowerDeltaSafe,
+   equippedSetCounts, heroHasSetBonus, RARITIES, SETS, heroSlotLabel,
+   heroIco, icon, esc, fmtNum, fmtPct, openSheet, closeSheet, toast,
+   refresh, save.
+
+   All new top-level names are prefixed `hd`; all new classes `.hd-`.
+   ============================================================ */
+
+/* ---- H3: the paper doll ---- */
+
+/* The hooded, cloaked silhouette from HERO-CONCEPT.html's
+   .h-silhouette, redrawn with style-attribute colours (the way
+   tmPaint does for the town map) instead of fill="var(..)"
+   presentation attributes, and with the hero's own class sigil
+   on the chest. Purely decorative. */
+function hdSilhouette(hero) {
+  return '<svg viewBox="0 0 96 250" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">' +
+    '<g style="stroke:var(--track)" stroke-width="1">' +
+      '<line x1="0" y1="39" x2="14" y2="39"/>' +
+      '<line x1="0" y1="125" x2="14" y2="125"/>' +
+      '<line x1="0" y1="211" x2="14" y2="211"/>' +
+      '<line x1="96" y1="39" x2="82" y2="39"/>' +
+      '<line x1="96" y1="125" x2="82" y2="125"/>' +
+      '<line x1="96" y1="211" x2="82" y2="211"/>' +
+    '</g>' +
+    '<path d="M36 222 L44 222 L44 240 Q44 244 40 244 L33 244 Q30 244 31 241 L36 236 Z" ' +
+      'style="fill:var(--track);stroke:var(--edge)" stroke-width="1.5" stroke-linejoin="round"/>' +
+    '<path d="M52 222 L60 222 L60 236 L65 241 Q66 244 63 244 L56 244 Q52 244 52 240 Z" ' +
+      'style="fill:var(--track);stroke:var(--edge)" stroke-width="1.5" stroke-linejoin="round"/>' +
+    '<path d="M48 6 C60 10 70 24 70 40 C70 50 74 56 82 62 L88 150 L92 222 L82 216 L74 226 L64 218 ' +
+      'L56 228 L48 219 L40 228 L32 218 L22 226 L14 216 L4 222 L8 150 L14 62 C22 56 26 50 26 40 ' +
+      'C26 24 36 10 48 6 Z" style="fill:var(--track);stroke:var(--edge)" stroke-width="1.5" stroke-linejoin="round"/>' +
+    '<path d="M40 58 C38 110 36 160 35 214 L61 214 C60 160 58 110 56 58 Z" ' +
+      'style="fill:var(--raised);stroke:var(--edge)" stroke-width="1" stroke-linejoin="round"/>' +
+    '<rect x="36.5" y="130" width="23" height="5" rx="1" style="fill:var(--edge)"/>' +
+    '<g style="fill:none;stroke:var(--edge)" stroke-width="1" stroke-linecap="round" opacity=".7">' +
+      '<path d="M22 80 C20 130 17 170 14 212"/>' +
+      '<path d="M74 80 C76 130 79 170 82 212"/>' +
+    '</g>' +
+    '<path d="M48 22 C57 22 60 32 58 44 C55 50 41 50 38 44 C36 32 39 22 48 22 Z" style="fill:var(--abyss)"/>' +
+    '<circle cx="44" cy="37" r="1.7" style="fill:var(--corona)"/>' +
+    '<circle cx="52" cy="37" r="1.7" style="fill:var(--corona)"/>' +
+    '<circle cx="48" cy="58" r="3" style="fill:var(--edge)"/>' +
+    '<use href="#sig-' + esc(hero.classId) + '" x="36" y="80" width="24" height="24" style="color:var(--corona)"/>' +
+  '</svg>';
+}
+
+/* Top row of a paper-doll tile: the slot icon and name, and,
+   right-aligned, the upgrade arrow and/or lock icon. */
+function hdTileTop(slot, showArrow, locked) {
+  let right = '';
+  if (showArrow) {
+    right += '<span class="hd-arrow" aria-hidden="true">&#9650;</span>' +
+      '<span class="hd-vh">Upgrade in your bag</span>';
+  }
+  if (locked) right += heroIco('ico-lock', 14);
+  return '<div class="hd-tiletop">' +
+    '<span class="hd-slotlabel">' + heroIco('ico-slot-' + slot, 16) + '<span>' + heroSlotLabel[slot] + '</span></span>' +
+    (right ? '<span class="hd-tiletop-right">' + right + '</span>' : '') +
+  '</div>';
+}
+
+/* A worn item's tile. The upgrade arrow uses heroBestUpgrade, same
+   rule as H4's Equip upgrades button. */
+function hdWornTile(hero, slot, item) {
+  const r = RARITIES[item.rarity];
+  const showArrow = heroBestUpgrade(hero, slot) !== null;
+  const chain = r.chain
+    ? '<span style="color:var(--r-set);flex:0 0 auto;margin-right:4px">' + heroIco('ico-chain', 13) + '</span>'
+    : '';
+  return '<button class="card-tap hd-tile" data-act="item" data-item="equip:' + slot + '" style="' +
+    'border:' + r.border + ' var(--r-' + item.rarity + ')">' +
+    hdTileTop(slot, showArrow, !!item.locked) +
+    '<div class="hd-itemname rar-' + item.rarity + '">' + chain +
+      '<span class="hd-clamp2">' + esc(item.name) + '</span>' +
+    '</div>' +
+  '</button>';
+}
+
+/* The best bag item for an empty slot: for relics, the first relic
+   in the bag; otherwise the item with the highest heroPowerDeltaSafe.
+   Returns { item, idx, count } or null. Used only for the empty-slot
+   tile's own candidate, not the H4 upgrade list (which never suggests
+   relics at all). */
+function hdBestCandidate(hero, slot) {
+  let best = null, bestIdx = -1, bestGain = -Infinity, count = 0;
+  hero.inventory.forEach(function (item, idx) {
+    if (item.slot !== slot || !canEquip(hero, item)) return;
+    count++;
+    if (slot === 'relic') {
+      if (best === null) { best = item; bestIdx = idx; }
+      return;
+    }
+    const gain = heroPowerDeltaSafe(hero, item);
+    if (best === null || gain > bestGain) { best = item; bestIdx = idx; bestGain = gain; }
+  });
+  return best ? { item: best, idx: bestIdx, count: count } : null;
+}
+
+/* An empty slot's tile: dashed border, "Empty", and, if the bag
+   holds a candidate, "N in your bag" plus a tap target that opens it. */
+function hdEmptyTile(hero, slot) {
+  const top = hdTileTop(slot, false, false);
+  const cand = hdBestCandidate(hero, slot);
+  if (cand) {
+    return '<button class="card-tap hd-tile hd-tile-empty" data-act="item" data-item="inv:' + cand.idx + '" ' +
+      'style="border:1px dashed var(--edge)">' +
+      top +
+      '<div>' +
+        '<div class="hd-itemname" style="color:var(--ash);font-weight:500">Empty</div>' +
+        '<div class="hd-bagnote">&#9650; ' + fmtNum(cand.count) + ' in your bag</div>' +
+      '</div>' +
+    '</button>';
+  }
+  return '<div class="hd-tile hd-tile-empty" style="border:1px dashed var(--edge)">' +
+    top +
+    '<div class="hd-itemname" style="color:var(--ash);font-weight:500">Empty</div>' +
+  '</div>';
+}
+
+function hdSlotTile(hero, slot) {
+  const item = hero.equipment[slot];
+  return item ? hdWornTile(hero, slot, item) : hdEmptyTile(hero, slot);
+}
+
+/* Left column head-to-foot, the figure in the centre spanning all
+   three rows, right column hands-and-neck - placed by nth-child in
+   hero-gear.css, so the markup order below IS the layout order. */
+function hdDoll(hero) {
+  let html = '<div class="hd-doll">';
+  html += hdSlotTile(hero, 'helm');
+  html += hdSlotTile(hero, 'armor');
+  html += hdSlotTile(hero, 'boots');
+  html += '<div class="hd-figure" aria-hidden="true">' + hdSilhouette(hero) + '</div>';
+  html += hdSlotTile(hero, 'weapon');
+  html += hdSlotTile(hero, 'gloves');
+  html += hdSlotTile(hero, 'relic');
+  html += '</div>';
+  return html;
+}
+
+/* ---- H4: Equip upgrades ---- */
+
+/* Which rows of the current Equip upgrades sheet are ticked, keyed
+   by slot. Reset every time the sheet is opened. */
+let hdTicked = {};
+
+function hdTickedItems(list) {
+  return list.filter(function (e) { return !!hdTicked[e.slot]; }).map(function (e) { return e.item; });
+}
+
+function hdUpgradesSummary(hero, tickedItems) {
+  const before = Math.round(heroStats(hero).power);
+  const after = Math.round(heroStatsWithSwaps(hero, tickedItems).power);
+  const diff = after - before;
+  let diffHtml;
+  if (diff === 0) {
+    diffHtml = '<span style="color:var(--ash)">&mdash;</span>';
+  } else {
+    const up = diff > 0;
+    diffHtml = '<span style="color:var(--' + (up ? 'corona' : 'blood-light') + ')">' +
+      (up ? '&#9650; ' : '&#9660; ') + fmtNum(Math.abs(diff)) + '</span>';
+  }
+  return '<div class="hd-upsummary">Power ' + fmtNum(before) + ' &rarr; ' + fmtNum(after) + ' ' + diffHtml + '</div>';
+}
+
+function hdUpgradeRow(entry, ticked) {
+  const item = entry.item;
+  const sub = entry.replaced
+    ? 'Replaces ' + esc(entry.replaced.name)
+    : 'Fills your empty ' + esc(heroSlotLabel[entry.slot]) + ' slot';
+  const losses = entry.losses.map(function (l) {
+    return '<div class="hd-uploss">&#9660; ' + esc(l) + '</div>';
+  }).join('');
+  return '<button role="checkbox" aria-checked="' + (ticked ? 'true' : 'false') + '" ' +
+      'data-act="hd-toggle" data-slot="' + esc(entry.slot) + '" class="hd-uprow">' +
+    '<span class="hd-checkbox' + (ticked ? ' hd-checked' : '') + '" aria-hidden="true">' +
+      (ticked ? '&#10003;' : '') +
+    '</span>' +
+    '<span class="hd-uprow-body">' +
+      '<div class="rar-' + item.rarity + '" style="font-weight:600">' + esc(item.name) + '</div>' +
+      '<div class="hd-upsub">' + sub + '</div>' +
+      '<div class="hd-upgain">&#9650; ' + fmtPct(entry.gainPct) + ' Power</div>' +
+      losses +
+    '</span>' +
+  '</button>';
+}
+
+function hdUpgradesBody(hero, list) {
+  return hdUpgradesSummary(hero, hdTickedItems(list)) +
+    '<div class="hd-uprows">' +
+      list.map(function (e) { return hdUpgradeRow(e, !!hdTicked[e.slot]); }).join('') +
+    '</div>';
+}
+
+function hdUpgradesFoot(list) {
+  const n = hdTickedItems(list).length;
+  return '<button class="btn btn-primary" style="width:100%" data-act="hd-go"' +
+    (n === 0 ? ' disabled' : '') + '>Equip ' + fmtNum(n) + '</button>';
+}
+
+HERO_ACTS.upgrades = function (hero) {
+  if (hero.descent) return; // rules unchanged: no equipping during a descent
+  const list = heroUpgradeList(hero);
+  if (!list.length) return;
+
+  hdTicked = {};
+  list.forEach(function (e) { hdTicked[e.slot] = e.losses.length === 0; });
+
+  const sheetNode = openSheet({
+    title: 'Equip upgrades',
+    body: hdUpgradesBody(hero, list),
+    foot: hdUpgradesFoot(list),
+    onAct: function (act, node) {
+      if (act === 'hd-toggle') {
+        const slot = node.dataset.slot;
+        hdTicked[slot] = !hdTicked[slot];
+        const fresh = heroUpgradeList(hero);
+        sheetNode.querySelector('.sheet-body').innerHTML = hdUpgradesBody(hero, fresh);
+        sheetNode.querySelector('.sheet-foot').innerHTML = hdUpgradesFoot(fresh);
+        return;
+      }
+      if (act === 'hd-go') {
+        const fresh = heroUpgradeList(hero);
+        const items = hdTickedItems(fresh);
+        if (!items.length) return;
+        const res = heroApplyUpgrades(hero, items);
+        if (res.done > 0) toast('Equipped ' + fmtNum(res.done) + (res.done === 1 ? ' item.' : ' items.'));
+        else toast(res.reason || 'Nothing to equip.');
+        closeSheet();
+        refresh();
+      }
+    }
+  });
+};
+
+function hdUpgradesButton(hero) {
+  if (hero.descent) return '';
+  const list = heroUpgradeList(hero);
+  if (!list.length) return '';
+  return '<button class="btn hd-upgrades-btn" data-act="upgrades">' +
+    '<span style="color:var(--corona)">&#9650;</span>&nbsp;Equip upgrades (' + fmtNum(list.length) + ')' +
+  '</button>';
+}
+
+/* ---- H5: the set tracker ---- */
+
+function hdSetBonusLine(n, bonus, active, worn) {
+  const need = Math.max(0, n - worn);
+  const status = active
+    ? '<span class="hd-set-active">&#10003; Active</span>'
+    : '<span class="hd-set-need">Needs ' + fmtNum(need) + ' more</span>';
+  return '<div class="small hd-setbonus"><span class="hd-setbonus-text">' +
+    fmtNum(n) + ' pieces: ' + esc(bonus.text) + '</span> ' + status + '</div>';
+}
+
+/* For each piece not currently worn: a link into the bag, a plain
+   mention of the Vault, or, gathered into one line, everything still
+   unfound. */
+function hdSetMissingLines(hero, s) {
+  const stillToFind = [];
+  let html = '';
+  s.pieces.forEach(function (piece) {
+    const eq = hero.equipment[piece.slot];
+    if (eq && eq.setId === s.id && eq.name === piece.name) return; // worn
+
+    let bagIdx = -1;
+    for (let i = 0; i < hero.inventory.length; i++) {
+      const it = hero.inventory[i];
+      if (it.setId === s.id && it.name === piece.name) { bagIdx = i; break; }
+    }
+    if (bagIdx >= 0) {
+      html += '<div class="small hd-setmissing">In your bag: ' +
+        '<button class="hd-baglink" data-act="item" data-item="inv:' + bagIdx + '">' + esc(piece.name) + '</button>' +
+      '</div>';
+      return;
+    }
+
+    const inVault = (hero.vault || []).some(function (it) { return it.setId === s.id && it.name === piece.name; });
+    if (inVault) {
+      html += '<div class="small hd-setmissing hd-setmissing-vault">In the Vault: ' + esc(piece.name) + '</div>';
+      return;
+    }
+
+    stillToFind.push(piece.name);
+  });
+  if (stillToFind.length) {
+    html += '<div class="small hd-setmissing hd-setmissing-vault">Still to find: ' + esc(stillToFind.join(', ')) + '</div>';
+  }
+  return html;
+}
+
+function hdSetCard(hero, id, worn) {
+  const s = SETS[id];
+  const total = s.pieces.length;
+  return '<div class="card hd-setcard">' +
+    '<div class="row-between">' +
+      '<span class="row hd-setname" style="gap:6px;color:var(--r-set);font-weight:600;min-width:0">' +
+        heroIco('ico-chain', 16) +
+        '<span class="hd-ellip">' + esc(s.name) + '</span>' +
+      '</span>' +
+      '<span class="small" style="color:var(--ash);flex:0 0 auto">' + fmtNum(worn) + ' of ' + fmtNum(total) + ' worn</span>' +
+    '</div>' +
+    hdSetBonusLine(2, s.bonus2, heroHasSetBonus(hero, id, 2), worn) +
+    hdSetBonusLine(3, s.bonus3, heroHasSetBonus(hero, id, 3), worn) +
+    hdSetMissingLines(hero, s) +
+  '</div>';
+}
+
+function hdSetTracker(hero) {
+  const counts = equippedSetCounts(hero);
+  const ids = Object.keys(counts).filter(function (id) { return counts[id] > 0 && SETS[id]; });
+  if (!ids.length) return '';
+  return '<div class="hd-settracker">' +
+    ids.map(function (id) { return hdSetCard(hero, id, counts[id]); }).join('') +
+  '</div>';
+}
+
+/* ---- heroRenderGear: assembled ---- */
+
+function heroRenderGear(hero) {
+  let html = '<div class="section-title">Equipped</div>';
+  html += hdDoll(hero);
+  html += hdUpgradesButton(hero);
+  html += hdSetTracker(hero);
+
+  // Inventory half, unchanged from the live version: heading with slot
+  // count, heroSortRow() and the list of heroInvTile rows.
+  const cap = inventoryCap(hero);
+  const free = inventoryFree(hero);
+  const used = cap - free;
+
+  html += '<div class="row-between" style="margin-top:20px">' +
+    '<span class="section-title" style="margin:0">Inventory</span>' +
+    '<span class="small muted num">' + fmtNum(used) + ' / ' + fmtNum(cap) + ' slots</span>' +
+  '</div>';
+
+  html += heroSortRow();
+
+  const order = heroSortedIndices(hero);
+  if (!order.length) {
+    html += '<p class="small muted">No items yet.</p>';
+  } else {
+    html += '<div class="stack-s">' +
+      order.map(function (idx) { return heroInvTile(hero, idx); }).join('') +
+    '</div>';
+  }
+  return html;
+}
 
 document.addEventListener('DOMContentLoaded', boot);
 </script>
