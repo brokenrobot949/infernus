@@ -834,6 +834,120 @@ button.btn-lg[data-act]{ min-height:56px; }
   color:var(--corona); font-weight:600; font-size:.875rem;
   vertical-align:middle;
 }
+/* ============================================================
+   THE TOWN'S BUILDINGS - core styles (SCOPES-BUILDINGS T1, T2)
+   ============================================================ */
+
+/* T1: a keeper's greeting, on a solid panel with the place's accent. */
+.tk-quote{
+  margin:0 0 12px; padding:10px 12px;
+  background:var(--raised); border-radius:var(--radius);
+  border-left:3px solid var(--edge);
+}
+.tk-quote blockquote{ margin:0; font-size:.875rem; font-style:italic; color:var(--bone); line-height:1.45; }
+.tk-quote figcaption{ margin-top:4px; font-size:.75rem; color:var(--ash); }
+
+/* T2: cost chips. On a primary (corona) button the icons take the
+   button's text colour so they keep their contrast. */
+.tc-chips{ display:inline-flex; align-items:center; gap:6px; flex-wrap:wrap; }
+.tc-chip{ display:inline-flex; align-items:center; gap:4px; font-weight:600; }
+.tc-chip .ico{ width:16px; height:16px; }
+.btn-primary .tc-chip .ico{ color:currentColor; }
+.tc-btn{ gap:8px; flex:0 0 auto; }
+.tc-short{ font-size:.75rem; color:var(--ash); margin-top:4px; }
+/* town-vault.css — SCOPES-BUILDINGS V1 (Vault page). Every selector
+   below is prefixed tv-; the sheet rows reuse the game's existing
+   hd-uprow/hd-checkbox classes as instructed and need no new CSS. */
+
+/* The Store items / Take several row: side by side when there's room
+   for both (>=~336px, true at 360px), each its own full-width row
+   otherwise. */
+.tv-actionrow{ display:flex; flex-wrap:wrap; gap:8px; margin-top:14px; }
+.tv-actionrow > *{ flex:1 1 160px; }
+/* ============================================================
+   SCOPES-BUILDINGS.md - Forge rework (F1, F2, F3). Every selector
+   is prefixed tf-. Everything else the Forge page uses (panel,
+   row-between, stack-s, section-title, badge, chip, tc-chip(s),
+   tc-btn, tc-short, tk-quote, res-sticky, rar-*) already exists in
+   index.html's core styles.
+   ============================================================ */
+
+/* F1: the five-tab strip. Five equal columns fit at 336px with room
+   to spare (a 20px icon and a 12px label per tab). */
+.tf-tabstrip{
+  display:grid; grid-template-columns:repeat(5,1fr); gap:0;
+  background:var(--crypt); border:1px solid var(--track); border-radius:var(--radius);
+  overflow:hidden; margin-bottom:14px;
+}
+/* button[data-act]{min-height:44px} (core styles) is a type+attribute
+   selector, which outweighs a single class by CSS specificity even
+   though this rule comes later - "button.tf-tab" matches its specificity
+   so the later rule (this one) wins and 56px actually applies. */
+button.tf-tab{
+  min-height:56px; padding:6px 2px;
+  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px;
+  color:var(--ash); font-size:.75rem; background:var(--crypt);
+  border-bottom:2px solid transparent;
+}
+.tf-tab .ico{ width:20px; height:20px; }
+.tf-tab.active{ color:var(--brass); border-bottom-color:var(--brass); font-weight:600; }
+
+/* F3: the six slot chips, three across, two rows. */
+.tf-slotgrid{ display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin:10px 0; }
+.tf-slotchip{
+  min-height:44px; display:flex; align-items:center; justify-content:center; gap:6px;
+  border-radius:var(--radius); border:1px solid var(--edge); background:var(--raised);
+  color:var(--ash); font-size:.8125rem;
+}
+.tf-slotchip .ico{ width:16px; height:16px; }
+.tf-slotchip.sel{ border:2px solid var(--brass); color:var(--brass); font-weight:600; }
+
+/* F3: stacks the single Craft button's label above its cost chips
+   instead of forcing them onto one cramped line (targets the
+   costButton it wraps, which already carries .btn.btn-block). */
+.tf-craftwrap .btn{ flex-direction:column; gap:8px; padding:10px 14px; min-height:64px; }
+/* town-market.css — SCOPES-BUILDINGS M1-M3 (Market), B1-B2 (Bounty
+   Board). Every selector below is prefixed tq-. Everything else the
+   pages use (chip, chips, card, panel, row-between, bar-xp, etc.) is
+   the game's existing shared CSS - no new rules needed for those. */
+
+/* M3: the small "Upgrade" tag on a stock card, corona border + text
+   so it never relies on colour alone (it also carries the glyph and
+   the word). */
+.tq-tag-upgrade{
+  display:inline-flex; align-items:center; gap:4px;
+  border:1px solid var(--corona); color:var(--corona);
+  font-size:.75rem; font-weight:600; border-radius:999px; padding:2px 8px;
+}
+
+/* B1: the "All ranks" link-style button - text-only, corona, but
+   still a full 44px tap target. */
+.tq-link{
+  display:inline-flex; align-items:center; justify-content:center;
+  min-height:44px; padding:0 4px;
+  background:none; border:0;
+  color:var(--corona); font-size:.875rem; font-weight:600;
+}
+/* Chapel + Commissions (X = chapel) — SCOPES-BUILDINGS C1, C2, K1.
+   Every selector here starts with tw-. Everything else (cards, panels,
+   bars, chips, buttons) reuses the core primitives already in index.html. */
+
+/* C1: the HP preview bar. Layered over the core .bar.bar-lg, which already
+   gives the current-HP fill in blood via .bar-fill. */
+.tw-heal-gain{ position:absolute; top:0; bottom:0; background:var(--blood-light); opacity:.5; }
+.tw-heal-marker{ position:absolute; top:0; bottom:0; width:2px; background:var(--bone); }
+
+/* C1: a heal option row (a .panel.row-between). Selecting it (tw-healpick)
+   adds the corona border; the text area is the tap target for selecting. */
+.tw-healrow{ border:1px solid transparent; }
+.tw-healrow.tw-sel{ border-color:var(--corona); }
+.tw-healrow-main{ display:block; text-align:left; flex:1 1 auto; min-width:0; min-height:44px; }
+
+/* Small inline icons used in the 12px ash lines throughout both pages
+   (C1's daily climb, C2's Offering numbers, K1's HP line and job rows). */
+.tw-ico-sm{ width:14px; height:14px; }
+/* .row sets display:flex, which would otherwise beat the hidden attribute. */
+#tw-task-hp[hidden]{ display:none; }
 </style>
 </head>
 <body>
@@ -1079,6 +1193,30 @@ button.btn-lg[data-act]{ min-height:56px; }
   </symbol>
   <symbol id="ico-ht-keystone" viewBox="0 0 24 24">
     <path stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" stroke-linecap="round" d="M12 2.2L14.9 9.1L22.5 9.8L16.8 14.7L18.6 22.2L12 18.2L5.4 22.2L7.2 14.7L1.5 9.8L9.1 9.1Z"/>
+  </symbol>
+  <!-- SCOPES-BUILDINGS T3: Renown, a pennant on a staff. -->
+  <symbol id="ico-renown" viewBox="0 0 24 24">
+    <g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M6 21V3"/>
+      <path d="M6 4h12l-3.5 4.5L18 13H6"/>
+    </g>
+  </symbol>
+  <symbol id="ico-tf-temper" viewBox="0 0 24 24">
+    <g transform="rotate(45 12 12)">
+      <rect x="9" y="2.5" width="6" height="5.5" rx="1" fill="currentColor"/>
+      <rect x="10.8" y="7.6" width="2.4" height="13" rx="1" fill="currentColor"/>
+    </g>
+  </symbol>
+  <symbol id="ico-tf-reforge" viewBox="0 0 24 24">
+    <path fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" d="M5.2 9A7 7 0 0 1 18.4 6.3M19 3.6V8H14.6"/>
+    <path fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" d="M18.8 15A7 7 0 0 1 5.6 17.7M5 20.4V16H9.4"/>
+  </symbol>
+  <symbol id="ico-tf-craft" viewBox="0 0 24 24">
+    <path fill="currentColor" d="M12 2C12 7.2 13.1 9 19 10C13.1 11 12 12.8 12 18C12 12.8 10.9 11 5 10C10.9 9 12 7.2 12 2Z"/>
+    <path fill="currentColor" d="M18.3 14.5C18.3 16.4 18.7 16.9 20.6 17.3C18.7 17.7 18.3 18.2 18.3 20.1C18.3 18.2 17.9 17.7 16 17.3C17.9 16.9 18.3 16.4 18.3 14.5Z"/>
+  </symbol>
+  <symbol id="ico-tf-rekindle" viewBox="0 0 24 24">
+    <path fill="currentColor" fill-rule="evenodd" d="M12 2C12 2 7 7.2 7 13C7 17.4 9.4 20.5 12 20.5C14.6 20.5 17 17.4 17 13C17 9.8 15.3 7.7 14.3 6C14.6 8.2 13.3 9.3 12.7 9.9C13.1 6.6 12 4 12 2ZM12 11.2C12 11.2 9.8 13.9 9.8 16.1C9.8 17.9 10.8 19 12 19C13.2 19 14.2 17.9 14.2 16.1C14.2 14.9 13.5 14 12.9 13.2C13 14.3 12.3 14.9 11.9 15.2C12.2 13.6 12 12.3 12 11.2Z"/>
   </symbol>
 </svg>
 
@@ -1423,6 +1561,7 @@ const BALANCE = {
     offerings: {
       durationMs: 2 * 60 * 60 * 1000,
       renewMinGold: 1,           // renewing costs the used-up share of the price, never less
+      renewQuoteHoldMs: 60 * 1000, // the price shown in the Renew confirmation holds this long
       list: {
         vigil:     { id: 'vigil',     name: 'Vigil of the Flame', coef: 24, icon: 'ico-chapel',
                      text: 'HP regenerates twice as fast while you are not descending',
@@ -11626,6 +11765,7 @@ function debugPaceText() {
 /* The Bounty Board's keeper, added to the existing keeper map. */
 TOWN_KEEPERS.bounty = 'Warden Hask';
 TOWN_KEEPERS.vault = 'Doss the Quiet';
+TOWN_KEEPERS.labour = 'Garrow';
 TOWN_ACCENTS.vault = 'edge';
 
 /* ============================================================
@@ -12492,7 +12632,46 @@ const KEEPER_LINES = {
                    "I have read every page you've brought me twice. Once for the facts. Once because I don't believe the first reading.",
                    "Whatever you bring back from the Heart, bring it to me before you rest. Some things get harder to write down the longer you wait."
                  ]
-               } }
+               } },
+  /* SCOPES-BUILDINGS T1 - approved by Rob, 2026-09-26. */
+  doss: { id:"doss", name:"Doss the Quiet", place:"vault",
+          lines: {
+            1: [
+              "Leave it. I'll know it when you want it back.",
+              "Every shelf has a name on it. Most of the names are still in town."
+            ],
+            2: [
+              "Some of what you bring me is warm. I keep that shelf nearest the door.",
+              "I don't open the crates. I weigh them. Yours get heavier each time."
+            ],
+            3: [
+              "Glass came up in your pack again. It won't stay on the ledger. I've stopped writing it down.",
+              "I sleep here now. Someone should sit with what comes up from below."
+            ],
+            4: [
+              "Take what you need. I'll hold the rest until you come back for it.",
+              "The shelves are fuller than they've ever been. Nobody's coming back for most of it."
+            ]
+          } },
+  garrow: { id:"garrow", name:"Garrow", place:"labour",
+            lines: {
+              1: [
+                "Work's work. The pit pays better, but the pit doesn't pay you to breathe.",
+                "One chalk mark for every hour. I pay the marks, not the sweat."
+              ],
+              2: [
+                "Rope's hot to the touch now, all the way up. The haulers wrap their hands twice.",
+                "Brannoch's bellows need feeding day and night. The forge has never been this hungry."
+              ],
+              3: [
+                "Crates come up rattling with glass. We don't open them. We just haul.",
+                "Half my haulers took their wages and left on the south road. Can't fault them."
+              ],
+              4: [
+                "The winch groans at night with nothing on the line. We've stopped going out to check.",
+                "Take an honest wage while your wounds close. It may be the last quiet work in Emberhold."
+              ]
+            } }
 };
 /* ============================================================
    HALLS TAB - Phase 2 (SPEC 17.1, 19.5, 16.1).
@@ -14239,14 +14418,13 @@ function heroOpenItemSheet(hero, item, loc) {
       '</button>' +
     '</div>' +
     '<div class="btn-row">' +
+      // What each pays, as the same chips the town uses for prices (SCOPES-BUILDINGS T2).
       '<button class="btn btn-sm btn-tight" data-act="sell" data-item="' + esc(loc) + '"' +
-        (canDispose ? '' : ' disabled') + '><span class="btn-wrap">Sell &middot; <span class="num">' +
-        fmtNum(price) + '</span> gold</span></button>' +
+        (canDispose ? '' : ' disabled') + '><span class="btn-wrap" style="display:inline-flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:4px 8px">Sell ' +
+        costChips({ gold: price }) + '</span></button>' +
       '<button class="btn btn-sm btn-tight" data-act="salvage" data-item="' + esc(loc) + '"' +
-        (canDispose ? '' : ' disabled') + '><span class="btn-wrap">Salvage &middot; <span class="num">' +
-        fmtNum(salv.ash) + '</span> Ash' +
-        (salv.shards ? ' &middot; <span class="num">' + fmtNum(salv.shards) + '</span> Starshards' : '') +
-      '</span></button>' +
+        (canDispose ? '' : ' disabled') + '><span class="btn-wrap" style="display:inline-flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:4px 8px">Salvage ' +
+        costChips({ ash: salv.ash, shards: salv.shards }) + '</span></button>' +
     '</div>' +
     (isThisEquipped
       ? '<div class="tiny muted">Unequip it first to sell or salvage it.</div>'
@@ -15831,16 +16009,22 @@ function offeringRenewCost(hero) {
   return Math.max(BALANCE.town.offerings.renewMinGold, Math.ceil(offeringCost(hero, b.id) * used / D));
 }
 
-/* `quoted` is the price the player was shown. The price only rises while
-   they read, so if it has moved past the quote nothing is charged and the
-   caller shows the new price instead - never more than was shown, and a
-   sheet left open for an hour can't renew at the old price. */
-function renewOffering(hero, quoted) {
+/* `quote` is { cost, at }: the price the player was shown and when. The
+   price climbs while they read - on deep floors by a gold every second or
+   so - so a quote holds for renewQuoteHoldMs and is charged exactly as
+   shown. Past that, if the price has moved, nothing is charged and the
+   caller shows the new price, so a sheet left open for an hour can't
+   renew at the old one. */
+function renewOffering(hero, quote) {
   const b = activeOffering(hero);
   if (!b) return { ok: false, reason: 'That Offering has already ended.' };
   if (hero.descent) return { ok: false, reason: 'Not during a descent.' };
-  const cost = offeringRenewCost(hero);
-  if (quoted !== undefined && cost > quoted) return { ok: false, repriced: true, cost: cost };
+  let cost = offeringRenewCost(hero);
+  if (quote) {
+    const fresh = now() - quote.at <= BALANCE.town.offerings.renewQuoteHoldMs;
+    if (fresh) cost = Math.min(cost, quote.cost);
+    else if (cost > quote.cost) return { ok: false, repriced: true, cost: cost };
+  }
   if (hero.gold < cost) return { ok: false, reason: 'Not enough gold.' };
   // Bank the HP earned so far first, as buyOffering does, so a Vigil's
   // doubled stretch up to now is kept when its window restarts.
@@ -16037,6 +16221,7 @@ function townConfirmRenew(hero) {
   // "used up" always add up to the full duration on screen.
   const left = Math.ceil(Math.max(0, b.until - now()) / 60000) * 60000;
   const quoted = offeringRenewCost(hero);
+  const quotedAt = now();
   confirmSheet({
     title: 'Renew the Offering?',
     body: 'Offer ' + fmtNum(quoted) + ' gold to restart <strong>' + esc(def.name) + '</strong>. ' +
@@ -16044,7 +16229,7 @@ function townConfirmRenew(hero) {
       fmtTime(Math.max(0, D - left)) + ' used up.',
     yes: 'Renew',
     onYes: function () {
-      const r = renewOffering(hero, quoted);
+      const r = renewOffering(hero, { cost: quoted, at: quotedAt });
       if (r.repriced) { toast('The price is now ' + fmtNum(r.cost) + ' gold.'); townConfirmRenew(hero); return; }
       if (!r.ok) { toast(r.reason); refresh(); return; }
       toast(def.name + ' is renewed.');
@@ -16162,6 +16347,39 @@ function townFindVaultItem(hero, id) {
   return (hero.vault || []).find(function (i) { return i.id === id; }) || null;
 }
 
+/* Sorting the stored items: the same four orders as the bag's sort row
+   (SPEC 11.9), and like heroSort it lives only in the UI, never in the
+   save. In the Vault, Newest means most recently stored: vaultStore
+   appends, so a later position is a later arrival. Ties keep the most
+   recently stored first. */
+let vaultSort = 'rarity'; // 'rarity' | 'slot' | 'newest' | 'power'
+
+function vaultSortedItems(hero) {
+  const slots = BALANCE.items.slots;
+  const rows = (hero.vault || []).map(function (item, i) {
+    return { item: item, i: i, power: vaultSort === 'power' ? heroPowerDeltaSafe(hero, item) : 0 };
+  });
+  rows.sort(function (a, b) {
+    let d = 0;
+    if (vaultSort === 'rarity') d = RARITY_ORDER.indexOf(b.item.rarity) - RARITY_ORDER.indexOf(a.item.rarity);
+    else if (vaultSort === 'slot') d = slots.indexOf(a.item.slot) - slots.indexOf(b.item.slot);
+    else if (vaultSort === 'power') d = b.power - a.power;
+    return d || (b.i - a.i);
+  });
+  return rows.map(function (r) { return r.item; });
+}
+
+function vaultSortRow() {
+  const opts = [['rarity', 'Rarity'], ['slot', 'Slot'], ['newest', 'Newest'], ['power', 'Power']];
+  return '<div class="row wrap" style="gap:8px;margin:10px 0">' +
+    '<span class="small muted row" style="gap:4px">' + icon('ico-sort') + 'Sort</span>' +
+    opts.map(function (o) {
+      return '<button class="btn btn-sm' + (vaultSort === o[0] ? ' btn-primary' : '') + '" data-act="vaultSort" data-sort="' + o[0] + '"' +
+        ' aria-pressed="' + (vaultSort === o[0] ? 'true' : 'false') + '">' + o[1] + '</button>';
+    }).join('') +
+  '</div>';
+}
+
 function townRenderVault(hero) {
   let out = townHeader('The Vault', 'vault') + townCurrencyRow(hero);
 
@@ -16192,12 +16410,18 @@ function townRenderVault(hero) {
   if (!vault.length) {
     out += '<p class="small muted">Nothing stashed. Gear you send here stays safe until you take it back.</p>';
   } else {
+    if (vault.length > 1) out += vaultSortRow();
     out += '<div class="stack-s">';
-    vault.forEach(function (item) {
+    vaultSortedItems(hero).forEach(function (item) {
+      // The slot and the bag's Power comparison, so the Slot and Power
+      // orders can be read at a glance.
       out += '<div class="row-between panel" style="' + town2RarityBorderStyle(item) + '">' +
-        '<button type="button" class="row grow" data-act="vaultDetail" data-id="' + esc(item.id) + '" style="gap:8px;min-height:44px;text-align:left">' +
+        '<button type="button" class="row grow" data-act="vaultDetail" data-id="' + esc(item.id) + '" style="gap:8px;min-height:44px;text-align:left;min-width:0">' +
           townBadge(item) + town2ChainIcon(item) +
-          '<div>' + town2ItemLabel(item) + '</div>' +
+          '<div style="min-width:0">' + town2ItemLabel(item) +
+            '<div class="tiny muted row" style="gap:6px;margin-top:2px">' + esc(heroSlotLabel[item.slot]) +
+              ' &middot; ' + hero2CompareBadge(hero, item) + '</div>' +
+          '</div>' +
         '</button>' +
         '<button class="btn btn-sm" data-act="vaultTake" data-id="' + esc(item.id) + '">Take</button>' +
       '</div>';
@@ -16239,6 +16463,7 @@ function townRenderVault(hero) {
 (function () {
   const inherited = VIEWS.town.onAct;
   VIEWS.town.onAct = function (act, node, ev) {
+    if (act === 'vaultSort') { vaultSort = node.dataset.sort; refresh(); return; }
     if (act === 'vaultPut') {
       const hero = state && state.hero;
       if (!hero) return;
@@ -18263,6 +18488,1561 @@ function heroRenderGear(hero) {
   }
   return html;
 }
+/* ============================================================
+   THE TOWN'S BUILDINGS - SCOPES-BUILDINGS.md, SPEC 13, 19.4
+   Core: the keeper quote (T1), cost chips and "what's short" (T2), the
+   pinned resource bar (T3), and the figures the Chapel, Market and
+   Commissions show (C1, C2, M3, K1), plus storing several items at once
+   (V1). The building parts build on these. Every figure is worked out by
+   the game's own rules; nothing here changes one.
+   ============================================================ */
+
+/* ---- getting around (F1, B2) ---- */
+
+/* The Forge's open tab. UI only, never saved; it starts on Salvage and
+   remembers the last tab until the game is closed. */
+let forgeTab = 'salvage'; // 'salvage' | 'temper' | 'reforge' | 'craft' | 'rekindle'
+
+/* Send the player to a place in town, or to the Descend tab. Used by the
+   Bounty Board's contract links. */
+function townGo(place, opts) {
+  opts = opts || {};
+  if (place === 'descend') { setTab('descend'); return; }
+  if (opts.forgeTab) forgeTab = opts.forgeTab;
+  townPlace = place;
+  refresh();
+  el('view').scrollTop = 0;
+}
+
+/* ---- T1: keeper greetings ---- */
+
+/* Which keeper speaks in each place. The lines themselves are content, in
+   KEEPER_LINES; keeperLine picks one by the act of the deepest floor and
+   the day, so the greeting changes daily and follows the story. */
+const TOWN_KEEPER_IDS = {
+  chapel: 'maren', forge: 'brannoch', market: 'vell', bounty: 'hask',
+  vault: 'doss', labour: 'garrow', halls: 'archivist'
+};
+
+function townKeeperQuote(place, hero) {
+  const id = TOWN_KEEPER_IDS[place];
+  const k = id && KEEPER_LINES[id];
+  const line = k ? keeperLine(id, hero) : '';
+  if (!line) return '';
+  return '<figure class="tk-quote" style="border-left-color:' + townAccent(place) + '">' +
+    '<blockquote>&ldquo;' + esc(line) + '&rdquo;</blockquote>' +
+    '<figcaption>&mdash; ' + esc(k.name) + '</figcaption>' +
+  '</figure>';
+}
+
+/* ---- T2: costs ---- */
+
+/* A price as chips: the coin for gold, the Ash icon, the star for
+   Starshards. `cost` is { gold, ash, shards }; parts at zero are left out.
+   Each chip carries its unit in words for screen readers. */
+function costChips(cost) {
+  const chip = function (ico, cls, n, unit) {
+    return '<span class="tc-chip">' + icon(ico, cls) + '<span class="num">' + fmtNum(n) + '</span>' +
+      '<span class="sr"> ' + unit + '</span></span>';
+  };
+  const parts = [];
+  if (cost.gold) parts.push(chip('ico-coin', 'coin', cost.gold, 'gold'));
+  if (cost.ash) parts.push(chip('ico-ash', '', cost.ash, 'Ash'));
+  if (cost.shards) parts.push(chip('ico-star', '', cost.shards, cost.shards === 1 ? 'Starshard' : 'Starshards'));
+  return '<span class="tc-chips">' + parts.join('') + '</span>';
+}
+
+/* What the hero is short of, in words ("Need 15 more Ash"), or '' when
+   they can pay. */
+function costShort(hero, cost) {
+  const need = [];
+  if ((cost.gold || 0) > hero.gold) need.push(fmtNum(cost.gold - hero.gold) + ' more gold');
+  if ((cost.ash || 0) > hero.ash) need.push(fmtNum(cost.ash - hero.ash) + ' more Ash');
+  if ((cost.shards || 0) > hero.starshards) {
+    const n = cost.shards - hero.starshards;
+    need.push(fmtNum(n) + ' more Starshard' + (n === 1 ? '' : 's'));
+  }
+  return need.length ? 'Need ' + need.join(', ') : '';
+}
+
+/* A pay button: optional label, then the chips. Disabled, and not
+   primary, when the hero can't pay or opts.disabled is set. `attrs` is the
+   raw attribute string (data-act and friends). Put costShortLine beside
+   or under it so a disabled button always says why. */
+function costButton(hero, cost, attrs, label, opts) {
+  opts = opts || {};
+  const payable = !costShort(hero, cost) && !opts.disabled;
+  const cls = 'btn btn-sm tc-btn' + (payable && opts.primary !== false ? ' btn-primary' : '') + (opts.block ? ' btn-block' : '');
+  return '<button class="' + cls + '" ' + (attrs || '') + (payable ? '' : ' disabled') + '>' +
+    (label ? '<span>' + label + '</span>' : '') + costChips(cost) +
+  '</button>';
+}
+function costShortLine(hero, cost) {
+  const s = costShort(hero, cost);
+  return s ? '<div class="tc-short">' + esc(s) + '</div>' : '';
+}
+
+/* ---- T3: the pinned resource bar ---- */
+
+/* `kinds`: any of 'gold', 'ash', 'shards', 'renown', 'vault', in order. */
+function townResBar(hero, kinds) {
+  const bits = kinds.map(function (k) {
+    if (k === 'gold') return '<span class="row" style="gap:4px">' + icon('ico-coin', 'coin') + fmtNum(hero.gold) + '<span class="sr"> gold</span></span>';
+    if (k === 'ash') return '<span class="row" style="gap:4px">' + icon('ico-ash') + fmtNum(hero.ash) + ' Ash</span>';
+    if (k === 'shards') return '<span class="row" style="gap:4px">' + icon('ico-star') + fmtNum(hero.starshards) + ' Starshards</span>';
+    if (k === 'renown') return '<span class="row" style="gap:4px">' + icon('ico-renown') + 'Rank ' + fmtNum(currentRank()) + '</span>';
+    if (k === 'vault') return '<span class="row" style="gap:4px">' + icon('ico-vault') + fmtNum((hero.vault || []).length) + ' / ' + fmtNum(vaultCap(hero)) + ' stored</span>';
+    return '';
+  });
+  return '<div class="row wrap small num res-sticky" style="gap:14px">' + bits.join('') + '</div>';
+}
+
+/* ---- C1: healing figures ---- */
+
+/* The Offering that doubles town regeneration, found by its effect so no
+   id is hardcoded. */
+function vigilOfferingId() {
+  const list = BALANCE.town.offerings.list;
+  for (const id in list) if (list[id].effect.k === 'town_regen_mult') return id;
+  return null;
+}
+
+/* Milliseconds of town regeneration from now to `target` HP. A Vigil
+   already burning is counted, as timeToFullHp counts it. With `vigil`,
+   and none burning, it is worked out as if one were made right now - the
+   "with a Vigil" figure. Infinity when HP doesn't regenerate. */
+function hpWaitMs(hero, st, target, vigil) {
+  const hp = currentHp(hero, st);
+  if (hp >= target) return 0;
+  const rate = regenPerMs(hero, st);
+  if (rate <= 0) return Infinity;
+  const need = target - hp;
+  let mult = offeringMult(hero, 'town_regen_mult');
+  const b = activeOffering(hero);
+  let windowMs = (b && mult > 1) ? Math.max(0, b.until - now()) : 0;
+  if (vigil && !(windowMs > 0)) {
+    const def = offeringDef(vigilOfferingId());
+    if (def) { mult = def.effect.value; windowMs = BALANCE.town.offerings.durationMs; }
+  }
+  if (windowMs > 0 && mult > 1) {
+    const boosted = rate * mult * windowMs;
+    if (boosted >= need) return need / (rate * mult);
+    return windowMs + (need - boosted) / rate;
+  }
+  return need / rate;
+}
+
+/* The daily price climb (SPEC 13.1): heals in the last 24 hours, what the
+   next one is multiplied by, and when it's back to x1 - the moment the
+   newest of those heals leaves the window. */
+function healClimb(hero) {
+  const H = BALANCE.town.heal;
+  const n = healsInWindow(hero);
+  const newest = n ? Math.max.apply(null, hero.healsAt) : 0;
+  return { count: n, nextMult: Math.pow(H.growth, n), normalInMs: n ? Math.max(0, newest + H.windowMs - now()) : 0 };
+}
+
+/* ---- C2: what an Offering would do for you right now ---- */
+
+/* The hero as the price and yield rules would see them with no Offering,
+   or with the given one burning. A shallow copy: only `offering` differs,
+   so skills (Fence and the like) still count. */
+function heroWithOffering(hero, id) {
+  const c = Object.assign({}, hero);
+  c.offering = id ? { id: id, from: now(), until: now() + BALANCE.town.offerings.durationMs } : null;
+  return c;
+}
+
+/* What the bag sells for, without and with Coinshade's Favour (or whichever
+   Offering lifts sell prices). Locked and heirloom items are left out,
+   since they can't be sold. */
+function bagSellValue(hero, offeringId) {
+  const h = heroWithOffering(hero, offeringId);
+  let total = 0;
+  for (const item of hero.inventory) {
+    if (item.locked || item.heirloom) continue;
+    total += sellPrice(h, item);
+  }
+  return total;
+}
+
+/* The Ash salvaging the bag would give, without and with Ashen Favour.
+   Locked and heirloom items are left out, as salvageItem leaves them. */
+function bagSalvageAsh(hero, offeringId) {
+  const h = heroWithOffering(hero, offeringId);
+  let total = 0;
+  for (const item of hero.inventory) {
+    if (item.locked || item.heirloom) continue;
+    total += heroSalvageYield(h, item).ash;
+  }
+  return total;
+}
+
+/* ---- M3: stock that beats what's worn ---- */
+
+/* The Hero tab's rule (SCOPES-HERO H4): at least upgradeMinPct Power, and
+   relics never count, since a relic trades one stat for another. */
+function isPowerUpgrade(hero, item) {
+  if (!item || item.slot === 'relic' || !canEquip(hero, item)) return false;
+  return heroPowerDeltaSafe(hero, item) >= BALANCE.heroTab.upgradeMinPct;
+}
+
+/* ---- K1: the running job in terms of HP ---- */
+
+/* What the running job will have paid by the time HP is full, or by its
+   cap if that comes first: { toFullMs, amount, capFirst }. A Fallen hero
+   regenerates nothing until the timer ends, so that time comes first. */
+function taskPayUntilFull(hero) {
+  if (!hero.task) return null;
+  const st = heroStats(hero);
+  const fallenMs = Math.max(0, (hero.fallenUntil || 0) - now());
+  const toFull = fallenMs + timeToFullHp(hero, st);
+  const toCap = taskCapIn(hero);
+  const ms = Math.min(toFull, toCap);
+  const amount = Math.floor(taskRate(hero, hero.task.id) * ((taskElapsed(hero) + ms) / HOUR));
+  return { toFullMs: toFull, amount: amount, capFirst: toCap < toFull };
+}
+
+/* ---- V1: several items at once ---- */
+
+/* The same moves as storing or taking one at a time, repeated. Stops at
+   the first refusal (the Vault or the bag is full) and says how many
+   landed. */
+function vaultStoreMany(hero, items) {
+  let done = 0, reason = '';
+  for (const item of items) {
+    const r = vaultStore(hero, item);
+    if (r.ok) done++; else { reason = r.reason; break; }
+  }
+  return { done: done, reason: reason };
+}
+function vaultTakeMany(hero, items) {
+  let done = 0, reason = '';
+  for (const item of items) {
+    const r = vaultWithdraw(hero, item);
+    if (r.ok) done++; else { reason = r.reason; break; }
+  }
+  return { done: done, reason: reason };
+}
+/* ============================================================
+   town-vault.js — SCOPES-BUILDINGS.md: V1 (store/take several at
+   once) plus the shared T1/T2/T3/T4 pass on the Vault page, and the
+   Archivist greeting on the Halls tab's Codex page.
+
+   Overrides: townRenderVault(hero).
+   New actions on VIEWS.town.onAct: tv-store, tv-take.
+   Reused as-is, never redeclared: the core's vaultUpgrade / vaultTake /
+   vaultPut / vaultDetail / vaultSort action handlers (still on
+   VIEWS.town.onAct), vaultSort (let), vaultSortRow(), vaultSortedItems(),
+   vaultCap(), vaultFree(), vaultUpgradeCost(), buyVaultSlots(),
+   vaultStore(), vaultWithdraw(), vaultStoreMany(), vaultTakeMany(),
+   townKeeperQuote(), townResBar(), costButton(), costShortLine(),
+   townHeader(), townBadge(), town2ChainIcon(), town2ItemLabel(),
+   town2RarityBorderStyle(), town2OpenItemDetail(), heroSortedIndices(),
+   heroSlotLabel, inventoryFree(), openSheet()/closeSheet(), toast(),
+   esc(), fmtNum(), icon().
+   ============================================================ */
+
+/* ---- V1: pick-several sheet, shared by Store and Take ----
+
+   Reuses the H4 Equip-upgrades sheet's look (hd-uprow / hd-checkbox),
+   per the brief. Only one such sheet is ever open at a time, so one
+   module-level ticked-set, reset whenever a sheet opens, is enough -
+   same pattern as H4's hdTicked. */
+let tvTicked = {};
+
+function tvTickedCount() {
+  return Object.keys(tvTicked).length;
+}
+
+/* One tick row: checkbox, badge + chain icon + name in rarity colour,
+   slot in ash. No rarity border here - the sheet reuses the H4 look,
+   which never puts one on its rows; colour is still never alone
+   because the badge letter and (for sets) the chain icon ride along. */
+function tvRow(item, ticked) {
+  const nm = town2ItemName(item) || item.baseType;
+  return '<button role="checkbox" aria-checked="' + (ticked ? 'true' : 'false') + '" ' +
+      'data-act="tv-toggle" data-id="' + esc(item.id) + '" class="hd-uprow">' +
+    '<span class="hd-checkbox' + (ticked ? ' hd-checked' : '') + '" aria-hidden="true">' +
+      (ticked ? '&#10003;' : '') +
+    '</span>' +
+    '<span class="hd-uprow-body">' +
+      '<span class="row" style="gap:6px">' + townBadge(item) + town2ChainIcon(item) +
+        '<span class="rar-' + item.rarity + '" style="font-weight:600">' + esc(nm) + '</span>' +
+      '</span>' +
+      '<div class="tiny muted" style="margin-top:2px">' + esc(heroSlotLabel[item.slot]) + '</div>' +
+    '</span>' +
+  '</button>';
+}
+
+function tvLimitLine(free, whereLabel) {
+  return '<p class="small muted" style="margin:0 0 10px">' +
+    fmtNum(free) + ' slot' + (free === 1 ? '' : 's') + ' free in ' + esc(whereLabel) + '.</p>';
+}
+
+function tvBody(list, free, whereLabel) {
+  return tvLimitLine(free, whereLabel) +
+    '<div class="hd-uprows">' +
+      list.map(function (item) { return tvRow(item, !!tvTicked[item.id]); }).join('') +
+    '</div>';
+}
+
+function tvFoot(list, verb) {
+  const n = list.filter(function (item) { return !!tvTicked[item.id]; }).length;
+  return '<button class="btn btn-primary" style="width:100%" data-act="tv-go"' +
+    (n === 0 ? ' disabled' : '') + '>' + esc(verb) + ' ' + fmtNum(n) + '</button>';
+}
+
+/* Drives both sheets. `list` and `limit` are fixed for the sheet's
+   life: nothing actually moves until Store N / Take N is confirmed,
+   so the free-slot count at the far end can't change under it while
+   it's open. */
+function tvOpenSheet(opts) {
+  const list = opts.list;
+  if (!list.length) return;
+  tvTicked = {};
+
+  const sheetNode = openSheet({
+    title: opts.title,
+    body: tvBody(list, opts.limit, opts.whereLabel),
+    foot: tvFoot(list, opts.verb),
+    onAct: function (act, node) {
+      if (act === 'tv-toggle') {
+        const id = node.dataset.id;
+        if (tvTicked[id]) {
+          delete tvTicked[id];
+        } else {
+          if (tvTickedCount() >= opts.limit) { toast('No more room.'); return; }
+          tvTicked[id] = true;
+        }
+        sheetNode.querySelector('.sheet-body').innerHTML = tvBody(list, opts.limit, opts.whereLabel);
+        sheetNode.querySelector('.sheet-foot').innerHTML = tvFoot(list, opts.verb);
+        return;
+      }
+      if (act === 'tv-go') {
+        const items = list.filter(function (item) { return !!tvTicked[item.id]; });
+        if (!items.length) return;
+        const res = opts.commit(items);
+        if (res.done > 0) {
+          let msg = opts.verbPast + ' ' + fmtNum(res.done) + (res.done === 1 ? ' item.' : ' items.');
+          if (res.done < items.length && res.reason) msg += ' ' + res.reason;
+          toast(msg);
+        } else {
+          toast(res.reason || 'Nothing to ' + opts.verb.toLowerCase() + '.');
+        }
+        closeSheet();
+        refresh();
+      }
+    }
+  });
+}
+
+function tvOpenStoreSheet(hero) {
+  tvOpenSheet({
+    title: 'Store items',
+    verb: 'Store',
+    verbPast: 'Stored',
+    whereLabel: 'the Vault',
+    list: heroSortedIndices(hero).map(function (idx) { return hero.inventory[idx]; }),
+    limit: vaultFree(hero),
+    commit: function (items) { return vaultStoreMany(hero, items); }
+  });
+}
+
+function tvOpenTakeSheet(hero) {
+  tvOpenSheet({
+    title: 'Take several',
+    verb: 'Take',
+    verbPast: 'Took',
+    whereLabel: 'your bag',
+    list: vaultSortedItems(hero),
+    limit: inventoryFree(hero),
+    commit: function (items) { return vaultTakeMany(hero, items); }
+  });
+}
+
+/* The two buttons that replace "In your pack" (V1). Each is disabled,
+   with its own reason line, exactly when the brief spells out. */
+function tvActionsBlock(hero) {
+  const bagCount = (hero.inventory || []).length;
+  const vaultCount = (hero.vault || []).length;
+  const vaultFreeN = vaultFree(hero);
+  const bagFreeN = inventoryFree(hero);
+
+  const storeReason = !bagCount ? 'Nothing in your bag to store.' :
+    (vaultFreeN <= 0 ? 'The Vault is full.' : '');
+  const takeReason = !vaultCount ? 'Nothing in the Vault to take.' :
+    (bagFreeN <= 0 ? 'Your bag is full.' : '');
+
+  let out = '<div class="tv-actionrow">' +
+    '<button class="btn btn-primary" data-act="tv-store"' + (storeReason ? ' disabled' : '') + '>Store items</button>' +
+    '<button class="btn" data-act="tv-take"' + (takeReason ? ' disabled' : '') + '>Take several</button>' +
+  '</div>';
+  if (storeReason) out += '<p class="tiny muted" style="margin-top:6px">' + esc(storeReason) + '</p>';
+  if (takeReason) out += '<p class="tiny muted" style="margin-top:6px">' + esc(takeReason) + '</p>';
+  return out;
+}
+
+/* ---- The Vault page (overrides the live townRenderVault) ---- */
+
+function townRenderVault(hero) {
+  let out = townHeader('The Vault', 'vault') + townKeeperQuote('vault', hero) + townResBar(hero, ['vault', 'gold']);
+
+  const vault = hero.vault || [];
+  const cap = vaultCap(hero);
+  const cost = vaultUpgradeCost(hero);
+  const atMax = cost === null;
+
+  out += '<div class="section-title">Storage</div>';
+  out += '<div class="row-between panel">' +
+    '<div>' +
+      '<div style="font-weight:600" class="num">' + fmtNum(vault.length) + ' / ' + fmtNum(cap) + ' slots</div>' +
+      '<div class="tiny muted">' + esc(TOWN_KEEPERS.vault) + ' keeps what you cannot carry.</div>' +
+    '</div>' +
+    (atMax
+      ? '<button class="btn btn-sm" data-act="vaultUpgrade" disabled>Maximum</button>'
+      : costButton(hero, { gold: cost }, 'data-act="vaultUpgrade"', 'Expand', {})) +
+  '</div>';
+  if (atMax) {
+    out += '<p class="tiny muted" style="margin-top:6px">The Vault cannot hold more than ' + fmtNum(BALANCE.town.vault.maxSlots) + ' items.</p>';
+  } else {
+    out += costShortLine(hero, { gold: cost });
+  }
+
+  out += '<div class="section-title">Stored</div>';
+  if (!vault.length) {
+    out += '<p class="small muted">Nothing stashed. Gear you send here stays safe until you take it back.</p>';
+  } else {
+    if (vault.length > 1) out += vaultSortRow();
+    out += '<div class="stack-s">';
+    vaultSortedItems(hero).forEach(function (item) {
+      // Unchanged: slot and the bag's Power comparison, so the Slot and
+      // Power sort orders can be read at a glance.
+      out += '<div class="row-between panel" style="' + town2RarityBorderStyle(item) + '">' +
+        '<button type="button" class="row grow" data-act="vaultDetail" data-id="' + esc(item.id) + '" style="gap:8px;min-height:44px;text-align:left;min-width:0">' +
+          townBadge(item) + town2ChainIcon(item) +
+          '<div style="min-width:0">' + town2ItemLabel(item) +
+            '<div class="tiny muted row" style="gap:6px;margin-top:2px">' + esc(heroSlotLabel[item.slot]) +
+              ' &middot; ' + hero2CompareBadge(hero, item) + '</div>' +
+          '</div>' +
+        '</button>' +
+        '<button class="btn btn-sm" data-act="vaultTake" data-id="' + esc(item.id) + '">Take</button>' +
+      '</div>';
+    });
+    out += '</div>';
+  }
+
+  // V1: replaces the old "In your pack" list entirely.
+  out += tvActionsBlock(hero);
+
+  return out;
+}
+
+/* ---- New actions: tv-store, tv-take ----
+   Same wrap-and-fall-through pattern the core already uses on
+   VIEWS.town.onAct (see the Vault's own vaultUpgrade/vaultTake/etc.
+   IIFE just above this file's splice point). */
+(function () {
+  const inherited = VIEWS.town.onAct;
+  VIEWS.town.onAct = function (act, node, ev) {
+    if (act === 'tv-store') {
+      const hero = state && state.hero;
+      if (!hero) return;
+      tvOpenStoreSheet(hero);
+      return;
+    }
+    if (act === 'tv-take') {
+      const hero = state && state.hero;
+      if (!hero) return;
+      tvOpenTakeSheet(hero);
+      return;
+    }
+    return inherited.call(this, act, node, ev);
+  };
+})();
+
+/* ---- The Archivist's greeting on the Halls tab's Codex page ----
+   VIEWS.halls.render calls halls3RenderCodex() by name, so reassigning
+   the global binding is enough to change what it draws - no need to
+   touch VIEWS.halls itself or copy the renderer. Skips the quote when
+   there's no hero (e.g. before a hero exists yet). */
+halls3RenderCodex = (function (orig) {
+  return function () {
+    const hero = state && state.hero;
+    return (hero ? townKeeperQuote('halls', hero) : '') + orig.apply(this, arguments);
+  };
+})(halls3RenderCodex);
+/* ============================================================
+   SCOPES-BUILDINGS.md - the Forge rework: F1 (five tabs), F2 (show
+   what an upgrade does before you pay) and F3 (a simpler Craft),
+   plus T1-T4 on the Forge page.
+
+   Redeclares townRenderForge (the last declaration in the file
+   wins). Every action it fires (salvage, bulk, temper, reforgeOpen
+   + reforgePick inside its sheet, autosalvage, craft, rekindle,
+   detail) is the SAME action name calling the SAME handler already
+   in VIEWS.town.onAct - only the markup around it changed. The only
+   new actions are tf-tab (switch tab) and tf-craftslot (pick a
+   Craft slot), both UI-only.
+   ============================================================ */
+
+/* ---- F1: the five-tab strip ---- */
+
+const TF_TABS = [
+  { id: 'salvage',  label: 'Salvage',  ico: 'ico-salvage' },
+  { id: 'temper',   label: 'Temper',   ico: 'ico-tf-temper' },
+  { id: 'reforge',  label: 'Reforge',  ico: 'ico-tf-reforge' },
+  { id: 'craft',    label: 'Craft',    ico: 'ico-tf-craft' },
+  { id: 'rekindle', label: 'Rekindle', ico: 'ico-tf-rekindle' }
+];
+
+/* `forgeTab` is the core's existing UI-only state (declared once,
+   under "THE TOWN'S BUILDINGS"); this only reads and writes it. */
+function tfTabStrip() {
+  return '<div class="tf-tabstrip">' +
+    TF_TABS.map(function (t) {
+      const active = forgeTab === t.id;
+      return '<button type="button" class="tf-tab' + (active ? ' active' : '') + '" ' +
+        'data-act="tf-tab" data-tab="' + t.id + '" aria-pressed="' + (active ? 'true' : 'false') + '">' +
+        icon(t.ico) + '<span>' + t.label + '</span>' +
+      '</button>';
+    }).join('') +
+  '</div>';
+}
+
+/* ---- shared: every owned item, worn gear first then bag ---- */
+function tfOwnedItems(hero) {
+  const out = [];
+  for (const slot in hero.equipment) { if (hero.equipment[slot]) out.push(hero.equipment[slot]); }
+  hero.inventory.forEach(function (i) { out.push(i); });
+  return out;
+}
+
+/* ---- F2: what an upgrade would do ---- */
+
+/* The hero's Power change from a mutation to one WORN item (temper or
+   rekindle), worked out exactly as the Hero tab's equip preview does:
+   heroStats on a JSON clone of the hero, against heroStats(hero). Null
+   when `item` isn't actually the one equipped in its own slot. */
+function tfWornPowerDelta(hero, item, mutate) {
+  const slot = item.slot;
+  if (!hero.equipment[slot] || hero.equipment[slot] !== item) return null;
+  const before = heroStats(hero);
+  const clone = JSON.parse(JSON.stringify(hero));
+  mutate(clone.equipment[slot]);
+  const after = heroStats(clone);
+  if (!(before.power > 0)) return 0;
+  return (after.power - before.power) / before.power * 100;
+}
+
+function tfPowerFragment(delta) {
+  const up = delta >= 0;
+  return '<span class="tiny num" style="color:var(--' + (up ? 'corona' : 'blood-light') + ')">' +
+    'Power ' + (up ? '▲' : '▼') + ' ' + fmtPct(Math.abs(delta)) + '</span>';
+}
+
+/* A BAG item's own stat change (it isn't worn, so the hero doesn't
+   change - only the item's own numbers do). Shows every core or
+   percent stat that moves, e.g. "Guard 12 -> 13" or "Might 40 -> 43",
+   using heroStatLabel for names. */
+function tfItemStatDiffLines(item, mutate) {
+  const clone = JSON.parse(JSON.stringify(item));
+  mutate(clone);
+  const before = itemStats(item), after = itemStats(clone);
+  const lines = [];
+  heroCoreStats.forEach(function (c) {
+    const a = before[c] || 0, b = after[c] || 0;
+    // Compared (and shown) the same way fmtNum displays them - floored - so a
+    // pair that would otherwise print as "6 -> 6" is correctly left out.
+    if (Math.floor(a) !== Math.floor(b)) lines.push(esc(heroStatLabel[c]) + ' ' + fmtNum(a) + ' → ' + fmtNum(b));
+  });
+  heroPercentStats.forEach(function (p) {
+    const a = before[p] || 0, b = after[p] || 0;
+    if (Math.abs(a - b) > 0.0001) lines.push(esc(heroStatLabel[p]) + ' ' + fmtPct(a) + ' → ' + fmtPct(b));
+  });
+  return lines;
+}
+function tfBagStatFragment(lines) {
+  if (!lines.length) return '';
+  return '<span class="tiny num" style="color:var(--corona)">' + lines.join(' &middot; ') + '</span>';
+}
+
+/* Lays the result (Power line or item stat line) beside costShortLine,
+   the way BUILDINGS-CONCEPT.html#forge pairs them on one row. Either
+   side may be empty; the row is skipped only when both are. */
+function tfResultRow(resultFrag, hero, cost) {
+  const shortFrag = costShortLine(hero, cost);
+  if (!resultFrag && !shortFrag) return '';
+  return '<div class="row-between" style="margin-top:6px">' + (resultFrag || '<span></span>') + shortFrag + '</div>';
+}
+
+/* ---- Salvage tab ---- */
+function tfSalvageTab(hero) {
+  let out = '';
+  const salvageable = hero.inventory.filter(function (i) { return !i.locked && !i.heirloom; });
+  if (!salvageable.length) {
+    out += '<p class="small muted">Nothing in your bag to salvage.</p>';
+  } else {
+    out += '<div class="stack-s">';
+    salvageable.forEach(function (item) {
+      const y = heroSalvageYield(hero, item);
+      out += '<div class="row-between panel" style="' + town2RarityBorderStyle(item) + '">' +
+        '<button type="button" class="row grow" data-act="detail" data-id="' + esc(item.id) + '" style="gap:8px;min-height:44px;text-align:left">' +
+          townBadge(item) + town2ChainIcon(item) +
+          '<div>' + town2ItemLabel(item) + '</div>' +
+        '</button>' +
+        '<button class="btn btn-sm" data-act="salvage" data-id="' + esc(item.id) + '">' +
+          costChips({ ash: y.ash, shards: y.shards }) +
+        '</button>' +
+      '</div>';
+    });
+    out += '</div>';
+
+    out += '<div class="stack-s" style="margin-top:10px">';
+    ['common', 'magic', 'rare'].forEach(function (r) {
+      out += '<button class="btn btn-sm btn-block" data-act="bulk" data-rarity="' + r + '">' +
+        'Salvage all unlocked ' + RARITIES[r].name.toLowerCase() + ' and below' +
+      '</button>';
+    });
+    out += '</div>';
+  }
+
+  out += '<div class="section-title">Auto-salvage</div>';
+  if (!hasUnlock('autosalvage')) {
+    out += '<p class="small muted">Opens at Renown rank ' + town2UnlockRank('autosalvage') + '.</p>';
+  } else {
+    out += '<p class="tiny muted">Uniques and sets are never auto-salvaged.</p>';
+    const AS = (state.settings && state.settings.autoSalvage) || { common: false, magic: false, rare: false };
+    out += '<div class="stack-s">';
+    ['common', 'magic', 'rare'].forEach(function (r) {
+      const on = !!AS[r];
+      out += '<button type="button" class="row-between panel card-tap" data-act="autosalvage" data-rarity="' + r + '" style="min-height:44px;width:100%">' +
+        '<span class="row" style="gap:8px">' + townBadge({ rarity: r }) + '<span>Auto-salvage ' + esc(RARITIES[r].name.toLowerCase()) + '</span></span>' +
+        '<span class="small">' + (on ? 'On' : 'Off') + '</span>' +
+      '</button>';
+    });
+    out += '</div>';
+  }
+  return out;
+}
+
+/* ---- Temper tab (F2) ---- */
+function tfTemperRow(hero, item, worn) {
+  const c = temperCost(item);
+  const maxed = !c;
+  const sub = maxed
+    ? '<div class="tiny muted num">At +' + BALANCE.items.temperMax + '</div>'
+    : '<div class="tiny muted num">+' + (item.temper || 0) + ' → +' + c.to + '</div>';
+
+  let out = '<div class="panel" style="' + town2RarityBorderStyle(item) + '">' +
+    '<div class="row-between">' +
+      '<button type="button" class="row grow" data-act="detail" data-id="' + esc(item.id) + '" style="gap:8px;min-height:44px;text-align:left">' +
+        townBadge(item) + town2ChainIcon(item) +
+        '<div style="min-width:0">' + town2ItemLabel(item) + sub + '</div>' +
+      '</button>';
+  if (!maxed) {
+    const cost = { gold: c.gold, ash: c.ash, shards: c.shards };
+    out += costButton(hero, cost, 'data-act="temper" data-id="' + esc(item.id) + '"', null, { primary: false });
+  }
+  out += '</div>';
+
+  if (!maxed) {
+    const cost = { gold: c.gold, ash: c.ash, shards: c.shards };
+    // A relic never moves Power (its stat is Haste, Fortune or Recovery),
+    // so it shows its own stat change even when worn.
+    const resultFrag = (worn && item.slot !== 'relic')
+      ? (function () {
+          const delta = tfWornPowerDelta(hero, item, function (it) { it.temper = c.to; });
+          return delta === null ? '' : tfPowerFragment(delta);
+        })()
+      : tfBagStatFragment(tfItemStatDiffLines(item, function (it) { it.temper = c.to; }));
+    out += tfResultRow(resultFrag, hero, cost);
+  }
+  out += '</div>';
+  return out;
+}
+
+function tfTemperTab(hero) {
+  let out = '<p class="tiny muted">Each level adds 8% to base stats, up to +' + BALANCE.items.temperMax + '.</p>';
+
+  const equipped = [];
+  for (const slot in hero.equipment) { if (hero.equipment[slot]) equipped.push(hero.equipment[slot]); }
+  const bag = hero.inventory.slice();
+
+  out += '<div class="section-title">Worn</div>';
+  out += equipped.length
+    ? '<div class="stack-s">' + equipped.map(function (i) { return tfTemperRow(hero, i, true); }).join('') + '</div>'
+    : '<p class="small muted">Nothing equipped.</p>';
+
+  out += '<div class="section-title">In your bag</div>';
+  out += bag.length
+    ? '<div class="stack-s">' + bag.map(function (i) { return tfTemperRow(hero, i, false); }).join('') + '</div>'
+    : '<p class="small muted">Nothing in your bag.</p>';
+
+  return out;
+}
+
+/* ---- Reforge tab ---- */
+function tfReforgeTab(hero) {
+  if (!hasUnlock('reforge')) {
+    return '<p class="small muted">Opens at Renown rank ' + town2UnlockRank('reforge') + '.</p>';
+  }
+  const candidates = tfOwnedItems(hero).filter(function (i) { return canReforge(i).ok; });
+  if (!candidates.length) {
+    return '<p class="small muted">No magic or rare items to reforge.</p>';
+  }
+  let out = '<p class="tiny muted">Replaces one affix with a new one. The cost doubles each time that item is reforged.</p>';
+  out += '<div class="stack-s">';
+  candidates.forEach(function (item) {
+    const cost = reforgeCost(item);
+    const equippedTag = townIsEquipped(hero, item) ? ' <span class="tiny muted">(equipped)</span>' : '';
+    out += '<div class="panel" style="' + town2RarityBorderStyle(item) + '">' +
+      '<button type="button" class="row-between card-tap" data-act="reforgeOpen" data-id="' + esc(item.id) + '" style="min-height:44px;width:100%">' +
+        '<span class="row" style="gap:8px;min-width:0">' + townBadge(item) + town2ChainIcon(item) +
+          '<span style="min-width:0">' + town2ItemLabel(item) + equippedTag + '</span>' +
+        '</span>' +
+        costChips(cost) +
+      '</button>' +
+      costShortLine(hero, cost) +
+    '</div>';
+  });
+  out += '</div>';
+  return out;
+}
+
+/* ---- Craft tab (F3) ---- */
+
+/* UI-only, never saved: which slot the single Craft button targets. */
+let tfCraftSlot = 'weapon';
+
+function tfCraftTab(hero) {
+  if (!hasUnlock('craft')) {
+    return '<p class="small muted">Opens at Renown rank ' + town2UnlockRank('craft') + '.</p>';
+  }
+  let out = '<p class="tiny muted">Crafts a magic or rare item, for a slot you choose, at your deepest ' +
+    'floor’s item level. Uniques and sets can’t be crafted.</p>';
+
+  out += '<div class="tf-slotgrid">';
+  BALANCE.items.slots.forEach(function (slot) {
+    const sel = tfCraftSlot === slot;
+    out += '<button type="button" class="tf-slotchip' + (sel ? ' sel' : '') + '" ' +
+      'data-act="tf-craftslot" data-slot="' + slot + '" aria-pressed="' + (sel ? 'true' : 'false') + '">' +
+      icon('ico-slot-' + slot) + '<span>' + esc(heroSlotLabel[slot] || slot) + '</span>' +
+    '</button>';
+  });
+  out += '</div>';
+
+  const c = craftCost(hero);
+  out += '<div class="tf-craftwrap">' +
+    costButton(hero, c, 'data-act="craft" data-slot="' + tfCraftSlot + '"',
+      'Craft a magic or rare ' + esc(heroSlotLabel[tfCraftSlot] || tfCraftSlot), { primary: true, block: true }) +
+  '</div>' + costShortLine(hero, c);
+  return out;
+}
+
+/* ---- Rekindle tab ---- */
+function tfRekindleRow(hero, item, worn) {
+  const sub = '<div class="tiny muted num">ilvl ' + fmtNum(item.ilvl) + ' → ' + fmtNum(hero.deepest) + '</div>';
+  const equippedTag = worn ? ' <span class="tiny muted">(equipped)</span>' : '';
+  const gate = canRekindle(hero, item);
+
+  let out = '<div class="panel" style="' + town2RarityBorderStyle(item) + '">' +
+    '<div class="row-between">' +
+      '<button type="button" class="row grow" data-act="detail" data-id="' + esc(item.id) + '" style="gap:8px;min-height:44px;text-align:left">' +
+        townBadge(item) + town2ChainIcon(item) +
+        '<div style="min-width:0">' + town2ItemLabel(item) + equippedTag + sub + '</div>' +
+      '</button>';
+  if (!gate.ok) {
+    out += '<span class="tiny muted" style="max-width:120px;text-align:right">' + esc(gate.reason) + '</span>';
+  } else {
+    const cost = rekindleCost(hero, item);
+    out += costButton(hero, cost, 'data-act="rekindle" data-id="' + esc(item.id) + '"', null, { primary: false });
+  }
+  out += '</div>';
+
+  if (gate.ok) {
+    const cost = rekindleCost(hero, item);
+    // Worn gear shows the hero's Power change; bag items and relics show
+    // the item's own stat change, as on the Temper tab.
+    let resultFrag = '';
+    if (worn && item.slot !== 'relic') {
+      const delta = tfWornPowerDelta(hero, item, function (it) { it.ilvl = hero.deepest; });
+      if (delta !== null) resultFrag = tfPowerFragment(delta);
+    } else {
+      resultFrag = tfBagStatFragment(tfItemStatDiffLines(item, function (it) { it.ilvl = hero.deepest; }));
+    }
+    out += tfResultRow(resultFrag, hero, cost);
+  }
+  out += '</div>';
+  return out;
+}
+
+function tfRekindleTab(hero) {
+  if (!hasUnlock('craft')) {
+    return '<p class="small muted">Opens at Renown rank ' + town2UnlockRank('craft') + '.</p>';
+  }
+  let out = '<p class="tiny muted">Raises an item’s level to your deepest floor.</p>';
+  const candidates = tfOwnedItems(hero).filter(function (i) { return i.ilvl < hero.deepest; });
+  if (!candidates.length) {
+    out += '<p class="small muted">Everything is already at your deepest floor’s level.</p>';
+    return out;
+  }
+  out += '<div class="stack-s">' + candidates.map(function (item) {
+    return tfRekindleRow(hero, item, townIsEquipped(hero, item));
+  }).join('') + '</div>';
+  return out;
+}
+
+/* ============================================================
+   Redeclares the SCOPES-BUILDINGS-era townRenderForge (the one that
+   drew Salvage, Temper, Reforge, Auto-salvage, then town3CraftSection,
+   then town3RekindleSection, one after another on a single ~2,800px
+   page). This one shows only the active tab's content, per F1.
+   town3CraftSection and town3RekindleSection are left defined but
+   unused - tfCraftTab and tfRekindleTab replace them.
+   ============================================================ */
+function townRenderForge(hero) {
+  let out = townHeader('The Forge', 'forge') +
+    townKeeperQuote('forge', hero) +
+    townResBar(hero, ['gold', 'ash', 'shards']) +
+    tfTabStrip();
+
+  if (forgeTab === 'temper') out += tfTemperTab(hero);
+  else if (forgeTab === 'reforge') out += tfReforgeTab(hero);
+  else if (forgeTab === 'craft') out += tfCraftTab(hero);
+  else if (forgeTab === 'rekindle') out += tfRekindleTab(hero);
+  else out += tfSalvageTab(hero);
+
+  return out;
+}
+
+/* New actions only: tf-tab switches the Forge's tab, tf-craftslot
+   picks Craft's target slot. Everything else (salvage, bulk, temper,
+   reforgeOpen, autosalvage, craft, rekindle, detail, and whatever
+   later IIFEs added for other places) goes to the inherited chain
+   unchanged. */
+(function () {
+  const inherited = VIEWS.town.onAct;
+  VIEWS.town.onAct = function (act, node, ev) {
+    if (act === 'tf-tab') {
+      forgeTab = node.dataset.tab;
+      renderView();
+      const v = el('view');
+      if (v) v.scrollTop = 0;
+      return;
+    }
+    if (act === 'tf-craftslot') {
+      tfCraftSlot = node.dataset.slot;
+      renderView();
+      return;
+    }
+    return inherited.call(this, act, node, ev);
+  };
+})();
+/* ============================================================
+   town-market.js — SCOPES-BUILDINGS.md: M1-M3 (the Market) and
+   B1-B2 (the Bounty Board), plus the shared T1-T4 pass on both
+   pages.
+
+   Overrides: townRenderMarket(hero), town2RenderBounty(hero).
+   New actions on VIEWS.town.onAct: tq-go (contract/black-market
+   link buttons -> townGo), tq-ranks (Renown card's "All ranks"
+   link -> the Halls tab's Renown page).
+
+   Reused as-is, never redeclared: townHeader(), townKeeperQuote(),
+   townResBar(), costChips(), costButton(), costShort(),
+   costShortLine(), townBadge(), town2ChainIcon(), town2ItemLabel(),
+   town2RarityBorderStyle(), town4AffixLinesCompact(), powerArrow(),
+   powerDelta(), hero2CompareBadge(), isPowerUpgrade(), buyPrice(),
+   sellPrice(), blackMarketPrice(), earlyRestockCost(),
+   supplyPrice(), hasUnlock(), town2UnlockRank(), renownProgress(),
+   claimContract() (via the inherited 'claimContract' action),
+   townGo(), setTab(), halls3Tab (let), townMarketTab (let),
+   inventoryFree(), UNIQUES, BALANCE, CONTRACT_TEMPLATES /
+   state.account.contracts, esc(), fmtNum(), fmtTime(), icon(),
+   now(), g().
+
+   No new icons needed: the upgrade tag reuses the plain "&#9650;"
+   glyph the game already uses in powerArrow(), and "Done"/"Claimed"
+   use a plain "&#10003;" check mark the same way town-vault.js's
+   tick rows use "&#10003;" for their checkbox - both are text next
+   to a word, never colour alone.
+   ============================================================ */
+
+/* ============================================================
+   THE MARKET - SCOPES-BUILDINGS M1, M2, M3
+   ============================================================ */
+function townRenderMarket(hero) {
+  let out = townHeader('The Market', 'market') +
+    townKeeperQuote('market', hero) +
+    townResBar(hero, ['gold']);
+
+  /* ---- M1: the Black Market, featured at the top. Only appears
+     when there is actually an item on offer - SCOPES-BUILDINGS.md:
+     "When there's no Black Market item, the card doesn't appear." */
+  const bm = hero.market.blackMarket;
+  if (hasUnlock('blackmarket') && bm && bm.item) {
+    const item = bm.item;
+    const price = blackMarketPrice(item);
+    const bmLeft = Math.max(0, (bm.expiresAt || 0) - now());
+    const u = item.uniqueId && UNIQUES[item.uniqueId];
+    const bmInvFull = inventoryFree(hero) <= 0;
+
+    out += '<div class="section-title">Black Market</div>';
+    out += '<div class="card" style="' + town2RarityBorderStyle(item) + '">' +
+      '<div class="row" style="gap:8px">' +
+        townBadge(item) + town2ChainIcon(item) +
+        '<div class="grow" style="min-width:0">' +
+          town2ItemLabel(item) +
+          '<div class="tiny muted">ilvl ' + fmtNum(item.ilvl) + '</div>' +
+        '</div>' +
+      '</div>';
+    if (u) {
+      out += '<p class="small" style="margin-top:10px">' + esc(u.power.text) + '</p>' +
+        '<p class="small" style="font-style:italic;color:var(--ash);margin-top:8px">' + esc(u.lore) + '</p>';
+    }
+    // The icon sits outside the ticking span: the core's tick() replaces
+    // that span's textContent wholesale on every tick, which would wipe
+    // out a child <svg> if the icon lived inside it.
+    out += '<div class="row-between wrap" style="margin-top:10px;gap:6px">' +
+      '<span class="small muted row" style="gap:6px">' +
+        icon('ico-clock') +
+        '<span data-town-cd="' + (bm.expiresAt || 0) + '" data-town-cd-tmpl="blackmarket">Expires in ' + fmtTime(bmLeft) + '</span>' +
+      '</span>' +
+      hero2CompareBadge(hero, item) +
+    '</div>';
+    out += '<div style="margin-top:12px">' +
+      costButton(hero, { gold: price }, 'data-act="buyBlackMarket"', 'Buy', { block: true, disabled: bmInvFull }) +
+    '</div>';
+    out += bmInvFull ? '<div class="tc-short">Inventory full</div>' : costShortLine(hero, { gold: price });
+    out += '</div>';
+  }
+
+  /* ---- M2: restock, in one line, timer and button side by side.
+     Wraps under the timer at 336px if there isn't room (the ".wrap"
+     utility class turns on flex-wrap on the existing ".row-between").
+     The old separate "Early restock" section at the bottom is gone -
+     this row replaces it entirely. The button itself is still gated
+     on the same Renown unlock as before; nothing about who can
+     restock early has changed. */
+  const restockLeft = Math.max(0, (hero.market.restockAt || 0) - now());
+  out += '<div class="row-between wrap" style="margin-top:16px">' +
+    '<p class="small muted" style="margin:0" data-town-cd="' + (hero.market.restockAt || 0) + '" data-town-cd-tmpl="market">' +
+      'Restocks in ' + fmtTime(restockLeft) +
+    '</p>';
+  if (hasUnlock('restock')) {
+    out += costButton(hero, { gold: earlyRestockCost(hero) }, 'data-act="earlyRestock"', 'Restock now', {});
+  }
+  out += '</div>';
+  if (hasUnlock('restock')) out += costShortLine(hero, { gold: earlyRestockCost(hero) });
+
+  /* ---- Buy/Sell toggle (unchanged) ---- */
+  out += '<div class="btn-row" style="margin:14px 0 10px">' +
+    '<button class="btn btn-sm' + (townMarketTab === 'buy' ? ' btn-primary' : '') + '" data-act="markettab" data-tab="buy">Buy</button>' +
+    '<button class="btn btn-sm' + (townMarketTab === 'sell' ? ' btn-primary' : '') + '" data-act="markettab" data-tab="sell">Sell</button>' +
+  '</div>';
+
+  if (townMarketTab === 'buy') {
+    const stock = (hero.market.stock || []).slice();
+    if (!stock.length) {
+      out += '<p class="small muted">Nothing in stock.</p>';
+    } else {
+      /* ---- M3: upgrades first, everything else keeps its order.
+         Array#sort is a stable sort (ES2019+), so ties (both
+         upgrades, or both not) keep the roll's original order. */
+      stock.sort(function (a, b) {
+        return (isPowerUpgrade(hero, a) ? 0 : 1) - (isPowerUpgrade(hero, b) ? 0 : 1);
+      });
+      out += '<div class="grid-2">';
+      stock.forEach(function (item) {
+        const price = buyPrice(item);
+        const invFull = inventoryFree(hero) <= 0;
+        const upgrade = isPowerUpgrade(hero, item);
+        const delta = Math.round(powerDelta(hero, item));
+        out += '<div class="card" style="padding:10px;position:relative;' + town2RarityBorderStyle(item) + '">' +
+          (upgrade ? '<span class="tq-tag-upgrade" style="position:absolute;top:8px;right:8px">&#9650; Upgrade</span>' : '') +
+          '<div class="row" style="gap:6px">' + townBadge(item) + town2ChainIcon(item) + '</div>' +
+          '<div style="margin-top:6px">' + town2ItemLabel(item) + '</div>' +
+          '<div class="tiny muted">ilvl ' + fmtNum(item.ilvl) + '</div>' +
+          town4AffixLinesCompact(item) +
+          '<div style="margin-top:4px">' + powerArrow(delta) + '</div>' +
+          costButton(hero, { gold: price }, 'data-act="buy" data-id="' + esc(item.id) + '" style="margin-top:8px"', null, { block: true, disabled: invFull }) +
+          (invFull ? '<div class="tc-short">Inventory full</div>' : costShortLine(hero, { gold: price })) +
+        '</div>';
+      });
+      out += '</div>';
+    }
+  } else {
+    const sellable = hero.inventory.filter(function (i) { return !i.locked && !i.heirloom; });
+    if (!sellable.length) {
+      out += '<p class="small muted">Nothing unlocked to sell.</p>';
+    } else {
+      out += '<div class="grid-2">';
+      sellable.forEach(function (item) {
+        const price = sellPrice(hero, item);
+        out += '<div class="card" style="padding:10px;' + town2RarityBorderStyle(item) + '">' +
+          '<button type="button" class="row" data-act="detail" data-id="' + esc(item.id) + '" style="gap:6px;width:100%;text-align:left;min-height:44px">' +
+            townBadge(item) + town2ChainIcon(item) +
+            '<div class="grow">' + town2ItemLabel(item) + '</div>' +
+          '</button>' +
+          '<button class="btn btn-sm btn-block" data-act="sell" data-id="' + esc(item.id) + '" style="margin-top:8px">' +
+            '<span>Sell</span>' + costChips({ gold: price }) +
+          '</button>' +
+        '</div>';
+      });
+      out += '</div>';
+
+      out += '<div class="stack-s" style="margin-top:10px">';
+      ['common', 'magic', 'rare'].forEach(function (r) {
+        out += '<button class="btn btn-sm btn-block" data-act="sellbulk" data-rarity="' + r + '">' +
+          'Sell all unlocked ' + RARITIES[r].name.toLowerCase() + ' and below' +
+        '</button>';
+      });
+      out += '</div>';
+    }
+  }
+
+  /* ---- Supplies (unchanged section, chips + short lines) ---- */
+  out += '<div class="section-title">Supplies</div>';
+  out += '<div class="stack-s">';
+  ['candle', 'ward', 'oil'].forEach(function (id) {
+    const s = BALANCE.town.supplies[id];
+    const held = (hero.supplies && hero.supplies[id]) || 0;
+    const price = supplyPrice(hero, id);
+    const atMax = held >= s.max;
+    out += '<div class="panel">' +
+      '<div class="row-between">' +
+        '<div class="grow">' +
+          '<div style="font-weight:600">' + esc(s.name) + '</div>' +
+          '<div class="tiny muted">' + esc(s.text) + '</div>' +
+          '<div class="tiny muted">' + fmtNum(held) + ' / ' + fmtNum(s.max) + ' held</div>' +
+        '</div>' +
+        (atMax
+          ? '<button class="btn btn-sm" disabled>Max</button>'
+          : costButton(hero, { gold: price }, 'data-act="buySupply" data-id="' + id + '"', null, {})) +
+      '</div>' +
+      (atMax ? '' : costShortLine(hero, { gold: price })) +
+    '</div>';
+  });
+  out += '</div>';
+
+  return out;
+}
+
+/* ============================================================
+   THE BOUNTY BOARD - SCOPES-BUILDINGS B1, B2
+   ============================================================ */
+
+/* B1: which rank comes next, skipping any 'later' (named-but-inert)
+   entries, the same way hasUnlock() treats them. */
+function tqNextRenownUnlock(rank) {
+  const ranks = Object.keys(BALANCE.renownUnlocks).map(Number).sort(function (a, b) { return a - b; });
+  for (let i = 0; i < ranks.length; i++) {
+    const r = ranks[i];
+    if (r <= rank) continue;
+    const u = BALANCE.renownUnlocks[r];
+    if (u.later) continue;
+    return { rank: r, label: u.label };
+  }
+  return null;
+}
+
+function tqRenownCard() {
+  const p = renownProgress();
+  let out = '<div class="card">' +
+    '<div class="row-between">' +
+      '<span style="font-weight:600">Renown rank <span class="num">' + fmtNum(p.rank) + '</span></span>' +
+      '<button type="button" class="tq-link" data-act="tq-ranks">All ranks</button>' +
+    '</div>';
+  if (p.atMax) {
+    out += '<div class="small" style="margin-top:10px">Top rank reached</div>';
+  } else {
+    const pct = p.needed > 0 ? Math.max(0, Math.min(1, p.into / p.needed)) : 0;
+    out += '<div class="small muted num" style="margin-top:6px">' + fmtNum(p.into) + ' / ' + fmtNum(p.needed) + ' to rank ' + (p.rank + 1) + '</div>' +
+      '<div class="bar bar-xp" style="margin-top:6px"><div class="bar-fill" style="width:' + Math.round(pct * 100) + '%"></div></div>';
+    const next = tqNextRenownUnlock(p.rank);
+    if (next) {
+      out += '<div class="small" style="margin-top:10px">Next: <span style="color:var(--bone)">' + esc(next.label) + '</span> <span class="tiny muted">(rank ' + next.rank + ')</span></div>';
+    }
+  }
+  out += '</div>';
+  return out;
+}
+
+/* B2: which button a contract's template gets, and where it goes.
+   Matches the brief's table exactly; read from the contract's own
+   `id` field, which is the CONTRACT_TEMPLATES id rollContracts()
+   copied onto it. */
+function tqContractLink(id) {
+  if (id === 'salvage') return { label: 'Go to the Forge', place: 'forge', forgeTab: 'salvage' };
+  if (id === 'temper') return { label: 'Go to the Forge', place: 'forge', forgeTab: 'temper' };
+  if (id === 'horror') return { label: 'Find a Wandering Horror', place: 'descend' };
+  if (id === 'pact') return { label: 'Choose a pact path', place: 'descend' };
+  if (id === 'bloodmoon') return { label: 'Choose a Blood Moon path', place: 'descend' };
+  if (id === 'deep' || id === 'elites' || id === 'gold') return { label: 'Go to Descend', place: 'descend' };
+  return null;
+}
+
+function town2RenderBounty(hero) {
+  if (!hasUnlock('bounty')) {
+    return townHeader('The Bounty Board', 'bounty') +
+      '<p class="small muted">Opens at Renown rank ' + town2UnlockRank('bounty') + '.</p>';
+  }
+
+  let out = townHeader('The Bounty Board', 'bounty') +
+    townKeeperQuote('bounty', hero) +
+    townResBar(hero, ['gold', 'shards', 'renown']);
+
+  /* ---- B1: Renown at the top ---- */
+  out += tqRenownCard();
+
+  const contracts = (state.account.contracts && state.account.contracts.list) || [];
+  const nextAt = (state.account.contracts && state.account.contracts.nextAt) || 0;
+  const left = Math.max(0, nextAt - now());
+  // Same reason as the Black Market's "Expires in": keep the icon out of
+  // the span the tick handler overwrites wholesale.
+  out += '<p class="small muted row" style="gap:6px;margin-top:14px">' +
+    icon('ico-clock') +
+    '<span data-town-cd="' + nextAt + '" data-town-cd-tmpl="bounty">New contracts in ' + fmtTime(left) + '</span>' +
+  '</p>';
+
+  if (!contracts.length) {
+    out += '<p class="small muted">No contracts posted yet.</p>';
+    return out;
+  }
+
+  // Same gold formula claimContract uses, so the figure shown here always
+  // matches the figure paid on Claim.
+  const gold = Math.round(BALANCE.contracts.goldCoef * g(hero.deepest));
+  const starshards = BALANCE.contracts.starshards;
+  const renownReward = BALANCE.renown.perContract;
+  const rewardChips = '<div class="chips" style="margin-top:8px">' +
+    '<span class="chip">' + icon('ico-renown') + '<span class="num">' + fmtNum(renownReward) + '</span></span>' +
+    '<span class="chip">' + icon('ico-coin', 'coin') + '<span class="num">' + fmtNum(gold) + '</span></span>' +
+    '<span class="chip">' + icon('ico-star') + '<span class="num">' + fmtNum(starshards) + '</span></span>' +
+  '</div>';
+
+  out += '<div class="section-title">Contracts</div>';
+  out += '<div class="stack-s">';
+  contracts.forEach(function (c, idx) {
+    if (c.claimed) {
+      out += '<div class="small muted row" style="gap:6px;padding:4px 2px">&#10003; Claimed &middot; ' + esc(c.text) + '</div>';
+      return;
+    }
+
+    out += '<div class="card"' + (c.done ? ' style="border:1px solid var(--verdant)"' : '') + '>' +
+      '<div style="font-weight:600">' + esc(c.text) + '</div>' +
+      rewardChips;
+
+    if (c.done) {
+      out += '<div class="small" style="margin-top:10px;color:var(--verdant);font-weight:600">&#10003; Done</div>' +
+        '<button class="btn btn-primary btn-block" data-act="claimContract" data-idx="' + idx + '" style="margin-top:10px">Claim</button>';
+    } else {
+      if (c.goal === 1) {
+        out += '<div class="small muted" style="margin-top:10px">Not done yet</div>';
+      } else {
+        const pct = c.goal > 0 ? Math.max(0, Math.min(1, c.progress / c.goal)) : 0;
+        out += '<div class="bar bar-xp" style="margin-top:10px"><div class="bar-fill" style="width:' + Math.round(pct * 100) + '%"></div></div>' +
+          '<div class="tiny muted num" style="margin-top:4px">' + fmtNum(Math.min(c.progress, c.goal)) + ' / ' + fmtNum(c.goal) + '</div>';
+      }
+      const link = tqContractLink(c.id);
+      if (link) {
+        out += '<button class="btn btn-block" data-act="tq-go" data-place="' + link.place + '"' +
+          (link.forgeTab ? ' data-forgetab="' + link.forgeTab + '"' : '') +
+          ' style="margin-top:10px">' + esc(link.label) + '</button>';
+      }
+    }
+
+    out += '</div>';
+  });
+  out += '</div>';
+
+  return out;
+}
+
+/* ---- New actions: tq-go, tq-ranks ----
+   Same wrap-and-fall-through pattern the core already uses on
+   VIEWS.town.onAct. */
+(function () {
+  const inherited = VIEWS.town.onAct;
+  VIEWS.town.onAct = function (act, node, ev) {
+    if (act === 'tq-go') {
+      const opts = {};
+      if (node.dataset.forgetab) opts.forgeTab = node.dataset.forgetab;
+      townGo(node.dataset.place, opts);
+      return;
+    }
+    if (act === 'tq-ranks') {
+      halls3Tab = 'renown';
+      setTab('halls');
+      return;
+    }
+    return inherited.call(this, act, node, ev);
+  };
+})();
+/* ============================================================
+   Infernus — town buildings rework (X = chapel)
+   SCOPES-BUILDINGS.md: C1, C2, K1, plus T1-T4 on the Chapel and
+   Commissions pages. Redeclares townRenderChapel, townRenderOfferings
+   and townRenderRespec (Chapel) and town5RenderLabour (Commissions).
+   Every figure below is read from the game's own rules (healQuote,
+   hpWaitMs, healClimb, bagSellValue, bagSalvageAsh, taskPayUntilFull,
+   spentSkillPoints, taskAmountText, ...); nothing here changes one.
+   ============================================================ */
+
+/* C1: which heal option's gain is previewed on the HP bar. UI only,
+   never saved - like forgeTab, it just remembers the last choice. */
+let twHealPick = 0.25;
+
+/* A multiplier for display, e.g. 1.5 or 2.25, with no trailing zeros. */
+function twMultText(m) {
+  return String(Math.round(m * 100) / 100);
+}
+
+/* ---- C2: what an Offering would do for you right now, as a line ---- */
+function twOfferingNumbers(hero, st, def, isActive, fallen) {
+  const k = def.effect.k;
+  if (k === 'town_regen_mult') {
+    if (fallen) return '';
+    const hp = currentHp(hero, st);
+    if (hp >= st.maxHp) return '<div class="small muted" style="margin-top:2px">You&rsquo;re at full HP</div>';
+    if (isActive) {
+      return '<div class="small muted" style="margin-top:2px">Full HP in ' +
+        fmtTime(hpWaitMs(hero, st, st.maxHp, false)) + '</div>';
+    }
+    return '<div class="small muted" style="margin-top:2px">Full HP in ' + fmtTime(hpWaitMs(hero, st, st.maxHp, false)) +
+      ' &rarr; ' + fmtTime(hpWaitMs(hero, st, st.maxHp, true)) + '</div>';
+  }
+  if (k === 'sell_price_mult') {
+    const base = bagSellValue(hero, null);
+    if (base <= 0) return '<div class="small muted" style="margin-top:2px">Nothing in your bag to sell</div>';
+    return '<div class="small muted" style="margin-top:2px">Your bag sells for ' + fmtNum(base) +
+      ' &rarr; ' + fmtNum(bagSellValue(hero, def.id)) + ' gold</div>';
+  }
+  if (k === 'salvage_ash_mult') {
+    const base = bagSalvageAsh(hero, null);
+    if (base <= 0) return '<div class="small muted" style="margin-top:2px">Nothing in your bag to salvage</div>';
+    return '<div class="small muted" style="margin-top:2px">Salvaging your bag: ' + fmtNum(base) +
+      ' &rarr; ' + fmtNum(bagSalvageAsh(hero, def.id)) + ' Ash</div>';
+  }
+  return '';
+}
+
+/* ============================================================
+   THE LAST CHAPEL — SCOPES-BUILDINGS C1 (heal preview), T1-T4.
+   Redeclares the live townRenderChapel so Offerings still seats
+   between Heal and Respec, exactly as the copy it replaces.
+   ============================================================ */
+function townRenderChapel(hero) {
+  let out = townHeader('The Last Chapel', 'chapel') + townKeeperQuote('chapel', hero) + townResBar(hero, ['gold']);
+
+  if (hero.fallenUntil > now()) {
+    const left = hero.fallenUntil - now();
+    const cost = reviveCost(hero);
+    const afford = hero.gold >= cost;
+    out += '<div class="section-title">Fallen</div>' +
+      '<div class="card">' +
+        '<div class="risk risk-deadly">' + icon('ico-deadly') + '<span>Fallen</span></div>' +
+        '<div class="small muted" style="margin-top:6px" data-town-cd="' + hero.fallenUntil + '" data-town-cd-tmpl="fallen">' +
+          'Time left: ' + fmtTime(left) +
+        '</div>' +
+        '<div style="margin-top:14px">' +
+          '<button class="btn btn-primary btn-block btn-lg" data-act="revive"' + (afford ? '' : ' disabled') + '>' +
+            '<span>Revive</span>' + costChips({ gold: cost }) +
+          '</button>' +
+          (afford ? '' : costShortLine(hero, { gold: cost })) +
+        '</div>' +
+      '</div>';
+    out += townRenderOfferings(hero);
+    out += townRenderRespec(hero);
+    return out;
+  }
+
+  const gate = canHeal(hero);
+  out += '<div class="section-title">Heal</div>';
+  if (!gate.ok) {
+    out += '<p class="small muted">' + esc(gate.reason) + '</p>';
+  } else {
+    const st = heroStats(hero);
+    const hp = currentHp(hero, st);
+    const options = [[0.25, 'Heal 25%'], [0.5, 'Heal 50%'], [1, 'Heal to full']]
+      .map(function (o) { return { frac: o[0], label: o[1], q: healQuote(hero, o[0]) }; })
+      .filter(function (o) { return o.q.restored > 0; });
+
+    if (!options.length) {
+      out += "<p class=\"small muted\">You're at full HP.</p>";
+    } else {
+      const selFrac = options.some(function (o) { return o.frac === twHealPick; }) ? twHealPick : options[0].frac;
+      const sel = options.find(function (o) { return o.frac === selFrac; });
+      const curPct = st.maxHp > 0 ? hp / st.maxHp * 100 : 0;
+      const targetPct = st.maxHp > 0 ? sel.q.target / st.maxHp * 100 : 0;
+      const gainPct = Math.max(0, Math.min(100 - curPct, targetPct - curPct));
+      const markerPct = Math.min(targetPct, 98);
+
+      out += '<div class="card">' +
+          '<div class="row-between">' +
+            '<span style="font-weight:600">HP</span>' +
+            '<span class="num small">' + fmtNum(hp) + ' / ' + fmtNum(st.maxHp) + '</span>' +
+          '</div>' +
+          '<div class="bar bar-lg" style="margin-top:8px">' +
+            '<div class="bar-fill" style="width:' + curPct + '%"></div>' +
+            '<div class="tw-heal-gain" style="left:' + curPct + '%;width:' + gainPct + '%"></div>' +
+            '<div class="tw-heal-marker" style="left:' + markerPct + '%"></div>' +
+          '</div>' +
+        '</div>';
+
+      const vigilBurning = offeringMult(hero, 'town_regen_mult') > 1;
+      out += '<div class="stack-s" style="margin-top:10px">';
+      options.forEach(function (o) {
+        const isSel = o.frac === selFrac;
+        let waitLine = 'or wait ' + fmtTime(hpWaitMs(hero, st, o.q.target, false));
+        if (!vigilBurning) waitLine += ' &middot; ' + fmtTime(hpWaitMs(hero, st, o.q.target, true)) + ' with a Vigil';
+        out += '<div class="panel row-between tw-healrow' + (isSel ? ' tw-sel' : '') + '">' +
+            '<button class="tw-healrow-main" data-act="tw-healpick" data-frac="' + o.frac + '">' +
+              '<div style="font-weight:600">' + esc(o.label) +
+                ' <span class="muted num" style="font-weight:400">&rarr; ' + fmtNum(o.q.target) + ' / ' + fmtNum(st.maxHp) + '</span>' +
+              '</div>' +
+              '<div class="tiny muted" style="margin-top:2px">' + waitLine + '</div>' +
+            '</button>' +
+            costButton(hero, { gold: o.q.gold }, 'data-act="heal" data-frac="' + o.frac + '"', '', {}) +
+          '</div>';
+        if (hero.gold < o.q.gold) out += costShortLine(hero, { gold: o.q.gold });
+      });
+      out += '</div>';
+
+      const climb = healClimb(hero);
+      out += '<div class="small muted row" style="gap:6px;margin-top:10px">' +
+        icon('ico-clock', 'tw-ico-sm') +
+        '<span>' + (climb.count > 0
+          ? fmtNum(climb.count) + ' heal' + (climb.count === 1 ? '' : 's') + ' today &middot; the next costs &times;' +
+            twMultText(climb.nextMult) + ' &middot; back to normal in ' + fmtTime(climb.normalInMs)
+          : 'Each heal within a day costs &times;' + twMultText(BALANCE.town.heal.growth) + ' more than the last') +
+        '</span>' +
+      '</div>';
+    }
+  }
+
+  out += townRenderOfferings(hero);
+  out += townRenderRespec(hero);
+  return out;
+}
+
+/* ---- C2: Offerings, each with what it would do for you right now ---- */
+function townRenderOfferings(hero) {
+  const B = BALANCE.town.offerings;
+  const st = heroStats(hero);
+  const fallen = hero.fallenUntil > now();
+  const active = activeOffering(hero);
+  let out = '<div class="section-title">Offerings</div>';
+
+  if (active) {
+    const def = offeringDef(active.id);
+    const left = Math.max(0, active.until - now());
+    out += '<div class="card" style="border-left:3px solid ' + townAccent('chapel') + '">' +
+        '<div class="row" style="gap:10px">' +
+          '<span style="color:' + townAccent('chapel') + ';display:inline-flex">' + icon(def.icon) + '</span>' +
+          '<div class="grow">' +
+            '<div style="font-weight:600">' + esc(def.name) + '</div>' +
+            '<div class="small muted">' + esc(def.text) + '</div>' +
+            twOfferingNumbers(hero, st, def, true, fallen) +
+          '</div>' +
+        '</div>' +
+        '<div class="row-between" style="margin-top:10px;gap:10px">' +
+          '<div class="small" style="color:' + townAccent('chapel') + '"' +
+            ' data-town-cd="' + active.until + '" data-town-cd-tmpl="offering">' +
+            'Ends in ' + fmtTime(left) +
+          '</div>' +
+          townRenewButton(hero) +
+        '</div>' +
+      '</div>' +
+      '<p class="tiny muted" style="margin-top:8px">Renew to reset it to ' + fmtTime(B.durationMs) +
+        '; you pay only for the time used up. Making a different one ends this one early.</p>';
+  } else {
+    out += '<p class="tiny muted">Each lasts ' + fmtTime(B.durationMs) +
+      '. Only one at a time, and none of them follow you into the pit.</p>';
+  }
+
+  out += '<div class="stack-s" style="margin-top:10px">';
+  for (const id in B.list) {
+    // The one that is running is already shown in full above.
+    if (active && active.id === id) continue;
+    const def = B.list[id];
+    const cost = offeringCost(hero, id);
+    out += '<div class="panel">' +
+        '<div class="row-between" style="gap:10px">' +
+          '<div class="row grow" style="gap:10px;min-width:0">' +
+            '<span style="color:var(--ash);display:inline-flex;flex:0 0 auto">' + icon(def.icon) + '</span>' +
+            '<div style="min-width:0">' +
+              '<div style="font-weight:600">' + esc(def.name) + '</div>' +
+              '<div class="small muted">' + esc(def.text) + '</div>' +
+              twOfferingNumbers(hero, st, def, false, fallen) +
+            '</div>' +
+          '</div>' +
+          costButton(hero, { gold: cost }, 'data-act="offering" data-id="' + esc(id) + '"', '', {}) +
+        '</div>' +
+        costShortLine(hero, { gold: cost }) +
+      '</div>';
+  }
+  out += '</div>';
+  return out;
+}
+
+/* ---- Respec: how many points it refunds, cost as chips ---- */
+function townRenderRespec(hero) {
+  const cost = respecCost(hero);
+  const spent = spentSkillPoints(hero);
+  const sub = spent > 0
+    ? 'Refunds ' + fmtNum(spent) + ' point' + (spent === 1 ? '' : 's') + '.'
+    : 'No skill points to refund.';
+  const disabled = spent <= 0;
+  const costObj = cost > 0 ? { gold: cost } : {};
+  const label = cost > 0 ? '' : 'Free';
+  return '<div class="section-title">Respec</div>' +
+    '<div class="panel">' +
+      '<div class="row-between" style="gap:10px">' +
+        '<div>' +
+          '<div style="font-weight:600">Respec your skills</div>' +
+          '<div class="small muted">' + esc(sub) + '</div>' +
+        '</div>' +
+        costButton(hero, costObj, 'data-act="respec"', label, { disabled: disabled }) +
+      '</div>' +
+      (disabled ? '' : costShortLine(hero, costObj)) +
+    '</div>';
+}
+
+/* C1: tapping a heal row's text picks it for the HP bar preview. UI only -
+   it selects, it never spends. The existing "heal" action (fired by the
+   cost button beside it) is untouched. */
+(function () {
+  const inherited = VIEWS.town.onAct;
+  VIEWS.town.onAct = function (act, node, ev) {
+    if (act === 'tw-healpick') {
+      twHealPick = parseFloat(node.dataset.frac);
+      renderView();
+      return;
+    }
+    return inherited.call(this, act, node, ev);
+  };
+})();
+
+/* ============================================================
+   COMMISSIONS — SCOPES-BUILDINGS K1, T1-T4.
+   Redeclares the live town5RenderLabour. town5-earned and town5-cap keep
+   their ids and wording verbatim: the inherited tick still rewrites them
+   every second exactly as it always has. The bar and the new HP-tied line
+   are ours, kept current by our own tick wrapper below.
+   ============================================================ */
+function twTaskBarPct(hero) {
+  const capMs = BALANCE.labour.capMs;
+  return capMs > 0 ? Math.min(100, taskElapsed(hero) / capMs * 100) : 0;
+}
+function twTaskBarLabel(hero) {
+  return fmtTime(taskElapsed(hero)) + ' of ' + fmtTime(BALANCE.labour.capMs);
+}
+/* taskPayUntilFull as one line: what the job means for your HP. */
+function twTaskHpLine(hero) {
+  const def = taskDef(hero.task.id);
+  if (!def) return '';
+  // Once the job has stopped paying, the cap line below says so; this one
+  // would only repeat it ("stops paying in 0s").
+  if (taskAtCap(hero)) return '';
+  const st = heroStats(hero);
+  if (currentHp(hero, st) >= st.maxHp) return "You're at full HP. Collect, or keep working until the cap.";
+  const pay = taskPayUntilFull(hero);
+  if (pay.capFirst) return 'It stops paying in ' + fmtTime(taskCapIn(hero)) + ', before your HP is full.';
+  // A literal em dash, not the &mdash; entity: this line is set both via
+  // innerHTML (through esc(), which would double-escape an entity) and via
+  // textContent in the tick below (which never decodes entities at all).
+  return 'Your HP is full in ' + fmtTime(pay.toFullMs) + ' — about ' + taskAmountText(def.reward, pay.amount) + ' by then.';
+}
+
+function twTaskCard(hero) {
+  const def = taskDef(hero.task.id);
+  if (!def) return '';
+  const accrued = taskAccrued(hero);
+  const atCap = taskAtCap(hero);
+  const capText = atCap
+    ? 'This job has stopped paying. Collect to bank it.'
+    : 'Stops paying in ' + fmtTime(taskCapIn(hero)) + '.';
+
+  return '<div class="card" style="border-left:3px solid ' + townAccent('labour') + '">' +
+      '<div style="font-weight:600">' + esc(def.name) + '</div>' +
+      '<div class="tiny muted num" id="tw-task-bar-label" style="margin-top:2px">' + esc(twTaskBarLabel(hero)) + '</div>' +
+      '<div class="bar bar-xp" style="margin-top:6px"><div class="bar-fill" id="tw-task-bar-fill" style="width:' + twTaskBarPct(hero) + '%"></div></div>' +
+      '<div class="small num" id="town5-earned" style="margin-top:10px">Earned so far: ' + esc(taskAmountText(def.reward, accrued)) + '</div>' +
+      '<div class="tiny muted row" id="tw-task-hp" style="gap:6px;margin-top:8px"' + (twTaskHpLine(hero) ? '' : ' hidden') + '>' +
+        icon('ico-hp', 'tw-ico-sm') + '<span>' + esc(twTaskHpLine(hero)) + '</span>' +
+      '</div>' +
+      '<div class="small muted" id="town5-cap" style="margin-top:4px">' + esc(capText) + '</div>' +
+      '<button class="btn btn-primary btn-block" data-act="collectTask" style="margin-top:10px">Collect</button>' +
+    '</div>';
+}
+
+/* A compact row for a job that isn't running: icon-plus-rate on the left,
+   Switch/Start on the right. */
+function twJobRow(hero, id, switching) {
+  const def = taskDef(id);
+  if (!def) return '';
+  const rateIcon = def.reward === 'gold' ? 'ico-coin' : def.reward === 'ash' ? 'ico-ash' : 'ico-clock';
+  const rateText = town5TaskRateAmountText(hero, id) + ' an hour';
+  return '<div class="panel">' +
+      '<div style="font-weight:600">' + esc(def.name) + '</div>' +
+      '<div class="row-between" style="margin-top:6px">' +
+        '<span class="small muted row" style="gap:5px">' + icon(rateIcon, 'tw-ico-sm') + esc(rateText) + '</span>' +
+        '<button class="btn btn-sm' + (switching ? '' : ' btn-primary') + '" data-act="startTask" data-id="' + esc(def.id) + '" style="flex:0 0 auto">' +
+          (switching ? 'Switch' : 'Start') +
+        '</button>' +
+      '</div>' +
+    '</div>';
+}
+
+function town5RenderLabour(hero) {
+  let out = townHeader('Commissions', 'labour') + townKeeperQuote('labour', hero) + townResBar(hero, ['gold', 'ash']);
+  out += '<p class="small muted">Wages for waiting out your HP between descents &mdash; a fraction of what a ' +
+    'descent pays. Starting a descent ends the current job and banks what it earned.</p>';
+
+  if (hero.task) {
+    out += twTaskCard(hero);
+    out += '<div class="section-title">Switch job</div>';
+    out += '<p class="tiny muted">Starting a different job banks what this one earned first &mdash; nothing is lost.</p>';
+  } else {
+    out += '<div class="section-title">Available work</div>';
+  }
+
+  out += '<div class="stack-s">';
+  ['gold', 'ash', 'rites'].forEach(function (id) {
+    if (hero.task && hero.task.id === id) return; // already shown above as the running job
+    out += twJobRow(hero, id, !!hero.task);
+  });
+  out += '</div>';
+
+  return out;
+}
+
+/* K1: keeps the bar and the HP-tied line current, once a second. Calls the
+   inherited tick first so town5-earned / town5-cap / the countdowns / the
+   Renew price / the map pins all keep working exactly as they do now. */
+(function () {
+  const inherited = VIEWS.town.tick;
+  VIEWS.town.tick = function () {
+    const out = inherited ? inherited.apply(this, arguments) : undefined;
+    const hero = state && state.hero;
+    if (hero && hero.task) {
+      const labelEl = el('tw-task-bar-label');
+      if (labelEl) labelEl.textContent = twTaskBarLabel(hero);
+      const fillEl = el('tw-task-bar-fill');
+      if (fillEl) fillEl.style.width = twTaskBarPct(hero) + '%';
+      const hpEl = el('tw-task-hp');
+      if (hpEl) {
+        const line = twTaskHpLine(hero);
+        const span = hpEl.querySelector('span');
+        if (span) span.textContent = line;
+        hpEl.hidden = !line;
+      }
+    }
+    return out;
+  };
+})();
 
 document.addEventListener('DOMContentLoaded', boot);
 </script>
