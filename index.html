@@ -948,6 +948,218 @@ button.tf-tab{
 .tw-ico-sm{ width:14px; height:14px; }
 /* .row sets display:flex, which would otherwise beat the hidden attribute. */
 #tw-task-hp[hidden]{ display:none; }
+/* ============================================================
+   SCOPES-HALLS L5 (Records with shape) and L6 (Champion plaques)
+   Every selector below starts with the hy- prefix.
+   ============================================================ */
+
+/* L5 - the account-wide deepest floor, headlining the Records page. */
+.hy-deepest{ display:flex; flex-direction:column; align-items:center; text-align:center; gap:2px; padding:16px 14px; }
+.hy-deepest-floor{ font-size:2.5rem; line-height:1; }
+.hy-deepest-floor.hy-none{ color:var(--ash); font-family:var(--font-ui); font-size:1.5rem; }
+
+/* L5 - the three per-class deepest-floor columns, side by side at 336px. */
+.hy-classcols{ display:grid; grid-template-columns:repeat(3, 1fr); gap:8px; }
+.hy-classcol{
+  display:flex; flex-direction:column; align-items:center; gap:4px; padding:12px 4px;
+  background:var(--crypt); border:1px solid var(--track); border-radius:var(--radius);
+  min-width:0;
+}
+.hy-classcol .cname{ font-size:.75rem; font-weight:600; text-align:center; }
+.hy-classcol .floor{ font-size:1.375rem; }
+.hy-classcol .floor.hy-none{ color:var(--ash); font-family:var(--font-ui); font-size:1rem; }
+
+/* L5 - the fastest-Guardian-clears table. */
+.hy-gwrap{ padding:0; overflow:hidden; }
+.hy-gtable{ width:100%; border-collapse:collapse; }
+.hy-gtable td{ padding:10px 12px; border-bottom:1px solid var(--track); }
+.hy-gtable tr:last-child td{ border-bottom:0; }
+.hy-gwho{ font-size:.75rem; color:var(--ash); margin-top:2px; }
+
+/* L5 - the lifetime-totals tile grid. */
+.hy-statgrid{ display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+.hy-stattile{
+  background:var(--crypt); border:1px solid var(--track); border-radius:var(--radius);
+  padding:10px 12px; display:flex; flex-direction:column; gap:6px; min-height:76px;
+}
+.hy-stattile .ico{ width:18px; height:18px; color:var(--ash); }
+.hy-stattile .ico.coin{ color:var(--brass); }
+.hy-stattile .hy-val{ font-size:1.125rem; font-weight:700; }
+.hy-stattile .hy-lbl{ font-size:.75rem; color:var(--ash); }
+
+/* L6 - champion plaque cards. */
+.hy-plaque.hy-plaque-old{ border-style:dashed; }
+.hy-statchips{ display:flex; flex-wrap:wrap; gap:6px; margin-top:10px; }
+.hy-ring{ width:44px; height:44px; border-radius:50%; flex:0 0 auto; }
+.hy-ring-brass{ border:2px solid var(--brass); }
+.hy-pname{ font-weight:700; font-size:1.0625rem; }
+.hy-ftitle{ margin-top:2px; color:var(--brass); }
+.hy-epitaph{ font-style:italic; color:var(--ash); margin:10px 0 0; }
+.hy-date{ margin:8px 0 0; }
+.hy-blessing{ margin:4px 0 0; color:var(--corona); }
+.hy-heirloom{ margin:6px 0 0; }
+
+/* L6 - the "statues in the square" line and its link-style button. The
+   button carries data-act, so the game's global button[data-act]{
+   min-height:44px} rule already gives it a full touch target; this just
+   makes it read as a link rather than a boxed button. */
+.hy-squareline{ margin:10px 2px 14px; }
+.hy-squarebtn{
+  display:inline-flex; align-items:center;
+  color:var(--corona); font-weight:600; font-size:.875rem;
+}
+/* ============================================================
+   HALLS REWORK - SCOPES-HALLS.md L3 (Codex) and L4 (Armory).
+   Every selector here starts with hx so it can't collide with any
+   other Halls part. Spliced in as the last rules of the core
+   stylesheet, so on a tied specificity (button[data-act] vs
+   button.hx-...) these rules win - used deliberately below where a
+   tile needs a taller minimum height than the game's global 44px
+   button rule.
+   ============================================================ */
+
+/* ---- L3: Codex ---- */
+
+.hx-progchips{ display:grid; grid-template-columns:repeat(2,1fr); gap:8px; margin:10px 0 16px; }
+.hx-chip{
+  display:flex; align-items:center; gap:8px; min-height:44px; padding:8px 10px;
+  border-radius:var(--radius); background:var(--raised); border:1px solid var(--track);
+  color:var(--bone); font-size:.8125rem; text-align:left;
+}
+.hx-chip .ico{ width:18px; height:18px; color:var(--ash); }
+
+button.hx-actrow{
+  display:flex; align-items:center; gap:10px; width:100%;
+  min-height:52px; padding:10px 2px; text-align:left;
+  border-bottom:1px solid var(--track);
+}
+.hx-actrow .ico{ flex:0 0 auto; color:var(--ash); width:20px; height:20px; }
+.hx-actname{ font-size:1.0625rem; color:var(--bone); }
+.hx-actname .display{ font-size:1.0625rem; }
+.hx-actmeta{ font-size:.75rem; color:var(--ash); margin-top:2px; }
+.hx-actbody{ padding:12px 2px 6px; }
+
+.hx-loregrid{ display:grid; grid-template-columns:repeat(5,1fr); gap:6px; margin:10px 0; }
+.hx-loreslot{
+  min-height:52px; border-radius:8px;
+  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px;
+  background:var(--raised); color:var(--bone); font-size:.75rem; font-weight:600;
+}
+.hx-loreslot .ico{ width:16px; height:16px; }
+.hx-loreslot.hx-locked{ background:none; border:1px dashed var(--edge); color:var(--ash); font-weight:400; }
+
+.hx-linklist{ display:flex; flex-direction:column; gap:2px; margin-top:8px; }
+button.hx-loretitle{
+  display:flex; align-items:center; min-height:44px; padding:4px 2px;
+  color:var(--corona); font-size:.8125rem; text-align:left; width:100%;
+}
+
+/* ---- L4: Armory ---- */
+
+.hx-classrow{ display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:16px; }
+button.hx-classbtn{
+  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px;
+  min-height:64px; padding:10px 4px;
+  border-radius:var(--radius); border:1px solid var(--track);
+  background:var(--crypt); color:var(--ash); font-size:.8125rem; font-weight:600;
+}
+.hx-classbtn .ico{ width:24px; height:24px; }
+button.hx-classbtn.sel{ border-color:var(--corona); color:var(--bone); background:var(--raised); }
+.hx-classcount{ font-size:.75rem; color:var(--ash); font-weight:400; }
+
+.hx-slotgrid{ display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin:10px 0 16px; }
+button.hx-slottile, div.hx-slottile{
+  min-height:72px; border-radius:var(--radius); padding:8px; border:1px solid var(--track);
+  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px;
+  text-align:center; background:var(--crypt); color:var(--bone);
+}
+.hx-slottile .ico{ width:18px; height:18px; color:var(--ash); }
+.hx-slottile .hx-tname{
+  font-size:.75rem; font-weight:600; line-height:1.2;
+  display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;
+}
+.hx-slottile .hx-slotname{ font-size:.75rem; color:var(--ash); }
+.hx-slottile.hx-locked{ border:1px dashed var(--edge); color:var(--ash); background:none; }
+.hx-tilebadgerow{ display:inline-flex; align-items:center; gap:4px; }
+
+.hx-setcard{ margin-top:14px; }
+.hx-setcard .hx-slotgrid{ margin-bottom:0; }
+/* Infernus — Halls tab rework, part "renown" (L1, L2, L7, L8).
+   Every selector below is prefixed hr-. Colours are CSS variables
+   only, ported 1:1 from HALLS-CONCEPT.html's .hl- rules. */
+
+/* L1 — legacy banner */
+.hr-legacybar{ position:relative; height:8px; border-radius:999px; background:var(--track); overflow:hidden; margin-top:8px; }
+.hr-legacybar > i{ position:absolute; inset:0 auto 0 0; background:var(--corona); border-radius:999px; display:block; }
+.hr-chips{ display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-top:12px; }
+button.hr-chip{
+  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px;
+  min-height:52px; padding:6px 4px;
+  border-radius:var(--radius); background:var(--raised); border:1px solid var(--track);
+  font-size:.75rem; color:var(--ash); text-align:center;
+}
+.hr-chip .num{ font-size:.875rem; font-weight:700; color:var(--bone); }
+.hr-chip .ico{ width:14px; height:14px; flex:0 0 auto; color:var(--ash); }
+.hr-chip-top{ display:inline-flex; align-items:center; gap:4px; }
+
+/* L2 — page nav, two rows of three */
+.hr-nav{ display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:16px; }
+.hr-nav + .hr-nav{ margin-top:-8px; }
+button.hr-navbtn{
+  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px;
+  min-height:56px; padding:8px 4px;
+  border-radius:var(--radius); border:1px solid var(--track);
+  background:var(--crypt); color:var(--ash); font-size:.75rem; text-align:center;
+}
+.hr-navbtn .ico{ width:20px; height:20px; }
+.hr-navbtn.active{ color:var(--corona); border:1px solid var(--corona); background:var(--raised); font-weight:600; }
+
+/* L2 — Achievements: filter chips, groups, earned one-liners */
+.hr-filters{ display:flex; gap:8px; margin-bottom:16px; }
+.hr-filter{
+  display:inline-flex; align-items:center; justify-content:center;
+  min-height:44px; padding:0 16px;
+  border-radius:999px; background:var(--raised); border:1px solid var(--track);
+  color:var(--ash); font-size:.875rem;
+}
+.hr-filter.active{ background:var(--corona); color:var(--abyss); font-weight:600; border-color:var(--corona); }
+
+.hr-group{ margin-top:22px; }
+.hr-group:first-child{ margin-top:0; }
+.hr-grouphead h3{ margin:0; font-size:.9375rem; font-weight:700; color:var(--bone); }
+.hr-groupbar{ position:relative; height:6px; border-radius:999px; background:var(--track); overflow:hidden; margin-top:8px; }
+.hr-groupbar > i{ position:absolute; inset:0 auto 0 0; background:var(--corona); border-radius:999px; display:block; }
+
+.hr-earnedline{ display:flex; align-items:center; gap:8px; min-height:32px; padding:6px 4px; font-size:.8125rem; }
+.hr-earnedline .ico{ width:16px; height:16px; color:var(--verdant); flex:0 0 auto; }
+
+/* L7 — rank track */
+.hr-ranktrack{ border-left:2px solid var(--track); margin-left:13px; padding-left:20px; }
+.hr-ranknode{ position:relative; min-height:44px; display:flex; align-items:center; padding:8px 0; }
+.hr-ranknode .dot{
+  position:absolute; left:-27px; width:12px; height:12px; border-radius:50%;
+  background:var(--track); border:2px solid var(--track);
+}
+.hr-ranknode.passed .dot{ background:var(--corona); border-color:var(--corona); }
+.hr-ranknode.current .dot{ width:20px; height:20px; left:-31px; background:var(--abyss); border:3px solid var(--corona); }
+.hr-ranknode.locked .dot{ background:var(--crypt); border-color:var(--edge); }
+.hr-ranknode .lbl{ font-size:.875rem; }
+.hr-ranknode .lbl .ico{ width:14px; height:14px; }
+.hr-rankcard{ margin:8px 0 8px -33px; }
+
+/* L8 — titles as buttons */
+.hr-titlewrap{ display:flex; flex-wrap:wrap; gap:8px; }
+.hr-titlechip{
+  display:inline-flex; flex-direction:column; align-items:flex-start; gap:2px;
+  min-height:44px; justify-content:center; padding:6px 14px;
+  border-radius:12px; background:var(--raised); border:1px solid var(--track);
+}
+.hr-titlechip .name{ font-size:.875rem; color:var(--bone); font-weight:600; }
+.hr-titlechip.worn{ border:2px solid var(--corona); }
+.hr-titlechip.worn .name{ color:var(--corona); }
+.hr-titlechip.locked{ border-style:dashed; opacity:.75; }
+.hr-titlechip .from{ font-size:.75rem; color:var(--ash); display:flex; align-items:center; gap:4px; }
+.hr-titlechip .from .ico{ width:12px; height:12px; }
 </style>
 </head>
 <body>
@@ -1217,6 +1429,18 @@ button.tf-tab{
   </symbol>
   <symbol id="ico-tf-rekindle" viewBox="0 0 24 24">
     <path fill="currentColor" fill-rule="evenodd" d="M12 2C12 2 7 7.2 7 13C7 17.4 9.4 20.5 12 20.5C14.6 20.5 17 17.4 17 13C17 9.8 15.3 7.7 14.3 6C14.6 8.2 13.3 9.3 12.7 9.9C13.1 6.6 12 4 12 2ZM12 11.2C12 11.2 9.8 13.9 9.8 16.1C9.8 17.9 10.8 19 12 19C13.2 19 14.2 17.9 14.2 16.1C14.2 14.9 13.5 14 12.9 13.2C13 14.3 12.3 14.9 11.9 15.2C12.2 13.6 12 12.3 12 11.2Z"/>
+  </symbol>
+  <symbol id="ico-hx-page" viewBox="0 0 24 24">
+    <path fill="currentColor" fill-rule="evenodd" d="M6 3H14L18 7V21H6ZM13.2 4.3V7.8H16.7Z"/>
+  </symbol>
+  <symbol id="ico-hr-page" viewBox="0 0 24 24">
+    <path fill="currentColor" fill-rule="evenodd" d="M6 3H14L18 7V21H6ZM13.2 4.3V7.8H16.7Z"/>
+  </symbol>
+  <symbol id="ico-hr-shield" viewBox="0 0 24 24">
+    <path fill="currentColor" fill-rule="evenodd" d="M12 2.4L19.6 5.4V10.8C19.6 15.8 16.4 19.6 12 21.4C7.6 19.6 4.4 15.8 4.4 10.8V5.4ZM12 5.2L7.1 7.1V10.8C7.1 14.5 9.1 17.3 12 18.7C14.9 17.3 16.9 14.5 16.9 10.8V7.1Z"/>
+  </symbol>
+  <symbol id="ico-hr-star5" viewBox="0 0 24 24">
+    <path fill="currentColor" d="M12 2.2L14.9 9.1L22.5 9.8L16.8 14.7L18.6 22.2L12 18.2L5.4 22.2L7.2 14.7L1.5 9.8L9.1 9.1Z"/>
   </symbol>
 </svg>
 
@@ -6864,6 +7088,11 @@ function ascend(hero, heirloomId) {
       if (!heirloom.originalIlvl) heirloom.originalIlvl = heirloom.ilvl;
       heirloom.isNew = false;
     }
+  }
+  // SCOPES-HALLS L6 - the plaque remembers the heirloom this champion passed
+  // on. An optional field: plaques from before it simply don't have one.
+  if (heirloom) {
+    plaque.heirloom = { name: heirloom.name, rarity: heirloom.rarity, relicStat: heirloom.relicStat || null };
   }
 
   state.account.champions.push(plaque);
@@ -20041,6 +20270,1139 @@ function town5RenderLabour(hero) {
       }
     }
     return out;
+  };
+})();
+/* ============================================================
+   ACHIEVEMENTS EARNED IN TOWN - SPEC 16.3 (fix, 2026-09-26)
+   Achievements used to be checked only when a descent ended, so ones
+   met in town - Full Regalia (wearing a complete set), Masterwork
+   (tempering to +10) and Collector (a tenth unique, which the Black
+   Market can supply) - waited for the next descent to finish. Now every
+   redraw outside a descent checks too, and says so. A descent's own
+   check still runs first when it ends, so those keep appearing on the
+   results sheet; checks that need a just-finished descent (a boss at
+   low HP, three banes) are never met here because there are no results.
+   ============================================================ */
+(function () {
+  const inherited = refresh;
+  refresh = function () {
+    const hero = state && state.hero;
+    if (hero && !hero.descent) {
+      const rankBefore = currentRank();
+      const earned = checkAchievements(hero, null);
+      if (earned.length) {
+        const names = earned.map(function (a) { return a.name; }).join(', ');
+        const renown = earned.reduce(function (n, a) { return n + (a.renown || 0); }, 0);
+        const rankAfter = currentRank();
+        toast((earned.length === 1 ? 'Achievement earned: ' : 'Achievements earned: ') + names +
+          (renown ? ' · +' + fmtNum(renown) + ' Renown' : '') +
+          (rankAfter > rankBefore ? ' · Renown rank ' + fmtNum(rankAfter) : '') + '.');
+      }
+    }
+    return inherited.apply(this, arguments);
+  };
+})();
+/* ============================================================
+   THE HALLS REWORK - SCOPES-HALLS.md L1-L8, SPEC 17, 19.5
+   Core: the counts the legacy banner shows (L1) and the groups the
+   Achievements page sorts into (L2). The page parts build on these.
+   ============================================================ */
+
+/* L2 - which group an achievement belongs to, by what it checks. Content
+   as data: a new achievement finds its group from its check kind alone. */
+const ACH_GROUPS = [
+  { id: 'depth',      name: 'Depth',      kinds: ['deepest'] },
+  { id: 'guardians',  name: 'Guardians',  kinds: ['guardian_kills', 'deep_guardians'] },
+  { id: 'horrors',    name: 'Horrors',    kinds: ['horrors', 'horrors_named'] },
+  { id: 'feats',      name: 'Feats',      kinds: ['clear_streak', 'total_gold', 'banes_cleared', 'boss_low_hp'] },
+  { id: 'collection', name: 'Collection', kinds: ['temper', 'uniques_found', 'full_set', 'lore_pages'] },
+  { id: 'legacy',     name: 'Legacy',     kinds: ['ascensions'] },
+  { id: 'mastery',    name: 'Mastery',    kinds: ['class_depth'] }
+];
+
+/* The group id for an achievement; anything unmatched goes to Feats so it
+   is never lost from the page. */
+function achGroupOf(a) {
+  const k = a && a.check && a.check.k;
+  for (const g of ACH_GROUPS) if (g.kinds.indexOf(k) >= 0) return g.id;
+  return 'feats';
+}
+
+/* L1 - the banner's three counts, worked out from the same data the pages
+   themselves read, so the banner and each page always agree. */
+function hallsLegacyCounts() {
+  const acct = state.account || {};
+  const codex = acct.codex || [];
+
+  const achIds = Object.keys(ACHIEVEMENTS);
+  const achEarned = achIds.filter(function (id) { return acct.achievements && acct.achievements[id]; }).length;
+
+  const cards = HALLS2_ALL_CARDS.filter(function (id) { return codex.indexOf(id) >= 0; }).length;
+  const pages = halls2AllLorePages();
+  const pagesFound = pages.filter(function (p) { return codex.indexOf(p.id) >= 0; }).length;
+  const echoes = halls3EchoFloors();
+  const echoesFound = echoes.filter(function (n) { return codex.indexOf('echo_' + n) >= 0; }).length;
+  const codexFound = cards + pagesFound + echoesFound + namedHorrorsKilled();
+  const codexTotal = HALLS2_ALL_CARDS.length + pages.length + echoes.length + HORROR_ORDER.length;
+
+  const armory = acct.armory || [];
+  let armFound = 0, armTotal = 0;
+  BALANCE.phase.unlockedClasses.forEach(function (cid) {
+    armFound += halls3ArmoryFoundForClass(cid, armory);
+    armTotal += halls3ArmoryTotalForClass(cid);
+  });
+
+  return {
+    achievements: { found: achEarned, total: achIds.length },
+    codex: { found: codexFound, total: codexTotal,
+             cards: cards, cardsTotal: HALLS2_ALL_CARDS.length,
+             pages: pagesFound, pagesTotal: pages.length,
+             echoes: echoesFound, echoesTotal: echoes.length,
+             horrors: namedHorrorsKilled(), horrorsTotal: HORROR_ORDER.length },
+    armory: { found: armFound, total: armTotal }
+  };
+}
+/* ============================================================
+   SCOPES-HALLS L5 (Records with shape) and L6 (Champion plaques)
+   Redeclares halls3RenderRecords, halls3RenderChampions,
+   halls3PlaqueRow and halls3OpenPlaque. New top-level names use
+   the "hy" prefix. No rule or balance change - presentation only.
+   ============================================================ */
+
+/* L5 - which sprite icon best represents each TOTAL_DEFS entry. A new
+   total id that isn't listed here just falls back to the Halls icon
+   rather than drawing nothing. */
+const HY_TOTAL_ICONS = {
+  descents:    'ico-descend',
+  descendMs:   'ico-clock',
+  bossesSlain: 'ico-boss',
+  deaths:      'ico-deadly',
+  salvaged:    'ico-salvage',
+  goldEarned:  'ico-coin'
+};
+
+/* One row of the "Fastest Guardian clears" table: the Guardian's name
+   and its best time, or an em dash when no clear has been recorded yet. */
+function hyGuardianRow(gid) {
+  const rec = getRecord('guardian_time', gid);
+  const name = hallsCardTitle(gid);
+  if (!rec) {
+    return '<tr><td><div class="row-between">' +
+      '<span>' + esc(name) + '</span><span class="num muted">—</span>' +
+    '</div></td></tr>';
+  }
+  return '<tr><td>' +
+    '<div class="row-between"><span>' + esc(name) + '</span><span class="num">' + esc(fmtTime(rec.value)) + '</span></div>' +
+    '<div class="hy-gwho">' + esc(rec.heroName || 'Unknown') + ' · ' + esc(halls3DateStr(rec.at)) + '</div>' +
+  '</td></tr>';
+}
+
+/* One "Personal bests" card: a label, a value (already-built HTML so the
+   gold row can carry its coin chip), and who/when when the record is set. */
+function hyBestRow(label, valueHtml, rec) {
+  return '<div class="card" style="padding:10px 12px">' +
+    '<div class="row-between"><span>' + esc(label) + '</span>' + valueHtml + '</div>' +
+    (rec ? '<div class="tiny muted" style="margin-top:6px">' + esc(rec.heroName || 'Unknown') +
+      ' · ' + esc(halls3DateStr(rec.at)) + '</div>' : '') +
+  '</div>';
+}
+
+/* One "Lifetime totals" tile: icon, big number, small ash label. */
+function hyTotalTile(id) {
+  const def = TOTAL_DEFS[id];
+  const val = def.kind === 'time' ? fmtTime(totalOf(id)) : fmtNum(totalOf(id));
+  const iconId = HY_TOTAL_ICONS[id] || 'ico-halls';
+  const coinCls = id === 'goldEarned' ? 'coin' : '';
+  return '<div class="hy-stattile">' +
+    icon(iconId, coinCls) +
+    '<div class="hy-val num">' + esc(val) + '</div>' +
+    '<div class="hy-lbl">' + esc(def.name) + '</div>' +
+  '</div>';
+}
+
+/* L5 - Hall of Records, reshaped: deepest floors (account-wide, then one
+   column per unlocked class), a fastest-clears table for the four story
+   Guardians, personal bests, and a lifetime-totals tile grid. Every empty
+   record reads as a quiet "—" rather than "Not set yet". */
+function halls3RenderRecords() {
+  let html = '';
+
+  // ---- Deepest floors ----
+  html += '<div class="section-title">Deepest floors</div>';
+  const deepest = getRecord('deepest');
+  html += '<div class="card hy-deepest">' +
+    (deepest
+      ? '<div class="display num hy-deepest-floor">' + esc(fmtNum(deepest.value)) + '</div>' +
+        '<div class="small muted">' + esc(deepest.heroName || 'Unknown') + ' · ' + esc(halls3DateStr(deepest.at)) + '</div>'
+      : '<div class="display num hy-deepest-floor hy-none">—</div>') +
+  '</div>';
+
+  html += '<div class="hy-classcols" style="margin-top:8px">' +
+    BALANCE.phase.unlockedClasses.map(function (cid) {
+      const rec = getRecord('deepest', cid);
+      return '<div class="hy-classcol">' +
+        halls3SigilHtml(cid) +
+        '<div class="cname">' + esc(heroClassName(cid)) + '</div>' +
+        (rec ? '<div class="floor display num">' + esc(fmtNum(rec.value)) + '</div>'
+             : '<div class="floor hy-none">—</div>') +
+      '</div>';
+    }).join('') +
+  '</div>';
+
+  // ---- Fastest Guardian clears ----
+  html += '<div class="section-title" style="margin-top:18px">Fastest Guardian clears</div>';
+  html += '<div class="card hy-gwrap"><table class="hy-gtable"><tbody>' +
+    ['warden', 'vael', 'champion', 'god'].map(hyGuardianRow).join('') +
+  '</tbody></table></div>';
+
+  // ---- Personal bests ----
+  html += '<div class="section-title" style="margin-top:18px">Personal bests</div><div class="stack-s">';
+  const goldRec = getRecord('gold_descent');
+  html += hyBestRow('Most gold from one descent',
+    '<span class="chip">' + icon('ico-coin', 'coin') + '<span class="num">' +
+      (goldRec ? esc(fmtNum(goldRec.value)) : '—') + '</span></span>',
+    goldRec);
+  const streakRec = getRecord('clear_streak');
+  html += hyBestRow('Longest run without falling',
+    '<span class="num' + (streakRec ? '' : ' muted') + '">' +
+      (streakRec ? esc(fmtNum(streakRec.value)) + ' descents' : '—') + '</span>',
+    streakRec);
+  html += '</div>';
+
+  // ---- Lifetime totals ----
+  html += '<div class="section-title" style="margin-top:18px">Lifetime totals</div>';
+  html += '<div class="hy-statgrid">' + Object.keys(TOTAL_DEFS).map(hyTotalTile).join('') + '</div>';
+
+  return html;
+}
+
+/* ============================================================
+   L6 - Champion plaques
+   ============================================================ */
+
+/* One champion's plaque card (or Aldric Venn's older one). Tapping it
+   opens the same full plaque sheet as before - the "plaque" action and
+   its handler are unchanged. Fields the plaque doesn't have (older
+   saves, or Aldric's founder record) are simply left out rather than
+   shown as zero. */
+function halls3PlaqueRow(p) {
+  const isFounder = !!p.founder;
+
+  const metaBits = [];
+  if (p.classId) metaBits.push(heroClassName(p.classId));
+  if (p.ascension) metaBits.push('Ascension ' + fmtNum(p.ascension));
+
+  const chips = [];
+  if (p.level != null) chips.push('<span class="chip">Level <span class="num">' + fmtNum(p.level) + '</span></span>');
+  if (p.deepest != null) chips.push('<span class="chip">Floor <span class="display num">' + fmtNum(p.deepest) + '</span></span>');
+  if (p.daysServed != null) chips.push('<span class="chip"><span class="num">' + fmtNum(p.daysServed) + '</span> days</span>');
+  if (p.descents != null) chips.push('<span class="chip"><span class="num">' + fmtNum(p.descents) + '</span> descents</span>');
+  if (p.deaths != null) chips.push('<span class="chip"><span class="num">' + fmtNum(p.deaths) + '</span> falls</span>');
+
+  const blessingStat = p.classId && BALANCE.ascension.classBlessing[p.classId];
+  const blessingLabel = blessingStat && heroStatLabel[blessingStat];
+
+  let heirloomHtml = '';
+  if (p.heirloom) {
+    const rr = RARITIES[p.heirloom.rarity] || {};
+    heirloomHtml = '<p class="tiny hy-heirloom">Passed on: ' +
+      '<span class="badge rar-' + esc(p.heirloom.rarity) + '">' + esc(rr.badge || '?') + '</span> ' +
+      '<span class="rar-' + esc(p.heirloom.rarity) + '" style="font-weight:600">' + esc(p.heirloom.name) + '</span>' +
+    '</p>';
+  }
+
+  const header = isFounder
+    ? '<div class="row" style="gap:10px;align-items:flex-start">' +
+        '<div class="hy-ring hy-ring-brass"></div>' +
+        '<div class="grow">' +
+          '<div class="hy-pname">' + esc(p.name) + '</div>' +
+          (p.title ? '<div class="tiny hy-ftitle">' + esc(p.title) + '</div>' : '') +
+        '</div>' +
+      '</div>'
+    : '<div class="row" style="gap:10px;align-items:flex-start">' +
+        halls3SigilHtml(p.classId, 44, 'iron') +
+        '<div class="grow">' +
+          '<div class="hy-pname">' + esc(p.name + (p.title ? ' ' + p.title : '')) + '</div>' +
+          (metaBits.length ? '<div class="tiny muted" style="margin-top:2px">' + esc(metaBits.join(' · ')) + '</div>' : '') +
+        '</div>' +
+      '</div>';
+
+  return '<button type="button" class="card card-tap hy-plaque' + (isFounder ? ' hy-plaque-old' : '') +
+    '" data-act="plaque" data-id="' + esc(p.id) + '">' +
+    header +
+    (chips.length ? '<div class="hy-statchips">' + chips.join('') + '</div>' : '') +
+    '<p class="small hy-epitaph">' + esc(p.epitaph) + '</p>' +
+    (isFounder ? '' : '<p class="tiny muted hy-date">' + esc(halls3DateStr(p.at)) + '</p>') +
+    (blessingLabel ? '<p class="tiny hy-blessing">Left the ' + esc(blessingLabel) + ' blessing</p>' : '') +
+    heirloomHtml +
+  '</button>';
+}
+
+/* L6 - the Hall of Champions page. Statues in the square are only
+   mentioned once there is a champion to see and the rank unlock has
+   been reached (SPEC/BALANCE.renownUnlocks 20 -> 'statues'). */
+function halls3RenderChampions() {
+  let html = '';
+  const champions = (state.account && state.account.champions) || [];
+  if ((state.account.ascensions || 0) === 0) {
+    html += '<p class="muted small" style="margin:10px 2px 14px">' +
+      'No hero has ascended yet. Their plaque will join this Hall the moment they do.</p>';
+  } else if (hasUnlock('statues') && champions.length > 0) {
+    html += '<div class="hy-squareline">' +
+      '<p class="small muted" style="margin:0 0 4px">Their statues stand in the town square.</p>' +
+      '<button type="button" class="hy-squarebtn" data-act="hy-square">See the square</button>' +
+    '</div>';
+  }
+  html += '<div class="stack-s">' + halls3ChampionsList().map(halls3PlaqueRow).join('') + '</div>';
+  return html;
+}
+
+/* The full plaque sheet - a faithful copy of the existing renderer, with
+   two rows added to the stat card (only shown for a real champion, never
+   for Aldric's founder plaque, matching how the card above already skips
+   those fields for him): what they left behind. */
+function halls3OpenPlaque(id) {
+  const p = halls3FindPlaque(id);
+  if (!p) return;
+
+  let body = '<div class="stack">';
+  body += '<div class="row" style="gap:10px">' +
+    halls3SigilHtml(p.classId, 44) +
+    '<div class="grow">' +
+      '<div style="font-weight:600;font-size:1.125rem">' + esc(p.name + (p.title ? ' ' + p.title : '')) + '</div>' +
+      (p.classId ? '<div class="tiny muted">' + esc(heroClassName(p.classId)) +
+        (p.ascension ? ' · Ascension ' + fmtNum(p.ascension) : '') + '</div>' : '') +
+    '</div>' +
+  '</div>';
+  body += '<p style="line-height:1.6;background:var(--raised);border-radius:var(--radius);padding:14px">' +
+    esc(p.epitaph) + '</p>';
+
+  if (!p.founder) {
+    const blessingStat = p.classId && BALANCE.ascension.classBlessing[p.classId];
+    const blessingLabel = blessingStat && heroStatLabel[blessingStat];
+
+    body += '<div class="card stack-s">' +
+      halls3StatLine('Level', fmtNum(p.level)) +
+      halls3StatLine('Deepest floor', fmtNum(p.deepest)) +
+      halls3StatLine('Days served', fmtNum(p.daysServed)) +
+      halls3StatLine('Descents', fmtNum(p.descents)) +
+      halls3StatLine('Times fallen', fmtNum(p.deaths)) +
+      (p.heirloom
+        ? '<div class="row-between" style="min-height:32px">' +
+            '<div class="tiny muted">Passed on</div>' +
+            '<div class="small" style="text-align:right">' +
+              '<span class="badge rar-' + esc(p.heirloom.rarity) + '" style="margin-right:4px">' +
+                esc((RARITIES[p.heirloom.rarity] || {}).badge || '?') +
+              '</span>' +
+              '<span class="rar-' + esc(p.heirloom.rarity) + '" style="font-weight:600">' + esc(p.heirloom.name) + '</span>' +
+            '</div>' +
+          '</div>'
+        : '') +
+      (blessingLabel ? halls3StatLine('Blessing', blessingLabel) : '') +
+    '</div>';
+
+    const gear = p.equipment || {};
+    const gearRows = BALANCE.items.slots.map(function (slot) {
+      const it = gear[slot];
+      const label = it ? (town2ItemName(it) || it.baseType) : '—';
+      return '<div class="row-between" style="min-height:32px">' +
+        '<div class="tiny muted">' + esc(halls3SlotName(slot)) + '</div>' +
+        '<div class="small">' + esc(label) + '</div>' +
+      '</div>';
+    }).join('');
+    body += '<div class="section-title" style="margin-top:10px">Gear</div><div class="card stack-s">' + gearRows + '</div>';
+  }
+  body += '</div>';
+
+  openSheet({
+    title: 'Hall of Champions',
+    body: body,
+    foot: '<button class="btn btn-block" data-act="close">Close</button>',
+    onAct: function (a) { if (a === 'close') closeSheet(); }
+  });
+}
+
+/* New action: from the Champions page, jump straight to the town map's
+   hub, where the statues strip lives. */
+(function () {
+  const hyChampionsInherited = VIEWS.halls.onAct;
+  VIEWS.halls.onAct = function (act, node, ev) {
+    if (act === 'hy-square') { townPlace = null; setTab('town'); return; }
+    return hyChampionsInherited.call(this, act, node, ev);
+  };
+})();
+/* ============================================================
+   HALLS REWORK - SCOPES-HALLS.md L3 (a shorter Codex) and
+   L4 (the Armory one class at a time).
+
+   Redeclares halls3RenderCodex() and halls3RenderArmory() (the
+   last declaration of each in the spliced file wins). Reuses,
+   unchanged: hallsCardRow, halls2LoreRow, halls2LorePagesForAct,
+   halls2AllLorePages, halls3EchoRow, halls3EchoFloors,
+   hallsBestiaryRow, halls3SetsForClass, halls3ArmoryFoundForClass,
+   halls3ArmoryTotalForClass, uniquesForClass, hallsLegacyCounts,
+   and the existing 'card' / 'lore' / 'echo' actions - none of those
+   are touched here. halls3RenderCodex is wrapped elsewhere (search
+   "halls3RenderCodex = (function (orig)") to add the Archivist's
+   greeting on top; that wrapper picks up this redeclaration
+   automatically, so the greeting is not added again here.
+
+   New UI-only state: hxOpen (which Codex sections are folded) and
+   hxArmoryClass (which class the Armory is showing). New actions:
+   hx-jump, hx-toggle, hx-class, hx-item. All new top-level names are
+   prefixed hx so they can't collide with any other helper.
+   ============================================================ */
+
+/* Which Codex sections are open. null means "the act of the deepest
+   floor is open, everything else (including Echoes and the
+   Bestiary) is folded" - the default described in SCOPES-HALLS.md.
+   The first toggle or jump turns this into an explicit map of
+   section id -> bool that is remembered until the game closes. */
+let hxOpen = null;
+
+/* Which class the Armory is showing. null means "the hero's class,
+   or the first unlocked class if there's no hero yet". */
+let hxArmoryClass = null;
+
+/* ---- shared fold-out helpers ---- */
+
+function hxDefaultOpenSec() {
+  const f = (state.hero && state.hero.deepest) || 1;
+  return 'hx-sec-act' + actForFloor(f).id;
+}
+
+function hxSecOpen(secId) {
+  if (hxOpen === null) return secId === hxDefaultOpenSec();
+  return !!hxOpen[secId];
+}
+
+/* Turns the null default into an explicit map (keeping the current
+   default open) the first time anything is toggled or jumped to. */
+function hxMaterializeOpen() {
+  if (hxOpen !== null) return;
+  hxOpen = {};
+  hxOpen[hxDefaultOpenSec()] = true;
+}
+
+function hxToggleSec(secId) {
+  hxMaterializeOpen();
+  hxOpen[secId] = !hxOpen[secId];
+}
+
+/* Opens a section (unfolding it if folded) and scrolls it into view.
+   refresh() replaces #view's innerHTML synchronously, so the node
+   exists by the time scrollIntoView is called. */
+function hxJumpToSec(secId) {
+  hxMaterializeOpen();
+  hxOpen[secId] = true;
+  refresh();
+  const node = document.getElementById(secId);
+  if (node && node.scrollIntoView) node.scrollIntoView({ block: 'start' });
+}
+
+function hxChevron(open) {
+  return icon(open ? 'ico-chevron-down' : 'ico-chevron-right');
+}
+
+/* A fold-out section's header button. titleHtml is trusted markup
+   built by the caller (already escaped); metaText is plain text. */
+function hxFoldHeader(secId, open, titleHtml, metaText) {
+  return '<button type="button" class="hx-actrow" data-act="hx-toggle" data-sec="' + esc(secId) + '" ' +
+    'aria-expanded="' + (open ? 'true' : 'false') + '">' +
+    hxChevron(open) +
+    '<div class="grow">' +
+      '<div class="hx-actname">' + titleHtml + '</div>' +
+      '<div class="hx-actmeta">' + esc(metaText) + '</div>' +
+    '</div>' +
+  '</button>';
+}
+
+function hxProgressChip(icoId, label, found, total, secId) {
+  return '<button type="button" class="hx-chip" data-act="hx-jump" data-sec="' + esc(secId) + '">' +
+    icon(icoId) +
+    '<span class="grow">' + esc(label) + '</span>' +
+    '<span class="num">' + fmtNum(found) + ' / ' + fmtNum(total) + '</span>' +
+  '</button>';
+}
+
+/* ============================================================
+   L3 - CODEX
+   ============================================================ */
+
+function hxLoreSlot(page, found) {
+  if (!found) {
+    return '<div class="hx-loreslot hx-locked">' + icon('ico-lock') + '</div>';
+  }
+  return '<button type="button" class="hx-loreslot" data-act="lore" data-page="' + esc(page.id) + '">' +
+    icon('ico-hx-page') +
+    '<span class="num">' + fmtNum(page.n) + '</span>' +
+  '</button>';
+}
+
+function hxLoreTitleLink(page) {
+  return '<button type="button" class="hx-loretitle" data-act="lore" data-page="' + esc(page.id) + '">' +
+    esc(page.title) +
+  '</button>';
+}
+
+function hxActSection(act, codex) {
+  const secId = 'hx-sec-act' + act.id;
+  const cardIds = HALLS2_ALL_CARDS.filter(function (id) {
+    const a = hallsActForCard(id);
+    return a && a.id === act.id;
+  });
+  const pages = halls2LorePagesForAct(act);
+  if (!cardIds.length && !pages.length) return '';
+
+  const pagesFound = pages.filter(function (p) { return codex.indexOf(p.id) >= 0; });
+  const open = hxSecOpen(secId);
+  const meta = fmtNum(cardIds.length) + ' cards · ' + fmtNum(pagesFound.length) + ' / ' + fmtNum(pages.length) + ' pages';
+
+  let html = '<div id="' + secId + '">' +
+    hxFoldHeader(secId, open, '<span class="display">' + esc(act.display) + '</span>', meta);
+
+  if (open) {
+    html += '<div class="hx-actbody">';
+    if (cardIds.length) {
+      html += '<div class="card stack-s">' + cardIds.map(hallsCardRow).join('') + '</div>';
+    }
+    if (pages.length) {
+      html += '<div class="hx-loregrid">' + pages.map(function (p) {
+        return hxLoreSlot(p, codex.indexOf(p.id) >= 0);
+      }).join('') + '</div>';
+      if (pagesFound.length) {
+        html += '<div class="hx-linklist">' + pagesFound.map(hxLoreTitleLink).join('') + '</div>';
+      }
+    }
+    html += '</div>';
+  }
+  html += '</div>';
+  return html;
+}
+
+function halls3RenderCodex() {
+  const codex = (state.account && state.account.codex) || [];
+  const counts = hallsLegacyCounts().codex;
+  const deepestSec = hxDefaultOpenSec();
+
+  let html = '<div class="hx-progchips">' +
+    hxProgressChip('ico-hx-page', 'Cards', counts.cards, counts.cardsTotal, deepestSec) +
+    hxProgressChip('ico-hx-page', 'Pages', counts.pages, counts.pagesTotal, deepestSec) +
+    hxProgressChip('ico-star', 'Echoes', counts.echoes, counts.echoesTotal, 'hx-sec-echoes') +
+    hxProgressChip('ico-horror', 'Horrors', counts.horrors, counts.horrorsTotal, 'hx-sec-bestiary') +
+  '</div>';
+
+  ACTS.forEach(function (act) { html += hxActSection(act, codex); });
+
+  const echoFloors = halls3EchoFloors();
+  const echoesOpen = hxSecOpen('hx-sec-echoes');
+  html += '<div id="hx-sec-echoes">' +
+    hxFoldHeader('hx-sec-echoes', echoesOpen, 'Echoes from Below',
+      fmtNum(counts.echoes) + ' of ' + fmtNum(counts.echoesTotal) + ' found');
+  if (echoesOpen) {
+    html += '<div class="hx-actbody"><div class="card stack-s">' +
+      echoFloors.map(halls3EchoRow).join('') + '</div></div>';
+  }
+  html += '</div>';
+
+  const bestiaryOpen = hxSecOpen('hx-sec-bestiary');
+  html += '<div id="hx-sec-bestiary">' +
+    hxFoldHeader('hx-sec-bestiary', bestiaryOpen, 'Bestiary',
+      fmtNum(counts.horrors) + ' of ' + fmtNum(counts.horrorsTotal) + ' found');
+  if (bestiaryOpen) {
+    html += '<div class="hx-actbody"><div class="card stack-s">' +
+      HORROR_ORDER.map(hallsBestiaryRow).join('') + '</div></div>';
+  }
+  html += '</div>';
+
+  return html;
+}
+
+/* ============================================================
+   L4 - ARMORY
+   ============================================================ */
+
+function hxArmoryDefaultClass() {
+  if (state.hero && state.hero.classId) return state.hero.classId;
+  return BALANCE.phase.unlockedClasses[0];
+}
+
+function hxArmoryCurrentClass() {
+  return hxArmoryClass || hxArmoryDefaultClass();
+}
+
+/* Hero's class first, then the rest in BALANCE.phase.unlockedClasses
+   order (SCOPES-HALLS.md decision 4). */
+function hxArmoryClassOrder() {
+  const first = hxArmoryDefaultClass();
+  const rest = BALANCE.phase.unlockedClasses.filter(function (c) { return c !== first; });
+  return [first].concat(rest);
+}
+
+function hxClassButton(cid, armory) {
+  const sel = cid === hxArmoryCurrentClass();
+  const found = halls3ArmoryFoundForClass(cid, armory);
+  const total = halls3ArmoryTotalForClass(cid);
+  return '<button type="button" class="hx-classbtn' + (sel ? ' sel' : '') + '" ' +
+    'data-act="hx-class" data-class="' + esc(cid) + '" aria-pressed="' + (sel ? 'true' : 'false') + '">' +
+    '<svg class="ico" aria-hidden="true"><use href="#sig-' + esc(cid) + '"></use></svg>' +
+    '<span>' + esc(heroClassName(cid)) + '</span>' +
+    '<span class="hx-classcount num">' + fmtNum(found) + ' / ' + fmtNum(total) + '</span>' +
+  '</button>';
+}
+
+function hxUniqueTile(u, armory) {
+  const found = armory.indexOf(u.id) >= 0;
+  if (!found) {
+    return '<div class="hx-slottile hx-locked">' +
+      icon('ico-slot-' + u.slot) +
+      '<span class="hx-tname">?</span>' +
+      '<span class="hx-slotname">' + esc(halls3SlotName(u.slot)) + '</span>' +
+    '</div>';
+  }
+  return '<button type="button" class="hx-slottile" data-act="hx-item" data-kind="unique" data-id="' + esc(u.id) + '" ' +
+    'style="border:' + esc(RARITIES.unique.border) + ' var(--r-unique)">' +
+    '<span class="badge rar-unique">' + esc(RARITIES.unique.badge) + '</span>' +
+    '<span class="hx-tname rar-unique">' + esc(u.name) + '</span>' +
+    icon('ico-slot-' + u.slot) +
+  '</button>';
+}
+
+function hxSetPieceTile(p, armory) {
+  const found = armory.indexOf(p.name) >= 0;
+  if (!found) {
+    return '<div class="hx-slottile hx-locked">' +
+      icon('ico-slot-' + p.slot) +
+      '<span class="hx-tname">?</span>' +
+      '<span class="hx-slotname">' + esc(halls3SlotName(p.slot)) + '</span>' +
+    '</div>';
+  }
+  return '<button type="button" class="hx-slottile" data-act="hx-item" data-kind="set" data-id="' + esc(p.name) + '" ' +
+    'style="border:' + esc(RARITIES.set.border) + ' var(--r-set)">' +
+    '<span class="hx-tilebadgerow">' +
+      '<span style="color:var(--r-set)">' + icon('ico-chain') + '</span>' +
+      '<span class="badge rar-set">' + esc(RARITIES.set.badge) + '</span>' +
+    '</span>' +
+    '<span class="hx-tname rar-set">' + esc(p.name) + '</span>' +
+    icon('ico-slot-' + p.slot) +
+  '</button>';
+}
+
+function hxSetCard(s, armory) {
+  const found = s.pieces.filter(function (p) { return armory.indexOf(p.name) >= 0; }).length;
+  return '<div class="card hx-setcard">' +
+    '<div class="row" style="gap:6px">' +
+      '<span style="color:var(--r-set)">' + icon('ico-chain') + '</span>' +
+      '<span style="font-weight:700;color:var(--r-set)">' + esc(s.name) + '</span>' +
+    '</div>' +
+    '<p class="tiny muted" style="margin-top:4px">' + fmtNum(found) + ' of ' + fmtNum(s.pieces.length) + ' found</p>' +
+    '<p class="tiny muted" style="margin-top:2px">(2) ' + esc(s.bonus2.text) + '</p>' +
+    '<p class="tiny muted" style="margin-top:2px">(3) ' + esc(s.bonus3.text) + '</p>' +
+    '<div class="hx-slotgrid">' + s.pieces.map(function (p) { return hxSetPieceTile(p, armory); }).join('') + '</div>' +
+  '</div>';
+}
+
+function halls3RenderArmory() {
+  const armory = (state.account && state.account.armory) || [];
+  const current = hxArmoryCurrentClass();
+  const uniques = uniquesForClass(current);
+  const sets = halls3SetsForClass(current);
+
+  let html = '<div class="hx-classrow">' +
+    hxArmoryClassOrder().map(function (cid) { return hxClassButton(cid, armory); }).join('') +
+  '</div>';
+
+  html += '<div class="section-title">Uniques</div>' +
+    '<div class="hx-slotgrid">' + uniques.map(function (u) { return hxUniqueTile(u, armory); }).join('') + '</div>';
+
+  sets.forEach(function (s) { html += hxSetCard(s, armory); });
+
+  return html;
+}
+
+/* ---- item sheets (SCOPES-HALLS.md L4.3): the sheet's click
+   delegation is separate from the page's, so it needs its own
+   onAct - see openSheet in HALLS-BRIEF-COMMON.md. ---- */
+
+function hxFindSetPieceByName(name) {
+  for (const sid in SETS) {
+    const s = SETS[sid];
+    for (const p of s.pieces) if (p.name === name) return { set: s, piece: p };
+  }
+  return null;
+}
+
+function hxOpenItemSheet(kind, id) {
+  if (kind === 'unique') {
+    const u = UNIQUES[id];
+    if (!u) return;
+    openSheet({
+      title: u.name,
+      body: '<div class="stack">' +
+          '<div class="row" style="gap:8px">' +
+            '<span class="badge rar-unique">' + esc(RARITIES.unique.badge) + '</span>' +
+            '<span class="rar-unique" style="font-weight:600">' + esc(u.name) + '</span>' +
+          '</div>' +
+          '<div class="tiny muted">' + esc(halls3SlotName(u.slot)) + ' · ' + esc(u.baseType) + '</div>' +
+          '<p class="small" style="margin-top:6px">' + esc(u.power.text) + '</p>' +
+          '<p class="small" style="font-style:italic;color:var(--ash);margin-top:4px">' + esc(u.lore) + '</p>' +
+        '</div>',
+      foot: '<button class="btn btn-primary btn-block btn-lg" data-act="close">Close</button>',
+      onAct: function (a) { if (a === 'close') closeSheet(); }
+    });
+    return;
+  }
+  if (kind === 'set') {
+    const found = hxFindSetPieceByName(id);
+    if (!found) return;
+    const p = found.piece, s = found.set;
+    openSheet({
+      title: p.name,
+      body: '<div class="stack">' +
+          '<div class="row" style="gap:8px">' +
+            '<span class="badge rar-set">' + esc(RARITIES.set.badge) + '</span>' +
+            '<span class="rar-set" style="font-weight:600">' + esc(p.name) + '</span>' +
+          '</div>' +
+          '<div class="tiny muted">' + esc(s.name) + ' · ' + esc(halls3SlotName(p.slot)) + '</div>' +
+          '<p class="small" style="margin-top:6px">(2) ' + esc(s.bonus2.text) + '</p>' +
+          '<p class="small" style="margin-top:4px">(3) ' + esc(s.bonus3.text) + '</p>' +
+        '</div>',
+      foot: '<button class="btn btn-primary btn-block btn-lg" data-act="close">Close</button>',
+      onAct: function (a) { if (a === 'close') closeSheet(); }
+    });
+    return;
+  }
+}
+
+/* ---- new actions: hx-jump, hx-toggle, hx-class, hx-item ---- */
+(function () {
+  const inherited = VIEWS.halls.onAct;
+  VIEWS.halls.onAct = function (act, node, ev) {
+    if (act === 'hx-jump') { hxJumpToSec(node.dataset.sec); return; }
+    if (act === 'hx-toggle') { hxToggleSec(node.dataset.sec); refresh(); return; }
+    if (act === 'hx-class') { hxArmoryClass = node.dataset.class; refresh(); return; }
+    if (act === 'hx-item') { hxOpenItemSheet(node.dataset.kind, node.dataset.id); return; }
+    return inherited.call(this, act, node, ev);
+  };
+})();
+/* ============================================================
+   Infernus — Halls tab rework, part "renown" (X = renown)
+   SCOPES-HALLS.md: L1 (legacy banner), L2 (six page buttons +
+   Achievements page), L7 (ranks track), L8 (titles as buttons).
+   Matches HALLS-CONCEPT.html's #achievements and #renown phones,
+   and the banner shown on every phone.
+
+   Overrides (same names, last declaration wins):
+     halls3SegControl()   - L2, two rows of three page buttons
+     halls3RenderRenown() - drops the big rank card + achievement
+                            list, keeps name/title, "N Renown
+                            total", the explanation line, Titles
+                            (now hrRenderTitles, L8), sigil frames
+                            (halls3RenderFramesSection, unchanged)
+                            and the ranks track (now hrRenderRanks,
+                            L7)
+     VIEWS.halls.render   - reassigned only (VIEWS.halls itself is
+                            NOT redeclared, so the existing onAct
+                            keeps working): hrBanner(), then the
+                            page buttons, then whichever page
+                            halls3Tab names. Calls the page
+                            functions by name so other helpers'
+                            redeclarations of them take effect at
+                            render time.
+
+   New actions on VIEWS.halls.onAct (wrapped, inherited call kept):
+     hr-go     - a banner count tile; sets halls3Tab, renders, and
+                 scrolls #view to the top
+     hr-filter - an Achievements filter chip; sets hrAchFilter and
+                 re-renders
+
+   New top-level names, all prefixed hr:
+     HR_NAV_ITEMS         - L2's own six-item nav list (does not
+                             touch HALLS3_SEGMENTS)
+     hrBanner()           - L1
+     hrAchFilter          - UI-only filter state ('progress' by
+                             default, per SCOPES-HALLS.md decision 3)
+     hrAchRewardChip(a), hrInProgressRow(id), hrEarnedRow(id),
+     hrGroupBody(ids)     - Achievements page (L2) row helpers.
+                             hrInProgressRow calls the game's own
+                             achievementProgress() so its bar and
+                             "cur / max" can never disagree with
+                             what actually gets the achievement
+                             earned.
+     hrRenderAchievements()- the Achievements page itself (replaces
+                             the old bottom-of-Renown achievement
+                             list; called from VIEWS.halls.render)
+     hrTitleChip(id, earnedIds, activeId), hrRenderTitles() - L8
+     hrRankEntries(), hrRenderRanks()                        - L7
+
+   New icons (halls-renown-sprite.svg): ico-hr-page, ico-hr-shield,
+   ico-hr-star5 — none of ico-page/ico-shield/ico-star5 existed in
+   the live sprite yet (checked first), so these are new, not
+   duplicates. Everything else reuses icons already in the game:
+   ico-star, ico-halls, ico-renown, ico-lock.
+   ============================================================ */
+
+/* ----------------------------------------------------------
+   L1 — the legacy banner, on every Halls page.
+   ---------------------------------------------------------- */
+function hrBanner() {
+  const rank = currentRank();
+  const prog = renownProgress();
+  const counts = hallsLegacyCounts();
+  const asc = (state.account && state.account.ascensions) || 0;
+
+  let html = '<div class="card" style="margin-bottom:12px">' +
+    '<div class="row-between">' +
+      '<span style="font-weight:700">Renown rank <span class="num">' + fmtNum(rank) + '</span></span>' +
+      '<span class="small muted">' +
+        (asc > 0 ? 'Ascension <span class="num">' + fmtNum(asc) + '</span>' : 'No Ascensions yet') +
+      '</span>' +
+    '</div>';
+
+  if (prog.atMax) {
+    html += '<p class="tiny muted" style="margin-top:8px">Top rank reached</p>';
+  } else {
+    const pct = prog.needed > 0 ? Math.min(100, Math.max(0, (prog.into / prog.needed) * 100)) : 0;
+    html += '<div class="hr-legacybar"><i style="width:' + pct + '%"></i></div>' +
+      '<div class="tiny muted num" style="margin-top:4px">' +
+        esc(fmtNum(prog.into) + ' / ' + fmtNum(prog.needed) + ' to rank ' + fmtNum(rank + 1)) +
+      '</div>';
+  }
+
+  html += '<div class="hr-chips">' +
+    '<button type="button" class="hr-chip" data-act="hr-go" data-tab="achievements">' +
+      '<span class="hr-chip-top">' + icon('ico-star') + 'Achievements</span>' +
+      '<span class="num">' + esc(fmtNum(counts.achievements.found) + ' / ' + fmtNum(counts.achievements.total)) + '</span>' +
+    '</button>' +
+    '<button type="button" class="hr-chip" data-act="hr-go" data-tab="codex">' +
+      '<span class="hr-chip-top">' + icon('ico-hr-page') + 'Codex</span>' +
+      '<span class="num">' + esc(fmtNum(counts.codex.found) + ' / ' + fmtNum(counts.codex.total)) + '</span>' +
+    '</button>' +
+    '<button type="button" class="hr-chip" data-act="hr-go" data-tab="armory">' +
+      '<span class="hr-chip-top">' + icon('ico-hr-shield') + 'Armory</span>' +
+      '<span class="num">' + esc(fmtNum(counts.armory.found) + ' / ' + fmtNum(counts.armory.total)) + '</span>' +
+    '</button>' +
+  '</div>';
+
+  html += '</div>';
+  return html;
+}
+
+/* ----------------------------------------------------------
+   L2 — the page buttons: two rows of three. Redeclares
+   halls3SegControl(); HALLS3_SEGMENTS itself is untouched.
+   ---------------------------------------------------------- */
+const HR_NAV_ITEMS = [
+  { id: 'codex',        label: 'Codex',        ico: 'ico-hr-page' },
+  { id: 'records',      label: 'Records',      ico: 'ico-halls' },
+  { id: 'champions',    label: 'Champions',    ico: 'ico-renown' },
+  { id: 'armory',       label: 'Armory',       ico: 'ico-hr-shield' },
+  { id: 'achievements', label: 'Achievements', ico: 'ico-star' },
+  { id: 'renown',       label: 'Renown',       ico: 'ico-hr-star5' }
+];
+
+function halls3SegControl() {
+  function navBtn(item) {
+    const active = halls3Tab === item.id;
+    return '<button type="button" class="hr-navbtn' + (active ? ' active' : '') + '" ' +
+      'data-act="tab" data-tab="' + item.id + '" aria-pressed="' + (active ? 'true' : 'false') + '">' +
+      icon(item.ico) + '<span>' + esc(item.label) + '</span>' +
+    '</button>';
+  }
+  return '<div class="hr-nav">' + HR_NAV_ITEMS.slice(0, 3).map(navBtn).join('') + '</div>' +
+    '<div class="hr-nav">' + HR_NAV_ITEMS.slice(3).map(navBtn).join('') + '</div>';
+}
+
+/* ----------------------------------------------------------
+   L2 — Achievements, its own page.
+   ---------------------------------------------------------- */
+let hrAchFilter = 'progress'; // ui-only: 'progress' (default) | 'earned' | 'all'
+
+/* The reward chip an in-progress row shows, if the achievement has one. */
+function hrAchRewardChip(a) {
+  if (!a.reward) return '';
+  if (a.reward.k === 'title') {
+    const t = TITLES[a.reward.title];
+    return 'Title: ' + esc(t ? t.name : a.reward.title);
+  }
+  if (a.reward.k === 'frame') {
+    const f = a.reward.frame || '';
+    return 'Frame: ' + esc(f ? (f.charAt(0).toUpperCase() + f.slice(1)) : '');
+  }
+  return '';
+}
+
+/* An unearned achievement's card: name, description, bar + "cur / max"
+   where achievementProgress() has a meaningful tally, its Renown, and
+   any reward. Reuses achievementProgress() itself (not just its shape)
+   so the bar can never disagree with what actually earns the row. */
+function hrInProgressRow(id) {
+  const a = ACHIEVEMENTS[id];
+  const hero = state.hero;
+  const prog = hero ? achievementProgress(a.check, hero) : null;
+  // Compact: name and Renown on one line, what to do (and any reward) on
+  // the next, then the bar with its count beside it - about 90px a row.
+  let progHtml = '';
+  if (prog && prog.max > 1) {
+    const pct = Math.max(0, Math.min(100, (prog.cur / prog.max) * 100));
+    progHtml = '<div class="row" style="gap:8px;margin-top:6px">' +
+      '<div class="bar bar-xp grow"><div class="bar-fill" style="width:' + pct + '%"></div></div>' +
+      '<span class="tiny num" style="flex:0 0 auto">' + esc(fmtNum(prog.cur) + ' / ' + fmtNum(prog.max)) + '</span>' +
+    '</div>';
+  }
+  const reward = hrAchRewardChip(a);
+  return '<div class="card" style="padding:10px 12px">' +
+    '<div class="row-between" style="gap:8px;align-items:baseline">' +
+      '<span style="font-weight:600;min-width:0">' + esc(a.name) + '</span>' +
+      '<span class="tiny muted row" style="gap:4px;flex:0 0 auto">' + icon('ico-renown') +
+        '<span class="num">' + fmtNum(a.renown) + '</span> Renown</span>' +
+    '</div>' +
+    '<div class="tiny muted" style="margin-top:2px">' + esc(a.desc) +
+      (reward ? ' &middot; <span style="color:var(--corona)">' + reward + '</span>' : '') + '</div>' +
+    progHtml +
+  '</div>';
+}
+
+/* An earned achievement shrinks to one line: verdant star, name, date. */
+function hrEarnedRow(id) {
+  const a = ACHIEVEMENTS[id];
+  const earnedAt = state.account.achievements && state.account.achievements[id];
+  return '<div class="hr-earnedline">' + icon('ico-star') +
+    '<span class="grow">' + esc(a.name) + '</span>' +
+    '<span class="tiny muted">Earned ' + esc(halls3DateStr(earnedAt)) + '</span>' +
+  '</div>';
+}
+
+/* Within a group's already-filtered id list: in-progress cards first,
+   then earned one-liners (matches the concept's "All" look; under
+   "In progress" or "Earned" one side is naturally empty). */
+function hrGroupBody(ids) {
+  const acct = state.account || {};
+  const unearned = ids.filter(function (id) { return !(acct.achievements && acct.achievements[id]); });
+  const earned = ids.filter(function (id) { return acct.achievements && acct.achievements[id]; });
+  return unearned.map(hrInProgressRow).join('') + earned.map(hrEarnedRow).join('');
+}
+
+function hrRenderAchievements() {
+  const acct = state.account || {};
+  const achAll = acct.achievements || {};
+
+  let html = '<div class="hr-filters">' +
+    ['progress', 'earned', 'all'].map(function (f) {
+      const label = f === 'progress' ? 'In progress' : (f === 'earned' ? 'Earned' : 'All');
+      const active = hrAchFilter === f;
+      return '<button type="button" class="hr-filter' + (active ? ' active' : '') + '" ' +
+        'data-act="hr-filter" data-filter="' + f + '" aria-pressed="' + (active ? 'true' : 'false') + '">' +
+        esc(label) + '</button>';
+    }).join('') +
+  '</div>';
+
+  let anyGroupShown = false;
+  ACH_GROUPS.forEach(function (g) {
+    const allIds = Object.keys(ACHIEVEMENTS).filter(function (id) { return achGroupOf(ACHIEVEMENTS[id]) === g.id; });
+    const totalCount = allIds.length;
+    if (!totalCount) return;
+    const earnedCount = allIds.filter(function (id) { return achAll[id]; }).length;
+
+    let visibleIds;
+    if (hrAchFilter === 'earned') visibleIds = allIds.filter(function (id) { return achAll[id]; });
+    else if (hrAchFilter === 'progress') visibleIds = allIds.filter(function (id) { return !achAll[id]; });
+    else visibleIds = allIds.slice();
+    if (!visibleIds.length) return;
+
+    anyGroupShown = true;
+    const pct = (earnedCount / totalCount) * 100;
+    html += '<div class="hr-group">' +
+      '<div class="hr-grouphead row-between">' +
+        '<h3>' + esc(g.name) + '</h3>' +
+        '<span class="tiny muted num">' + esc(fmtNum(earnedCount) + ' / ' + fmtNum(totalCount)) + '</span>' +
+      '</div>' +
+      '<div class="hr-groupbar"><i style="width:' + pct + '%"></i></div>' +
+      '<div class="stack-s" style="margin-top:10px">' + hrGroupBody(visibleIds) + '</div>' +
+    '</div>';
+  });
+
+  if (!anyGroupShown) {
+    const msg = hrAchFilter === 'earned' ? 'No achievements earned yet.' : 'Nothing in progress. Every achievement is earned.';
+    html += '<p class="small muted" style="margin:8px 2px">' + esc(msg) + '</p>';
+  }
+
+  return html;
+}
+
+/* ----------------------------------------------------------
+   L8 — titles as buttons.
+   ---------------------------------------------------------- */
+function hrTitleChip(id, earnedIds, activeId) {
+  const t = id ? TITLES[id] : null;
+  const label = id ? (t ? t.name : id) : 'No title';
+  const isWorn = (id || null) === (activeId || null);
+  const isAvailable = !id || earnedIds.indexOf(id) >= 0;
+
+  if (isWorn) {
+    return '<button type="button" class="hr-titlechip worn" data-act="title" data-id="' + esc(id || '') + '" aria-pressed="true">' +
+      '<span class="name">' + esc(label) + '</span>' +
+      '<span class="from">&#10003; Worn</span>' +
+    '</button>';
+  }
+  if (isAvailable) {
+    return '<button type="button" class="hr-titlechip" data-act="title" data-id="' + esc(id || '') + '" aria-pressed="false">' +
+      '<span class="name">' + esc(label) + '</span>' +
+    '</button>';
+  }
+  const fromA = t && t.from ? ACHIEVEMENTS[t.from] : null;
+  const fromName = fromA ? fromA.name : (t ? t.from : '');
+  return '<button type="button" class="hr-titlechip locked" disabled>' +
+    '<span class="name muted">' + esc(label) + '</span>' +
+    '<span class="from">' + icon('ico-lock') + 'From: ' + esc(fromName) + '</span>' +
+  '</button>';
+}
+
+function hrRenderTitles() {
+  const earnedIds = (state.account && state.account.titles) || [];
+  const activeId = (state.account && state.account.activeTitle) || null;
+  const ids = [null].concat(Object.keys(TITLES));
+  let html = '<div class="section-title" style="margin-top:18px">Titles</div>';
+  html += '<div class="hr-titlewrap">' +
+    ids.map(function (id) { return hrTitleChip(id, earnedIds, activeId); }).join('') +
+  '</div>';
+  return html;
+}
+
+/* ----------------------------------------------------------
+   L7 — the ranks track.
+   ---------------------------------------------------------- */
+function hrRankEntries() {
+  return Object.keys(BALANCE.renownUnlocks)
+    .map(Number)
+    .filter(function (r) { return !BALANCE.renownUnlocks[r].later; })
+    .sort(function (a, b) { return a - b; });
+}
+
+function hrRenderRanks() {
+  const rank = currentRank();
+  const total = currentRenown();
+  let html = '<div class="section-title" style="margin-top:18px">Ranks</div>';
+
+  if (rank >= BALANCE.renown.maxRank) {
+    html += '<p class="small muted" style="margin:2px 2px 0">Every rank unlocked</p>';
+    return html;
+  }
+
+  const entries = hrRankEntries();
+  const passed = entries.filter(function (r) { return r <= rank; });
+  const locked = entries.filter(function (r) { return r > rank; });
+  const nextLocked = locked.length ? locked[0] : null;
+  const laterLocked = locked.slice(1);
+
+  // If the current rank happens to be one of the unlock ranks (as rank 7
+  // is in the concept), fold "you are here" into that same node instead
+  // of drawing it twice. Otherwise it stands alone between the passed
+  // and locked nodes, with no unlock label of its own.
+  const alignedCurrent = passed.length > 0 && passed[passed.length - 1] === rank;
+  const passedOnly = alignedCurrent ? passed.slice(0, -1) : passed;
+
+  let track = '';
+  passedOnly.forEach(function (r) {
+    const entry = BALANCE.renownUnlocks[r];
+    track += '<div class="hr-ranknode passed"><div class="dot"></div>' +
+      '<div class="lbl">Rank ' + fmtNum(r) + ' · ' + esc(entry.label) + '</div></div>';
+  });
+
+  if (alignedCurrent) {
+    const entry = BALANCE.renownUnlocks[rank];
+    track += '<div class="hr-ranknode current"><div class="dot"></div>' +
+      '<div class="lbl">Rank ' + fmtNum(rank) + ' · ' + esc(entry.label) +
+        '<span class="tiny" style="color:var(--corona);display:block;margin-top:1px">You are here · rank ' + fmtNum(rank) + '</span>' +
+      '</div></div>';
+  } else {
+    track += '<div class="hr-ranknode current"><div class="dot"></div>' +
+      '<div class="lbl" style="color:var(--corona)">You are here · rank ' + fmtNum(rank) + '</div></div>';
+  }
+
+  if (nextLocked !== null) {
+    const entry = BALANCE.renownUnlocks[nextLocked];
+    const toGo = Math.max(0, renownForRank(nextLocked) - total);
+    track += '<div class="hr-rankcard"><div class="card" style="border-color:var(--corona)">' +
+      '<div class="row-between">' +
+        '<span style="font-weight:700">Rank ' + fmtNum(nextLocked) + ' · ' + esc(entry.label) + '</span>' +
+        icon('ico-renown') +
+      '</div>' +
+      '<p class="small muted num" style="margin-top:6px">' + esc(fmtNum(toGo) + ' Renown to go') + '</p>' +
+    '</div></div>';
+  }
+
+  laterLocked.forEach(function (r) {
+    const entry = BALANCE.renownUnlocks[r];
+    track += '<div class="hr-ranknode locked"><div class="dot"></div>' +
+      '<div class="lbl muted row" style="gap:6px">' + icon('ico-lock') + 'Rank ' + fmtNum(r) + ' · ' + esc(entry.label) + '</div></div>';
+  });
+
+  html += '<div class="hr-ranktrack">' + track + '</div>';
+  return html;
+}
+
+/* ----------------------------------------------------------
+   The Renown page itself. Drops the old big rank card/bar (the
+   banner covers that now) and the achievement list (its own page
+   now); keeps everything else, unchanged in substance.
+   ---------------------------------------------------------- */
+function halls3RenderRenown() {
+  const hero = state.hero;
+  const total = currentRenown();
+
+  let html = '<div class="card" style="margin-bottom:14px">' +
+    '<span class="sr">' + esc(heroDisplayName(hero)) + '</span>' +
+    '<div style="font-weight:600;font-size:1.125rem">' + esc(hero.name) + '</div>' +
+    '<div class="muted small" style="margin-top:2px">' + esc(activeTitleName() || 'No title worn') + '</div>' +
+  '</div>';
+
+  html += '<p class="muted small num" style="margin:2px 2px 0">' + fmtNum(total) + ' Renown total</p>';
+
+  html += '<p class="muted small" style="margin:10px 2px 0">' +
+    'Renown grows automatically: reaching a new deepest floor for the account, a hero’s ' +
+    'first kill of each Guardian, and every Bounty Board contract you complete.' +
+  '</p>';
+
+  html += hrRenderTitles();
+  html += halls3RenderFramesSection();
+  html += hrRenderRanks();
+
+  return html;
+}
+
+/* ----------------------------------------------------------
+   VIEW — render reassigned (VIEWS.halls itself is not redeclared,
+   so the existing onAct's 'tab' / 'card' / 'lore' / 'echo' /
+   'plaque' / 'title' handling all keep working unchanged).
+   ---------------------------------------------------------- */
+VIEWS.halls.render = function () {
+  let html = hrBanner() + halls3SegControl();
+  if (halls3Tab === 'records') html += halls3RenderRecords();
+  else if (halls3Tab === 'champions') html += halls3RenderChampions();
+  else if (halls3Tab === 'armory') html += halls3RenderArmory();
+  else if (halls3Tab === 'achievements') html += hrRenderAchievements();
+  else if (halls3Tab === 'renown') html += halls3RenderRenown();
+  else html += halls3RenderCodex();
+  return html;
+};
+
+(function () {
+  const inherited = VIEWS.halls.onAct;
+  VIEWS.halls.onAct = function (act, node, ev) {
+    if (act === 'hr-go') {
+      halls3Tab = node.dataset.tab;
+      renderView();
+      const v = el('view');
+      if (v) v.scrollTop = 0;
+      return;
+    }
+    if (act === 'hr-filter') {
+      hrAchFilter = node.dataset.filter;
+      renderView();
+      return;
+    }
+    return inherited.call(this, act, node, ev);
   };
 })();
 
