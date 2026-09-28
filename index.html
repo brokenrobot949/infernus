@@ -1815,6 +1815,7 @@ const BALANCE = {
   /* --- SPEC 16.1: Renown --- */
   renown: {
     perNewDeepestFloor: 5,
+    perHeroFloor: 2,              // a floor new for this hero but not the account (Rob, 2026-09-28)
     guardianFirstKill: { warden: 20, vael: 30, champion: 40, god: 60 },
     perContract: 10,
     rankCoef: 40,                 // rank r needs round(40 x (r-1)^1.6)
@@ -1826,14 +1827,16 @@ const BALANCE = {
     2:  { id: 'bounty',      label: 'Bounty Board' },
     3:  { id: 'autosalvage', label: 'Auto-salvage filters' },
     5:  { id: 'restock',     label: 'Early Market restocks' },
-    7:  { id: 'reforge',     label: 'Reforge at the Forge' },
     9:  { id: 'riteslot',    label: 'A fourth rite slot' },
     10: { id: 'queue',       label: 'Descent queue' },
     12: { id: 'blackmarket', label: 'Black Market slot' },
-    14: { id: 'craft',       label: 'Craft and Rekindle' },
     16: { id: 'slots',       label: '12 more inventory slots' },
     20: { id: 'statues',     label: 'Statues in the town square' }
   },
+  /* Open from the first hero on (Rob, 2026-09-28): the Forge's build tools
+     were ranks 7 and 14, which a player could finish the story without ever
+     seeing. Their own costs - Ash, gold and Starshards - pace them instead. */
+  unlockedFromStart: ['reforge', 'craft'],
 
   /* --- SPEC 13.4: the Bounty Board --- */
   contracts: {
@@ -3523,10 +3526,12 @@ TREES.shadowmancer = {
           row: 6,
           type: 'keystone',
           maxRank: 1,
-          text: 'Thralls always absorb 30% of HP cost; Might ×0.75',
+          // Rob, 2026-09-28: was a 30% floor, which a hero deep enough in
+          // the branch to reach it had usually passed already. Now it adds.
+          text: 'Thralls absorb an extra 20% of all HP cost; Might ×0.75',
           effects: [
             { k: 'stat_mult', stat: 'might', value: 0.75 },
-            { k: 'special', id: 'legion_of_ash' }
+            { k: 'thrall', scope: 'all', value: 20 }
           ]
         }
       ]
@@ -5853,8 +5858,8 @@ function thrallAbsorption(snap, ctx, enc) {
   }
   // The Ninth Thrall: an extra 15% absorbed from elites and bosses.
   if (snap.specials.the_ninth_thrall && scopeMatches('eliteBoss', enc)) a += 0.15;
-  // Legion of Ash: thralls always absorb at least 30%.
-  if (snap.specials.legion_of_ash) a = Math.max(a, 0.30);
+  // Legion of Ash adds its 20% as an ordinary 'thrall' effect above; the
+  // total is capped by BALANCE.caps.thrall where the cost is worked out.
   return a;
 }
 
@@ -6590,13 +6595,22 @@ function endDescent(hero, outcome, killer) {
     }
     // unlock the next floor
     if (d.floor >= hero.deepest) {
+      const heroBefore = hero.deepest;
+      const accountBefore = state.account.deepestEver;
       hero.deepest = d.floor + 1;
       results.unlockedFloor = hero.deepest;
       // SPEC 16.1 - a new deepest floor for the ACCOUNT pays Renown, once each.
-      if (hero.deepest > state.account.deepestEver) {
-        const newFloors = hero.deepest - state.account.deepestEver;
+      // A floor new only for this hero - one the account has already reached -
+      // pays the smaller per-hero amount, so a later hero replaying the story
+      // still earns something for the climb. A floor never pays both.
+      let amount = 0;
+      if (hero.deepest > accountBefore) {
+        amount += (hero.deepest - accountBefore) * BALANCE.renown.perNewDeepestFloor;
         state.account.deepestEver = hero.deepest;
-        const amount = newFloors * BALANCE.renown.perNewDeepestFloor;
+      }
+      const heroOnlyFloors = Math.max(0, Math.min(hero.deepest, accountBefore) - heroBefore);
+      amount += heroOnlyFloors * BALANCE.renown.perHeroFloor;
+      if (amount > 0) {
         const ren = grantRenown(amount, 'new depth');
         if (ren) {
           results.renown = (results.renown || 0) + amount;
@@ -7357,6 +7371,7 @@ function grantRenown(amount, reason) {
 
 /* Is a rank unlock available? `later: true` ranks are named but inert. */
 function hasUnlock(id) {
+  if ((BALANCE.unlockedFromStart || []).indexOf(id) >= 0) return true;
   const rank = currentRank();
   for (const r in BALANCE.renownUnlocks) {
     const u = BALANCE.renownUnlocks[r];
@@ -9764,6 +9779,8 @@ VIEWS.descend = {
     if (act === 'queue-cancel') { queueCancel(hero); refresh(); toast('Queue cancelled.'); }
     if (act === 'queue-open') {
       const f2 = selectedFloor(hero);
+      const qst = heroStats(hero);
+      const hpPctNow = qst.maxHp > 0 ? Math.floor(currentHp(hero, qst) / qst.maxHp * 100) : 0;
       openSheet({
         title: 'Queue descents',
         body:
@@ -9773,8 +9790,9 @@ VIEWS.descend = {
           '<label class="field"><span>How many descents</span>' +
             '<input id="q-count" type="number" min="1" max="' + BALANCE.queue.maxCount +
             '" value="3"></label>' +
-          '<label class="field" style="margin-top:10px"><span>Stop below this much HP</span>' +
-            '<input id="q-thr" type="number" min="0" max="100" value="50"></label>',
+          '<label class="field" style="margin-top:10px"><span>Stop below this much HP (%)</span>' +
+            '<input id="q-thr" type="number" min="0" max="100" value="50"></label>' +
+          '<p class="tiny muted num" style="margin-top:6px">You have ' + fmtNum(hpPctNow) + '% HP now.</p>',
         foot: '<button class="btn btn-primary btn-block btn-lg" data-act="go">Start the queue</button>',
         onAct: function (a) {
           if (a !== 'go') return;
@@ -9782,10 +9800,23 @@ VIEWS.descend = {
           const t = parseInt(document.getElementById('q-thr').value, 10) || 0;
           const res = queueStart(hero, f2, n, t);
           if (!res.ok) { toast(res.reason); return; }
+          /* The first descent has to be able to start now. If it can't, say
+             why and leave the sheet open to adjust, rather than letting the
+             queue cancel itself behind a "Queue started" message. */
+          const blocker = queueBlocker(hero);
+          if (blocker) {
+            queueCancel(hero);
+            const st2 = heroStats(hero);
+            const pct = st2.maxHp > 0 ? Math.floor(currentHp(hero, st2) / st2.maxHp * 100) : 0;
+            toast(blocker === 'HP below your threshold.'
+              ? 'Not started: you have ' + fmtNum(pct) + '% HP, below the ' + fmtNum(t) + '% you set.'
+              : 'Not started: ' + blocker);
+            return;
+          }
           closeSheet();
           settle();
           refresh();
-          toast('Queue started.');
+          toast(hero.descent ? 'Queue started.' : 'Not started: ' + (hero.queueMessage || 'the first descent could not begin.'));
         }
       });
     }
@@ -21360,8 +21391,9 @@ function halls3RenderRenown() {
   html += '<p class="muted small num" style="margin:2px 2px 0">' + fmtNum(total) + ' Renown total</p>';
 
   html += '<p class="muted small" style="margin:10px 2px 0">' +
-    'Renown grows automatically: reaching a new deepest floor for the account, a hero’s ' +
-    'first kill of each Guardian, and every Bounty Board contract you complete.' +
+    'Renown grows automatically: reaching a new deepest floor for the account (and, for a later ' +
+    'hero, each floor they reach for the first time), a hero’s first kill of each Guardian, ' +
+    'achievements, and every Bounty Board contract you complete.' +
   '</p>';
 
   html += hrRenderTitles();
